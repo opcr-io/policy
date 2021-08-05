@@ -1,0 +1,230 @@
+name: ci
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    # Publish `main` as Docker `latest` image.
+    branches:
+      - main
+      - release-*
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+  # Run tests for PRs
+  pull_request:
+    branches:
+      - main
+      - release-*
+env:
+  VAULT_ADDR: https://vault.eng.aserto.com/
+  PRE_RELEASE: ${{ github.ref == 'refs/heads/main' && 'development' || '' }}
+  GO_VERSION: "1.16"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Configuration
+        uses: hashicorp/vault-action@v2.1.0
+        id: vault
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/github  "SSH_PRIVATE_KEY"     | SSH_PRIVATE_KEY;
+      - name: Install Vault CLI
+        uses: innovationnorway/setup-vault@v1.0.3
+        with:
+          version: 1.4.2
+      - name: Renew Vault Token
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          vault token renew
+      - uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Setup caching
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Install Tools
+        run: |
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+
+          go run mage.go deps
+      - name: Lint
+        run: |
+          go run mage.go lint
+      - name: Test
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          go run mage.go test
+      - name: Upload code coverage
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: cover.out
+  push:
+    needs: test
+    runs-on: ubuntu-latest
+    # when on a branch only push if the branch is main
+    # always push when ref is a tag
+    if: github.event_name == 'push' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') )
+    steps:
+      - name: Read Configuration
+        uses: hashicorp/vault-action@v2.1.0
+        id: vault
+        with:
+          url: https://vault.eng.aserto.com/
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/github  "SSH_PRIVATE_KEY"     | SSH_PRIVATE_KEY;
+            kv/data/github  "USERNAME"            | DOCKER_USERNAME;
+            kv/data/github  "DOCKER_PUSH_TOKEN"   | DOCKER_PASSWORD;
+      - name: Install Vault CLI
+        uses: innovationnorway/setup-vault@v1.0.3
+        with:
+          version: 1.4.2
+      - name: Renew Vault Token
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          vault token renew
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Setup caching
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Login to GitHub Packages Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: https://ghcr.io
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+      - name: Build Images
+        run: |
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+          
+          eval `ssh-agent`
+          ssh-add $HOME/.ssh/id_rsa
+          
+          go run mage.go deps dockerImage
+      - name: Push image to GitHub Container Registry
+        run: |
+          BUILT_IMAGE_WITH_TAG="policy:$(calc-version)"
+          
+          PUBLISH_IMAGE=ghcr.io/${{ github.repository_owner }}/policy
+          
+          calc-version tags \
+            ${{ github.repository_owner }}/$IMAGE_NAME \
+            --server https://ghcr.io \
+            --user "$DOCKER_USERNAME" \
+            --password "$DOCKER_PASSWORD" | \
+            xargs -I{} bash -c "docker tag '$BUILT_IMAGE_WITH_TAG' '$PUBLISH_IMAGE:{}' && docker push '$PUBLISH_IMAGE:{}'"
+
+  release:
+    needs: push
+    runs-on: ubuntu-latest
+    # Only release when ref is a tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Read Configuration
+        uses: hashicorp/vault-action@v2.1.0
+        id: vault
+        with:
+          url: https://vault.eng.aserto.com/
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/github  "SSH_PRIVATE_KEY"     | SSH_PRIVATE_KEY;
+            kv/data/github  "READ_WRITE_TOKEN"    | READ_WRITE_TOKEN;
+      - name: Install Vault CLI
+        uses: innovationnorway/setup-vault@v1.0.3
+        with:
+          version: 1.4.2
+      - name: Renew Vault Token
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          vault token renew
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Setup caching
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Build
+        run: |
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+
+          go run mage.go deps build
+
+          (
+            cd ./bin/linux-amd64/
+            tar -czf policy-linux-amd64.tar.gz *
+          )
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          # A PAT is required to work around 
+          # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
+          GITHUB_TOKEN: ${{ steps.vault.outputs.READ_WRITE_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload Release Asset Linux
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing its ID to get its outputs object, which include an `upload_url`.
+          asset_path: ./bin/linux-amd64/policy-linux-amd64.tar.gz
+          asset_name: policy-linux-amd64.tar.gz
+          asset_content_type: application/gnutar

@@ -1,9 +1,15 @@
+# misc
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# env setting
+.vscode/launch.json
 
 # Test binary, built with `go test -c`
 *.test
@@ -13,3 +19,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+/.ext
+/bin
+/cover.out
