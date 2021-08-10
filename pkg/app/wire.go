@@ -7,39 +7,61 @@ import (
 
 	"github.com/google/wire"
 
-	"github.com/aserto-dev/policy-cli/pkg/cc"
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
+	runtime "github.com/aserto-dev/aserto-runtime"
+	runtimeconfig "github.com/aserto-dev/aserto-runtime/config"
+	"github.com/aserto-dev/clui"
+	eds "github.com/aserto-dev/go-eds"
+	"github.com/aserto-dev/policy/pkg/cc"
+	"github.com/aserto-dev/policy/pkg/cc/config"
 )
 
 var (
-	policyCLISet = wire.NewSet(
+	policyAppSet = wire.NewSet(
 		cc.NewCC,
+		runtime.BuildRuntime,
+		eds.NewEdgeDirectory,
+		emptyEDSConfig,
+		emptyOPAConfig,
+		clui.NewUI,
 
-		wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup"),
+		wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup", "CancelFunc"),
 	)
 
-	policyCLITestSet = wire.NewSet(
+	policyAppTestSet = wire.NewSet(
 		// Test
 		cc.NewTestCC,
 
 		// Normal
+		runtime.BuildRuntime,
+		eds.NewEdgeDirectory,
+		emptyEDSConfig,
+		emptyOPAConfig,
+		clui.NewUI,
 
-		wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup"),
+		wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup", "CancelFunc"),
 	)
 )
 
-func BuildPolicyCLI(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyCLI, func(), error) {
+func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	wire.Build(
-		wire.Struct(new(PolicyCLI), "*"),
-		policyCLISet,
+		wire.Struct(new(PolicyApp), "*"),
+		policyAppSet,
 	)
-	return &PolicyCLI{}, func() {}, nil
+	return &PolicyApp{}, func() {}, nil
 }
 
-func BuildTestPolicyCLI(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyCLI, func(), error) {
+func BuildTestPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	wire.Build(
-		wire.Struct(new(PolicyCLI), "*"),
-		policyCLITestSet,
+		wire.Struct(new(PolicyApp), "*"),
+		policyAppTestSet,
 	)
-	return &PolicyCLI{}, func() {}, nil
+	return &PolicyApp{}, func() {}, nil
+}
+
+func emptyEDSConfig() *eds.Config {
+	return &eds.Config{}
+}
+
+func emptyOPAConfig() *runtimeconfig.ConfigOPA {
+	return &runtimeconfig.ConfigOPA{}
 }

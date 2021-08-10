@@ -11,24 +11,29 @@ import (
 type ErrGroupAndContext struct {
 	Ctx      context.Context
 	ErrGroup *errgroup.Group
+	Cancel   context.CancelFunc
 }
 
 // NewContext creates a context that responds to user signals
 func NewContext() *ErrGroupAndContext {
-	errGroup, ctx := errgroup.WithContext(signals.SetupSignalHandler())
+	errGroup, ctxErr := errgroup.WithContext(signals.SetupSignalHandler())
+	ctx, cancelFunc := context.WithCancel(ctxErr)
 
 	return &ErrGroupAndContext{
 		Ctx:      ctx,
 		ErrGroup: errGroup,
+		Cancel:   cancelFunc,
 	}
 }
 
 // NewTestContext creates a context that can be used for testing
 func NewTestContext() *ErrGroupAndContext {
-	errGroup, ctx := errgroup.WithContext(context.Background())
+	errGroup, ctxErr := errgroup.WithContext(context.Background())
+	ctx, cancelFunc := context.WithCancel(ctxErr)
 
 	return &ErrGroupAndContext{
 		Ctx:      ctx,
 		ErrGroup: errGroup,
+		Cancel:   cancelFunc,
 	}
 }

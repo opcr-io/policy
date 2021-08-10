@@ -9,8 +9,8 @@ import (
 	"github.com/aserto-dev/go-lib/logger"
 	"github.com/google/wire"
 
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
-	cc_context "github.com/aserto-dev/policy-cli/pkg/cc/context"
+	"github.com/aserto-dev/policy/pkg/cc/config"
+	cc_context "github.com/aserto-dev/policy/pkg/cc/context"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 		logger.NewLogger,
 		certs.NewGenerator,
 		wire.FieldsOf(new(config.Config), "Logging"),
-		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup"),
+		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"),
 
 		wire.Struct(new(CC), "*"),
 	)
@@ -35,7 +35,7 @@ var (
 		config.NewLoggerConfig,
 		logger.NewLogger,
 		certs.NewGenerator,
-		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup"),
+		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"),
 
 		wire.Struct(new(CC), "*"),
 	)

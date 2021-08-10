@@ -8,8 +8,8 @@ package cc
 import (
 	"github.com/aserto-dev/go-lib/certs"
 	"github.com/aserto-dev/go-lib/logger"
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
-	"github.com/aserto-dev/policy-cli/pkg/cc/context"
+	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/aserto-dev/policy/pkg/cc/context"
 	"github.com/google/wire"
 	"io"
 )
@@ -35,11 +35,13 @@ func buildCC(logOutput io.Writer, configPath config.Path, overrides config.Overr
 		return nil, nil, err
 	}
 	group := errGroupAndContext.ErrGroup
+	cancelFunc := errGroupAndContext.Cancel
 	ccCC := &CC{
-		Context:  contextContext,
-		Config:   configConfig,
-		Log:      zerologLogger,
-		ErrGroup: group,
+		Context:    contextContext,
+		Config:     configConfig,
+		Log:        zerologLogger,
+		ErrGroup:   group,
+		CancelFunc: cancelFunc,
 	}
 	return ccCC, func() {
 	}, nil
@@ -62,11 +64,13 @@ func buildTestCC(logOutput io.Writer, configPath config.Path, overrides config.O
 		return nil, nil, err
 	}
 	group := errGroupAndContext.ErrGroup
+	cancelFunc := errGroupAndContext.Cancel
 	ccCC := &CC{
-		Context:  contextContext,
-		Config:   configConfig,
-		Log:      zerologLogger,
-		ErrGroup: group,
+		Context:    contextContext,
+		Config:     configConfig,
+		Log:        zerologLogger,
+		ErrGroup:   group,
+		CancelFunc: cancelFunc,
 	}
 	return ccCC, func() {
 	}, nil
@@ -75,7 +79,7 @@ func buildTestCC(logOutput io.Writer, configPath config.Path, overrides config.O
 // wire.go:
 
 var (
-	ccSet = wire.NewSet(context.NewContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(config.Config), "Logging"), wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup"), wire.Struct(new(CC), "*"))
+	ccSet = wire.NewSet(context.NewContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(config.Config), "Logging"), wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"), wire.Struct(new(CC), "*"))
 
-	ccTestSet = wire.NewSet(context.NewTestContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup"), wire.Struct(new(CC), "*"))
+	ccTestSet = wire.NewSet(context.NewTestContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"), wire.Struct(new(CC), "*"))
 )

@@ -6,46 +6,90 @@
 package app
 
 import (
-	"github.com/aserto-dev/policy-cli/pkg/cc"
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
+	"github.com/aserto-dev/aserto-runtime"
+	config2 "github.com/aserto-dev/aserto-runtime/config"
+	"github.com/aserto-dev/clui"
+	"github.com/aserto-dev/go-eds"
+	"github.com/aserto-dev/policy/pkg/cc"
+	"github.com/aserto-dev/policy/pkg/cc/config"
 	"github.com/google/wire"
 	"io"
 )
 
 // Injectors from wire.go:
 
-func BuildPolicyCLI(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyCLI, func(), error) {
+func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	ccCC, cleanup, err := cc.NewCC(logWriter, configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
 	context := ccCC.Context
+	cancelFunc := ccCC.CancelFunc
 	logger := ccCC.Log
 	configConfig := ccCC.Config
-	policyCLI := &PolicyCLI{
+	edsConfig := emptyEDSConfig()
+	edgeDirectory, cleanup2, err := eds.NewEdgeDirectory(edsConfig, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	configOPA := emptyOPAConfig()
+	runtimeRuntime, cleanup3, err := runtime.BuildRuntime(context, logger, edgeDirectory, configOPA)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	ui := clui.NewUI()
+	policyApp := &PolicyApp{
 		Context:       context,
+		Cancel:        cancelFunc,
 		Logger:        logger,
 		Configuration: configConfig,
+		Runtime:       runtimeRuntime,
+		UI:            ui,
 	}
-	return policyCLI, func() {
+	return policyApp, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }
 
-func BuildTestPolicyCLI(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyCLI, func(), error) {
+func BuildTestPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	ccCC, cleanup, err := cc.NewTestCC(logWriter, configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
 	context := ccCC.Context
+	cancelFunc := ccCC.CancelFunc
 	logger := ccCC.Log
 	configConfig := ccCC.Config
-	policyCLI := &PolicyCLI{
+	edsConfig := emptyEDSConfig()
+	edgeDirectory, cleanup2, err := eds.NewEdgeDirectory(edsConfig, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	configOPA := emptyOPAConfig()
+	runtimeRuntime, cleanup3, err := runtime.BuildRuntime(context, logger, edgeDirectory, configOPA)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	ui := clui.NewUI()
+	policyApp := &PolicyApp{
 		Context:       context,
+		Cancel:        cancelFunc,
 		Logger:        logger,
 		Configuration: configConfig,
+		Runtime:       runtimeRuntime,
+		UI:            ui,
 	}
-	return policyCLI, func() {
+	return policyApp, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }
@@ -53,7 +97,19 @@ func BuildTestPolicyCLI(logWriter io.Writer, configPath config.Path, overrides c
 // wire.go:
 
 var (
-	policyCLISet = wire.NewSet(cc.NewCC, wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup"))
+	policyAppSet = wire.NewSet(cc.NewCC, runtime.BuildRuntime, eds.NewEdgeDirectory, emptyEDSConfig,
+		emptyOPAConfig, clui.NewUI, wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup", "CancelFunc"),
+	)
 
-	policyCLITestSet = wire.NewSet(cc.NewTestCC, wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup"))
+	policyAppTestSet = wire.NewSet(cc.NewTestCC, runtime.BuildRuntime, eds.NewEdgeDirectory, emptyEDSConfig,
+		emptyOPAConfig, clui.NewUI, wire.FieldsOf(new(*cc.CC), "Config", "Log", "Context", "ErrGroup", "CancelFunc"),
+	)
 )
+
+func emptyEDSConfig() *eds.Config {
+	return &eds.Config{}
+}
+
+func emptyOPAConfig() *config2.ConfigOPA {
+	return &config2.ConfigOPA{}
+}

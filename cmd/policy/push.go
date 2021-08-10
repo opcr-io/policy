@@ -1,36 +1,21 @@
 package main
 
-import (
-	"os"
+type PushCmd struct {
+	Policies []string `arg:"" name:"policy" help:"Policies to push."`
+}
 
-	"github.com/aserto-dev/policy-cli/pkg/app"
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
-	"github.com/urfave/cli/v2"
-)
+func (c *PushCmd) Run(g *Globals) error {
+	cleanup := g.setup()
+	defer cleanup()
 
-var pushCmd = &cli.Command{
-	Name:  "push",
-	Usage: "push",
-	Action: func(c *cli.Context) error {
-
-		configFile := c.String("config")
-
-		app, cleanup, err := app.BuildPolicyCLI(
-			os.Stdout,
-			config.Path(configFile),
-			func(*config.Config) {})
-
-		defer func() {
-			if cleanup != nil {
-				cleanup()
-			}
-		}()
+	for _, policyRef := range c.Policies {
+		err := g.App.Push(policyRef)
 		if err != nil {
-			return err
+			g.App.UI.Problem().WithErr(err).Msg("Failed to push policy.")
 		}
+	}
 
-		<-app.Context.Done()
+	<-g.App.Context.Done()
 
-		return nil
-	},
+	return nil
 }

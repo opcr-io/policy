@@ -89,7 +89,7 @@ func ldflags() ([]string, error) {
 
 	date := time.Now().UTC().Format(time.RFC3339)
 
-	ldbase := "github.com/aserto-dev/policy-cli/pkg/version"
+	ldbase := "github.com/aserto-dev/policy/pkg/version"
 	ldflags := fmt.Sprintf(`-X %s.ver=%s -X %s.commit=%s -X %s.date=%s`,
 		ldbase, version, ldbase, commit, ldbase, date)
 

@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
+	"github.com/aserto-dev/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
@@ -13,10 +13,11 @@ import (
 // CC contains dependencies that are cross cutting and are needed in most
 // of the providers that make up this application
 type CC struct {
-	Context  context.Context
-	Config   *config.Config
-	Log      *zerolog.Logger
-	ErrGroup *errgroup.Group
+	Context    context.Context
+	Config     *config.Config
+	Log        *zerolog.Logger
+	ErrGroup   *errgroup.Group
+	CancelFunc context.CancelFunc
 }
 
 var (

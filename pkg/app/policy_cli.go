@@ -5,12 +5,17 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
+	runtime "github.com/aserto-dev/aserto-runtime"
+	"github.com/aserto-dev/clui"
+	"github.com/aserto-dev/policy/pkg/cc/config"
 )
 
-// PolicyCLI represents the policy CLI
-type PolicyCLI struct {
+// PolicyApp represents the policy CLI
+type PolicyApp struct {
 	Context       context.Context
+	Cancel        context.CancelFunc
 	Logger        *zerolog.Logger
 	Configuration *config.Config
+	Runtime       *runtime.Runtime
+	UI            *clui.UI
 }

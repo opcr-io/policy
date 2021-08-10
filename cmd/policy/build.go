@@ -1,36 +1,20 @@
 package main
 
-import (
-	"os"
+type BuildCmd struct {
+	Tag  []string `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format"`
+	Path string   `arg:"" name:"path" help:"Path to the policy sources." type:"path"`
+}
 
-	"github.com/aserto-dev/policy-cli/pkg/app"
-	"github.com/aserto-dev/policy-cli/pkg/cc/config"
-	"github.com/urfave/cli/v2"
-)
+func (c *BuildCmd) Run(g *Globals) error {
+	cleanup := g.setup()
+	defer cleanup()
 
-var buildCmd = &cli.Command{
-	Name:  "build",
-	Usage: "build",
-	Action: func(c *cli.Context) error {
+	err := g.App.Build(c.Tag, c.Path)
+	if err != nil {
+		g.App.UI.Problem().WithErr(err).Msg("Build failed.")
+	}
 
-		configFile := c.String("config")
+	<-g.App.Context.Done()
 
-		app, cleanup, err := app.BuildPolicyCLI(
-			os.Stdout,
-			config.Path(configFile),
-			func(*config.Config) {})
-
-		defer func() {
-			if cleanup != nil {
-				cleanup()
-			}
-		}()
-		if err != nil {
-			return err
-		}
-
-		<-app.Context.Done()
-
-		return nil
-	},
+	return nil
 }
