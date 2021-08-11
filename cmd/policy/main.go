@@ -38,6 +38,7 @@ var PolicyCLI struct {
 	Build BuildCmd `cmd:"" help:"Build policies."`
 	List  ListCmd  `cmd:"" help:"List policies."`
 	Push  PushCmd  `cmd:"" help:"Push policies to a registry."`
+	Pull  PullCmd  `cmd:"" help:"Pull policies from a registry."`
 }
 
 func (g *Globals) setup() func() {
