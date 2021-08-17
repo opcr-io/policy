@@ -30,6 +30,8 @@ type Globals struct {
 	App       *app.PolicyApp
 }
 
+var g *Globals
+
 var PolicyCLI struct {
 	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"$HOME/.config/aserto/policy/config.yaml"`
 	Debug     bool   `help:"Enable debug mode."`
@@ -39,6 +41,9 @@ var PolicyCLI struct {
 	List  ListCmd  `cmd:"" help:"List policies."`
 	Push  PushCmd  `cmd:"" help:"Push policies to a registry."`
 	Pull  PullCmd  `cmd:"" help:"Pull policies from a registry."`
+	Login LoginCmd `cmd:"" help:"Login to a registry."`
+	Save  SaveCmd  `cmd:"" help:"Save a policy to a local bundle tarball."`
+	Tag   TagCmd   `cmd:"" help:"Create a new tag for an existing policy."`
 }
 
 func (g *Globals) setup() func() {
@@ -71,12 +76,18 @@ This might be a bug. Please open an issue here: https://github.com/aserto-dev/po
 }
 
 func main() {
-	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(EnvExpander()))
-	err := ctx.Run(&Globals{
+	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(
+		EnvExpander()))
+
+	g = &Globals{
 		Debug:     PolicyCLI.Debug,
 		Config:    PolicyCLI.Config,
 		Verbosity: PolicyCLI.Verbosity,
-	})
+	}
+	cleanup := g.setup()
+	defer cleanup()
+
+	err := ctx.Run(g)
 
 	ctx.FatalIfErrorf(err)
 }

@@ -7,9 +7,7 @@ import (
 )
 
 func (c *PolicyApp) List() error {
-	defer func() {
-		c.Cancel()
-	}()
+	defer c.Cancel()
 
 	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
 	if err != nil {

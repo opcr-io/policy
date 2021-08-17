@@ -6,9 +6,6 @@ type BuildCmd struct {
 }
 
 func (c *BuildCmd) Run(g *Globals) error {
-	cleanup := g.setup()
-	defer cleanup()
-
 	err := g.App.Build(c.Tag, c.Path)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Build failed.")

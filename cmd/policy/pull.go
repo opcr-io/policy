@@ -5,9 +5,6 @@ type PullCmd struct {
 }
 
 func (c *PullCmd) Run(g *Globals) error {
-	cleanup := g.setup()
-	defer cleanup()
-
 	for _, policyRef := range c.Policies {
 		err := g.App.Pull(policyRef)
 		if err != nil {

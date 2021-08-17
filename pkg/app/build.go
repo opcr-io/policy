@@ -7,7 +7,6 @@ import (
 	"time"
 
 	runtime "github.com/aserto-dev/aserto-runtime"
-	"github.com/aserto-dev/aserto-runtime/plugins/edge/builtins"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
@@ -21,9 +20,7 @@ import (
 )
 
 func (c *PolicyApp) Build(refs []string, path string) error {
-	defer func() {
-		c.Cancel()
-	}()
+	defer c.Cancel()
 
 	// Create a tmp dir where to do our work
 	workdir, err := os.MkdirTemp("", "policy-build")
@@ -46,6 +43,10 @@ func (c *PolicyApp) Build(refs []string, path string) error {
 	if err != nil {
 		return err
 	}
+	err = ociStore.LoadIndex()
+	if err != nil {
+		return err
+	}
 
 	descriptor, err := c.createImage(ociStore, tarball)
 	if err != nil {
@@ -55,7 +56,7 @@ func (c *PolicyApp) Build(refs []string, path string) error {
 	for _, ref := range refs {
 		parsed, err := c.calculatePolicyRef(ref)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to calculate policy reference")
 		}
 
 		ociStore.AddReference(parsed, descriptor)
@@ -76,15 +77,17 @@ func (c *PolicyApp) Build(refs []string, path string) error {
 func (c *PolicyApp) calculatePolicyRef(userRef string) (string, error) {
 	parsed, err := docker.ParseDockerRef(userRef)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed to parse reference [%s]", userRef)
 	}
 
 	familiarized := docker.FamiliarString(parsed)
 
-	if familiarized == userRef {
+	domain := docker.Domain(parsed)
+
+	if (familiarized == userRef || familiarized == userRef+":latest") && domain == DefaultCanonicalDomain {
 		parsedWithDomain, err := docker.ParseDockerRef(c.Configuration.DefaultDomain + "/" + userRef)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "failed to parse normalized reference [%s]", c.Configuration.DefaultDomain+"/"+userRef)
 		}
 
 		return parsedWithDomain.String(), nil
@@ -189,7 +192,6 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 }
 
 func (c *PolicyApp) buildBundleTgz(workdir, bundleDir string) (string, error) {
-	builtins.Register(c.Logger, c.Runtime.Directory)
 	ctx := c.Context
 
 	err := c.Runtime.PluginsManager.Start(ctx)
