@@ -110,9 +110,7 @@ func (c *PolicyApp) Build(ref string, path []string,
 
 	ociStore.AddReference(parsed, descriptor)
 
-	c.UI.Normal().
-		WithStringValue("reference", ref).
-		Msg("Tagging image.")
+	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
 
 	err = ociStore.SaveIndex()
 	if err != nil {
