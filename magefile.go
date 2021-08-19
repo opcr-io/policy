@@ -65,7 +65,7 @@ func DockerImage() error {
 // DockerPush builds the docker image using all tags specified by sver
 // and pushes it to the specified registry
 func DockerPush(registry, org string) error {
-	tags, err := common.DockerTags(registry, fmt.Sprintf("%s/sver", org))
+	tags, err := common.DockerTags(registry, fmt.Sprintf("%s/policy", org))
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func DockerPush(registry, org string) error {
 
 	for _, tag := range tags {
 		common.UI.Normal().WithStringValue("tag", tag).Msg("pushing tag")
-		err = common.DockerPush(fmt.Sprintf("sver:%s", version), fmt.Sprintf("%s/%s/sver:%s", registry, org, tag))
+		err = common.DockerPush(fmt.Sprintf("policy:%s", version), fmt.Sprintf("%s/%s/policy:%s", registry, org, tag))
 		if err != nil {
 			return err
 		}
