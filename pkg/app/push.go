@@ -54,7 +54,7 @@ func (c *PolicyApp) Push(userRef string) error {
 			client := &http.Client{}
 
 			return []docker.RegistryHost{
-				docker.RegistryHost{
+				{
 					Host:         s,
 					Scheme:       "https",
 					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,

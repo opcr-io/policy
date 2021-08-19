@@ -48,7 +48,7 @@ func (c *PolicyApp) Build(ref string, path []string,
 		}
 	}()
 
-	params := opa.BuildParams{
+	params := &opa.BuildParams{
 		BundleMode:         bundleMode,
 		OptimizationLevel:  optimizationLevel,
 		Revision:           revision,
@@ -70,14 +70,17 @@ func (c *PolicyApp) Build(ref string, path []string,
 	}
 
 	params.Capabilities = &opa.CapabilitiesFlag{}
-	params.Capabilities.Set(capabilities)
+	err = params.Capabilities.Set(capabilities)
 	if err != nil {
 		return errors.Wrap(err, "invalid value for capabilities flag")
 	}
 
 	params.Entrypoints = opa.RepeatedStringFlag{}
 	for _, e := range entrypoints {
-		params.Entrypoints.Set(e)
+		err = params.Entrypoints.Set(e)
+		if err != nil {
+			return err
+		}
 	}
 
 	tarball, err := c.buildBundleTgz(workdir, params, path)
@@ -235,7 +238,7 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 	return fDigest, nil
 }
 
-func (c *PolicyApp) buildBundleTgz(workdir string, params opa.BuildParams, bundleDirs []string) (string, error) {
+func (c *PolicyApp) buildBundleTgz(workdir string, params *opa.BuildParams, bundleDirs []string) (string, error) {
 	outfile := filepath.Join(workdir, "bundle.tgz")
 
 	params.OutputFile = outfile

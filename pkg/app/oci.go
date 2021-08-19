@@ -12,7 +12,7 @@ const (
 	DefaultCanonicalDomain = "docker.io"
 )
 
-func cloneDescriptor(desc v1.Descriptor) (v1.Descriptor, error) {
+func cloneDescriptor(desc *v1.Descriptor) (v1.Descriptor, error) {
 	b, err := json.Marshal(desc)
 	if err != nil {
 		return v1.Descriptor{}, errors.Wrap(err, "failed to clone descriptor")

@@ -20,6 +20,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const stringType = "string"
+
 type Builtin struct {
 	Name string         `json:"name"`
 	Decl types.Function `json:"decl"`
@@ -39,7 +41,7 @@ type BuiltinDefs struct {
 	BuiltinDyn []BuiltinDyn `json:"builtinDyn,omitempty"`
 }
 
-func registerBuiltins(defs BuiltinDefs) {
+func registerBuiltins(defs *BuiltinDefs) {
 	for _, b := range defs.Builtin1 {
 		rego.RegisterBuiltin1(&rego.Function{
 			Name:    b.Name,
@@ -121,7 +123,7 @@ func generateAllBuiltins(paths []string) error {
 
 		manifest := struct {
 			Metadata struct {
-				RequiredBuiltins BuiltinDefs `json:"required_builtins"`
+				RequiredBuiltins *BuiltinDefs `json:"required_builtins"`
 			} `json:"metadata,omitempty"`
 		}{}
 		err = json.Unmarshal(manifestBytes, &manifest)
@@ -135,7 +137,7 @@ func generateAllBuiltins(paths []string) error {
 	return nil
 }
 
-func Build(buildParams BuildParams, paths []string) error {
+func Build(buildParams *BuildParams, paths []string) error {
 	err := generateAllBuiltins(paths)
 	if err != nil {
 		return err
@@ -153,7 +155,7 @@ type CapabilitiesFlag struct {
 
 // Type returns "string"
 func (f *CapabilitiesFlag) Type() string {
-	return "string"
+	return stringType
 }
 
 // String returns the set path
@@ -181,7 +183,7 @@ type RepeatedStringFlag struct {
 
 // Type returns "string"
 func (f *RepeatedStringFlag) Type() string {
-	return "string"
+	return stringType
 }
 
 // String returns a comma-joined list of the flag values
@@ -235,7 +237,7 @@ func (f loaderFilter) Apply(abspath string, info os.FileInfo, depth int) bool {
 }
 
 // Build builds a bundle using the Aserto OPA Runtime
-func build(params BuildParams, args []string) error {
+func build(params *BuildParams, args []string) error {
 	buf := bytes.NewBuffer(nil)
 
 	// generate the bundle verification and signing config

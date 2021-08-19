@@ -16,8 +16,7 @@ type PolicyApp struct {
 	Cancel        context.CancelFunc
 	Logger        *zerolog.Logger
 	Configuration *config.Config
-	//Runtime       *runtime.Runtime
-	UI *clui.UI
+	UI            *clui.UI
 }
 
 func (c *PolicyApp) SaveServerCreds(server string, creds config.ServerCredentials) error {

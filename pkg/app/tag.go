@@ -5,7 +5,7 @@ import (
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) Tag(existingRef string, newRef string) error {
+func (c *PolicyApp) Tag(existingRef, newRef string) error {
 	defer c.Cancel()
 
 	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
@@ -33,7 +33,7 @@ func (c *PolicyApp) Tag(existingRef string, newRef string) error {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
 
-	newDescriptor, err := cloneDescriptor(descriptor)
+	newDescriptor, err := cloneDescriptor(&descriptor)
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,9 @@ var refExamples = []struct {
 
 func TestRefCalculation(t *testing.T) {
 	for _, tc := range refExamples {
+		userRef := tc.userRef
+		expectedInternalRef := tc.expectedInternalRef
+
 		t.Run(tc.userRef, func(t *testing.T) {
 			assert := require.New(t)
 
@@ -26,10 +29,10 @@ func TestRefCalculation(t *testing.T) {
 			assert.NoError(err)
 			defer cleanup()
 
-			calculatedRef, err := p.calculatePolicyRef(tc.userRef)
+			calculatedRef, err := p.calculatePolicyRef(userRef)
 			assert.NoError(err)
 
-			assert.Equal(tc.expectedInternalRef, calculatedRef)
+			assert.Equal(expectedInternalRef, calculatedRef)
 		})
 	}
 
