@@ -136,7 +136,7 @@ jobs:
           eval `ssh-agent`
           ssh-add $HOME/.ssh/id_rsa
           go run mage.go deps dockerImage
-          go run mage.go dockerPush ghcr.io "aserto-dev/$IMAGE_NAME"
+          go run mage.go dockerPush ghcr.io "aserto-dev"
 
   release:
     needs: push
