@@ -113,11 +113,6 @@ func Tag() error {
 	return nil
 }
 
-// CIGitSetup ONLY FOR USE IN CI - makes changes to git configuration.
-func CIGitSetup() error {
-	return common.SetupGitConfig("github-bot@aserto.com", "Aserto Bot")
-}
-
 // Deps installs all dependencies required to build the project.
 func Deps() {
 	deps.GetAllDeps()
