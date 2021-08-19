@@ -4,9 +4,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
-	runtime "github.com/aserto-dev/aserto-runtime"
+	"github.com/aserto-dev/policy/pkg/opa"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
@@ -19,7 +18,22 @@ import (
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) Build(refs []string, path string) error {
+func (c *PolicyApp) Build(ref string, path []string,
+	runConfigFile string,
+	target string,
+	optimizationLevel int,
+	entrypoints []string,
+	revision string,
+	bundleMode bool,
+	ignore []string,
+	capabilities string,
+	verificationKey string,
+	verificationKeyID string,
+	algorithm string,
+	scope string,
+	excludeVerifyFiles []string,
+	signingKey string,
+	claimsFile string) error {
 	defer c.Cancel()
 
 	// Create a tmp dir where to do our work
@@ -34,7 +48,39 @@ func (c *PolicyApp) Build(refs []string, path string) error {
 		}
 	}()
 
-	tarball, err := c.buildBundleTgz(workdir, path)
+	params := opa.BuildParams{
+		BundleMode:         bundleMode,
+		OptimizationLevel:  optimizationLevel,
+		Revision:           revision,
+		Ignore:             ignore,
+		Debug:              c.Logger.Debug().Enabled(),
+		Algorithm:          algorithm,
+		ExcludeVerifyFiles: excludeVerifyFiles,
+		PubKey:             verificationKey,
+		PubKeyID:           verificationKeyID,
+		Key:                signingKey,
+		Scope:              scope,
+		ClaimsFile:         claimsFile,
+	}
+
+	params.Target = util.NewEnumFlag(compile.TargetRego, []string{compile.TargetRego, compile.TargetWasm})
+	err = params.Target.Set(target)
+	if err != nil {
+		return errors.Wrap(err, "invalid value for target flag")
+	}
+
+	params.Capabilities = &opa.CapabilitiesFlag{}
+	params.Capabilities.Set(capabilities)
+	if err != nil {
+		return errors.Wrap(err, "invalid value for capabilities flag")
+	}
+
+	params.Entrypoints = opa.RepeatedStringFlag{}
+	for _, e := range entrypoints {
+		params.Entrypoints.Set(e)
+	}
+
+	tarball, err := c.buildBundleTgz(workdir, params, path)
 	if err != nil {
 		return err
 	}
@@ -53,18 +99,16 @@ func (c *PolicyApp) Build(refs []string, path string) error {
 		return err
 	}
 
-	for _, ref := range refs {
-		parsed, err := c.calculatePolicyRef(ref)
-		if err != nil {
-			return errors.Wrap(err, "failed to calculate policy reference")
-		}
-
-		ociStore.AddReference(parsed, descriptor)
-
-		c.UI.Normal().
-			WithStringValue("reference", ref).
-			Msg("Tagging image.")
+	parsed, err := c.calculatePolicyRef(ref)
+	if err != nil {
+		return errors.Wrap(err, "failed to calculate policy reference")
 	}
+
+	ociStore.AddReference(parsed, descriptor)
+
+	c.UI.Normal().
+		WithStringValue("reference", ref).
+		Msg("Tagging image.")
 
 	err = ociStore.SaveIndex()
 	if err != nil {
@@ -191,27 +235,12 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 	return fDigest, nil
 }
 
-func (c *PolicyApp) buildBundleTgz(workdir, bundleDir string) (string, error) {
-	ctx := c.Context
-
-	err := c.Runtime.PluginsManager.Start(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to start OPA plugin manager")
-	}
-
-	// TODO: fix this (don't really need plugins?)
-	err = c.Runtime.WaitForPlugins(ctx, time.Duration(10)*time.Second)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to wait for OPA plugins")
-	}
-
+func (c *PolicyApp) buildBundleTgz(workdir string, params opa.BuildParams, bundleDirs []string) (string, error) {
 	outfile := filepath.Join(workdir, "bundle.tgz")
-	err = c.Runtime.Build(runtime.BuildParams{
-		Capabilities: &runtime.CapabilitiesFlag{C: nil},
-		OutputFile:   outfile,
-		BundleMode:   true,
-		Target:       util.NewEnumFlag(compile.TargetRego, []string{compile.TargetRego, compile.TargetWasm}),
-	}, []string{bundleDir})
+
+	params.OutputFile = outfile
+
+	err := opa.Build(params, bundleDirs)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to build policy")
 	}

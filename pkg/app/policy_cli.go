@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	runtime "github.com/aserto-dev/aserto-runtime"
 	"github.com/aserto-dev/clui"
 	"github.com/aserto-dev/policy/pkg/cc/config"
 )
@@ -17,8 +16,8 @@ type PolicyApp struct {
 	Cancel        context.CancelFunc
 	Logger        *zerolog.Logger
 	Configuration *config.Config
-	Runtime       *runtime.Runtime
-	UI            *clui.UI
+	//Runtime       *runtime.Runtime
+	UI *clui.UI
 }
 
 func (c *PolicyApp) SaveServerCreds(server string, creds config.ServerCredentials) error {

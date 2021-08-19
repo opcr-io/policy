@@ -33,6 +33,6 @@ LABEL org.opencontainers.image.url="https://aserto.com"
 
 RUN apk add --no-cache bash
 WORKDIR /app
-COPY --from=build /src/bin/linux-amd64/policy /app/
+COPY --from=build /src/dist/build_linux_amd64/policy /app/
 
 ENTRYPOINT ["./policy"]
