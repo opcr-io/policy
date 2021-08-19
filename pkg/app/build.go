@@ -24,7 +24,6 @@ func (c *PolicyApp) Build(ref string, path []string,
 	optimizationLevel int,
 	entrypoints []string,
 	revision string,
-	bundleMode bool,
 	ignore []string,
 	capabilities string,
 	verificationKey string,
@@ -49,7 +48,7 @@ func (c *PolicyApp) Build(ref string, path []string,
 	}()
 
 	params := &opa.BuildParams{
-		BundleMode:         bundleMode,
+		BundleMode:         true,
 		OptimizationLevel:  optimizationLevel,
 		Revision:           revision,
 		Ignore:             ignore,
@@ -70,9 +69,11 @@ func (c *PolicyApp) Build(ref string, path []string,
 	}
 
 	params.Capabilities = &opa.CapabilitiesFlag{}
-	err = params.Capabilities.Set(capabilities)
-	if err != nil {
-		return errors.Wrap(err, "invalid value for capabilities flag")
+	if capabilities != "" {
+		err = params.Capabilities.Set(capabilities)
+		if err != nil {
+			return errors.Wrap(err, "invalid value for capabilities flag")
+		}
 	}
 
 	params.Entrypoints = opa.RepeatedStringFlag{}

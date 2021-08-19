@@ -167,6 +167,7 @@ jobs:
           secrets: |
             kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
             kv/data/github  "SSH_PRIVATE_KEY"   | SSH_PRIVATE_KEY;
+            kv/data/github  "ASERTO_TAP"        | ASERTO_TAP;
       - name: Install Vault CLI
         uses: innovationnorway/setup-vault@v1.0.3
         with:
@@ -190,6 +191,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
           SSH_PRIVATE_KEY: ${{ steps.vault.outputs.SSH_PRIVATE_KEY }}
+          ASERTO_TAP: ${{ steps.vault.outputs.ASERTO_TAP }}
         run: |
           eval `ssh-agent`
           go run mage.go deps release

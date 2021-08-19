@@ -59,29 +59,32 @@ release:
   prerelease: false
   name_template: "policy {{.Tag}}"
 
-# brews:
-#   - name: policy
+brews:
+  - name: policy
 
-#     tap:
-#       owner: aserto-dev
-#       name: homebrew-tap
+    tap:
+      owner: aserto-dev
+      name: aserto-tap
+      token: "{{ .Env.ASERTO_TAP }}"
 
-#     url_template: "https://github.com/aserto-dev/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/aserto-dev/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    download_strategy: CustomGitHubPrivateRepositoryReleaseDownloadStrategy
+    custom_require: "lib/custom_download_strategy"
 
-#     commit_author:
-#       name: Aserto Bot
-#       email: github-bot@aserto.com
+    commit_author:
+      name: Aserto Bot
+      email: github-bot@aserto.com
 
-#     homepage: "https://aserto.com/"
+    homepage: "https://aserto.com/"
 
-#     description: "policy CLI for building and managing authorization policies"
+    description: "policy CLI for building and managing authorization policies"
 
-#     license: "Apache License Version 2.0"
+    license: "Apache License Version 2.0"
 
-#     skip_upload: false
+    skip_upload: false
 
-#     test: |
-#       system "#{bin}/policy version"
+    test: |
+      system "#{bin}/policy version"
 
-#     install: |
-#       bin.install "policy"
+    install: |
+      bin.install "policy"

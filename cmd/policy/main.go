@@ -37,13 +37,14 @@ var PolicyCLI struct {
 	Debug     bool   `help:"Enable debug mode."`
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 
-	Build BuildCmd `cmd:"" help:"Build policies."`
-	List  ListCmd  `cmd:"" help:"List policies."`
-	Push  PushCmd  `cmd:"" help:"Push policies to a registry."`
-	Pull  PullCmd  `cmd:"" help:"Pull policies from a registry."`
-	Login LoginCmd `cmd:"" help:"Login to a registry."`
-	Save  SaveCmd  `cmd:"" help:"Save a policy to a local bundle tarball."`
-	Tag   TagCmd   `cmd:"" help:"Create a new tag for an existing policy."`
+	Build   BuildCmd   `cmd:"" help:"Build policies."`
+	List    ListCmd    `cmd:"" help:"List policies."`
+	Push    PushCmd    `cmd:"" help:"Push policies to a registry."`
+	Pull    PullCmd    `cmd:"" help:"Pull policies from a registry."`
+	Login   LoginCmd   `cmd:"" help:"Login to a registry."`
+	Save    SaveCmd    `cmd:"" help:"Save a policy to a local bundle tarball."`
+	Tag     TagCmd     `cmd:"" help:"Create a new tag for an existing policy."`
+	Version VersionCmd `cmd:"" help:"Prints version information."`
 }
 
 func (g *Globals) setup() func() {

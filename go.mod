@@ -1,6 +1,6 @@
 module github.com/aserto-dev/policy
 
-go 1.16
+go 1.16 
 
 // replace github.com/aserto-dev/clui => ../clui
 // replace github.com/aserto-dev/mage-loot => ../mage-loot

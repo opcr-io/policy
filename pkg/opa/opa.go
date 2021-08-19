@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -131,7 +130,9 @@ func generateAllBuiltins(paths []string) error {
 			return errors.Wrapf(err, "failed to unmarshal json from manifest [%s]", manifestPath)
 		}
 
-		registerBuiltins(manifest.Metadata.RequiredBuiltins)
+		if manifest.Metadata.RequiredBuiltins != nil {
+			registerBuiltins(manifest.Metadata.RequiredBuiltins)
+		}
 	}
 
 	return nil
@@ -250,7 +251,7 @@ func build(params *BuildParams, args []string) error {
 
 	if bvc != nil || bsc != nil {
 		if !params.BundleMode {
-			return fmt.Errorf("enable bundle mode (ie. --bundle) to verify or sign bundle files or directories")
+			return errors.Errorf("enable bundle mode (ie. --bundle) to verify or sign bundle files or directories")
 		}
 	}
 	var capabilities *ast.Capabilities
@@ -272,7 +273,7 @@ func build(params *BuildParams, args []string) error {
 		WithEntrypoints(params.Entrypoints.Values...).
 		WithPaths(args...).
 		WithFilter(buildCommandLoaderFilter(params.BundleMode, params.Ignore)).
-		WithRevision(params.Revision).
+		//	WithRevision(params.Revision).
 		WithBundleVerificationConfig(bvc).
 		WithBundleSigningConfig(bsc)
 
