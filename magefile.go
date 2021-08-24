@@ -15,8 +15,6 @@ import (
 func init() {
 	// Set go version for docker builds
 	os.Setenv("GO_VERSION", "1.16")
-	// Set private repositories
-	os.Setenv("GOPRIVATE", "github.com/aserto-dev")
 	// Enable docker buildkit capabilities
 	os.Setenv("DOCKER_BUILDKIT", "1")
 }

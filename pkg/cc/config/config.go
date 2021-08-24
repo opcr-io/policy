@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aserto-dev/go-lib/certs"
-	"github.com/aserto-dev/go-lib/logger"
+	"github.com/aserto-dev/go-utils/certs"
+	"github.com/aserto-dev/go-utils/logger"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"

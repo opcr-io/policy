@@ -1,6 +1,6 @@
 module github.com/aserto-dev/policy
 
-go 1.16 
+go 1.16
 
 // replace github.com/aserto-dev/clui => ../clui
 // replace github.com/aserto-dev/mage-loot => ../mage-loot
@@ -9,8 +9,8 @@ require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/clui v0.1.2
-	github.com/aserto-dev/go-lib v0.2.74
-	github.com/aserto-dev/mage-loot v0.4.4
+	github.com/aserto-dev/go-utils v0.0.2
+	github.com/aserto-dev/mage-loot v0.4.6
 	github.com/bytecodealliance/wasmtime-go v0.29.0 // indirect
 	github.com/containerd/containerd v1.5.2
 	github.com/dustin/go-humanize v1.0.0
