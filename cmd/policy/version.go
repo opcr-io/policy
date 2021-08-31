@@ -12,7 +12,7 @@ func (c *VersionCmd) Run(g *Globals) error {
 		WithStringValue("version", v.Version).
 		WithStringValue("date", v.Date).
 		WithStringValue("commit", v.Commit).
-		Msg("Aserto policy CLI.")
+		Msg("Policy CLI.")
 
 	g.App.Cancel()
 	<-g.App.Context.Done()

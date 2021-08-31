@@ -33,7 +33,7 @@ type Globals struct {
 var g *Globals
 
 var PolicyCLI struct {
-	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"$HOME/.config/aserto/policy/config.yaml"`
+	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"$HOME/.config/policy/config.yaml"`
 	Debug     bool   `help:"Enable debug mode."`
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 

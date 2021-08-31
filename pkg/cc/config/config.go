@@ -62,7 +62,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	// Set defaults
-	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".aserto", "policies-root"))
+	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".policy", "policies-root"))
 	v.SetDefault("default_domain", "registry.aserto.com") // policyregistry.io
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
@@ -122,7 +122,7 @@ func NewLoggerConfig(configPath Path, overrides Overrider) (*logger.Config, erro
 }
 
 func (c *Config) LoadCreds() error {
-	path := os.ExpandEnv("$HOME/.aserto/policy-registries.yaml")
+	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
 
 	if _, err := os.Stat(path); err == nil {
 		contents, err := os.ReadFile(path)
@@ -143,7 +143,7 @@ func (c *Config) LoadCreds() error {
 }
 
 func (c *Config) SaveCreds() error {
-	path := os.ExpandEnv("$HOME/.aserto/policy-registries.yaml")
+	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
 
 	cfgBytes, err := yaml.Marshal(c.Servers)
 	if err != nil {
@@ -174,7 +174,7 @@ func fileExists(path string) (bool, error) {
 }
 
 // func (c *Config) LoadCreds() error {
-// 	path := os.ExpandEnv("$HOME/.aserto/policy-registries.yaml")
+// 	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
 
 // 	if _, err := os.Stat(path); err == nil {
 // 		contents, err := os.ReadFile(path)
@@ -203,7 +203,7 @@ func fileExists(path string) (bool, error) {
 // }
 
 // func (c *Config) SaveCreds() error {
-// 	path := os.ExpandEnv("$HOME/.aserto/policy-registries.yaml")
+// 	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
 
 // 	for server, creds := range c.Servers {
 // 		err := keyring.Set(keyringPrefix+server, creds.Username, creds.Password)

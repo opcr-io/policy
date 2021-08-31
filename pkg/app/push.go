@@ -1,9 +1,6 @@
 package app
 
 import (
-	"crypto/x509"
-	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/containerd/containerd/remotes/docker"
@@ -44,13 +41,6 @@ func (c *PolicyApp) Push(userRef string) error {
 
 	resolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: func(s string) ([]docker.RegistryHost, error) {
-			caCert, err := ioutil.ReadFile("/home/toaster/.config/aserto/aserto-registry/certs/http-ca.crt")
-			if err != nil {
-				log.Fatal(err)
-			}
-			caCertPool := x509.NewCertPool()
-			caCertPool.AppendCertsFromPEM(caCert)
-
 			client := &http.Client{}
 
 			return []docker.RegistryHost{

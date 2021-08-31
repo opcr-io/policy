@@ -237,7 +237,7 @@ func (f loaderFilter) Apply(abspath string, info os.FileInfo, depth int) bool {
 	return false
 }
 
-// Build builds a bundle using the Aserto OPA Runtime
+// Build builds a bundle using the OPA Runtime
 func build(params *BuildParams, args []string) error {
 	buf := bytes.NewBuffer(nil)
 
