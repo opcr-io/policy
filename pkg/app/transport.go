@@ -35,7 +35,8 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 
 	// Trust the augmented cert pool in our client
 	config := &tls.Config{
-		RootCAs: rootCAs,
+		RootCAs:    rootCAs,
+		MinVersion: tls.VersionTLS12,
 	}
 	return &http.Transport{TLSClientConfig: config}
 }
