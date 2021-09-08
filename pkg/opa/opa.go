@@ -52,41 +52,41 @@ func registerBuiltins(defs *BuiltinDefs) {
 	}
 
 	for _, b := range defs.Builtin2 {
-		rego.RegisterBuiltin1(&rego.Function{
+		rego.RegisterBuiltin2(&rego.Function{
 			Name:    b.Name,
 			Memoize: false,
 			Decl:    &b.Decl,
-		}, func(rego.BuiltinContext, *ast.Term) (*ast.Term, error) {
+		}, func(bctx rego.BuiltinContext, op1, op2 *ast.Term) (*ast.Term, error) {
 			return nil, nil
 		})
 	}
 
 	for _, b := range defs.Builtin3 {
-		rego.RegisterBuiltin1(&rego.Function{
+		rego.RegisterBuiltin3(&rego.Function{
 			Name:    b.Name,
 			Memoize: false,
 			Decl:    &b.Decl,
-		}, func(rego.BuiltinContext, *ast.Term) (*ast.Term, error) {
+		}, func(bctx rego.BuiltinContext, op1, op2, op3 *ast.Term) (*ast.Term, error) {
 			return nil, nil
 		})
 	}
 
 	for _, b := range defs.Builtin4 {
-		rego.RegisterBuiltin1(&rego.Function{
+		rego.RegisterBuiltin4(&rego.Function{
 			Name:    b.Name,
 			Memoize: false,
 			Decl:    &b.Decl,
-		}, func(rego.BuiltinContext, *ast.Term) (*ast.Term, error) {
+		}, func(bctx rego.BuiltinContext, op1, op2, op3, op4 *ast.Term) (*ast.Term, error) {
 			return nil, nil
 		})
 	}
 
 	for _, b := range defs.BuiltinDyn {
-		rego.RegisterBuiltin1(&rego.Function{
+		rego.RegisterBuiltinDyn(&rego.Function{
 			Name:    b.Name,
 			Memoize: false,
 			Decl:    &b.Decl,
-		}, func(rego.BuiltinContext, *ast.Term) (*ast.Term, error) {
+		}, func(bctx rego.BuiltinContext, terms []*ast.Term) (*ast.Term, error) {
 			return nil, nil
 		})
 	}
@@ -273,7 +273,7 @@ func build(params *BuildParams, args []string) error {
 		WithEntrypoints(params.Entrypoints.Values...).
 		WithPaths(args...).
 		WithFilter(buildCommandLoaderFilter(params.BundleMode, params.Ignore)).
-		//	WithRevision(params.Revision).
+		WithRevision(params.Revision).
 		WithBundleVerificationConfig(bvc).
 		WithBundleSigningConfig(bsc)
 

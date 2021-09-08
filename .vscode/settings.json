@@ -21,6 +21,7 @@
     "aonaupdater",
     "artemisc",
     "bbolt",
+    "bctx",
     "boltdb",
     "cerr",
     "clui",

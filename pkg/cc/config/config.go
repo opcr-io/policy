@@ -22,6 +22,7 @@ type Config struct {
 	FileStoreRoot string        `mapstructure:"file_store_root"`
 	DefaultDomain string        `mapstructure:"default_domain"`
 	Logging       logger.Config `mapstructure:"logging"`
+	CA            []string      `mapstructure:"ca"`
 
 	Servers map[string]ServerCredentials `mapstructure:"servers"`
 }

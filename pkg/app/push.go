@@ -41,7 +41,7 @@ func (c *PolicyApp) Push(userRef string) error {
 
 	resolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: func(s string) ([]docker.RegistryHost, error) {
-			client := &http.Client{}
+			client := &http.Client{Transport: c.TransportWithTrustedCAs()}
 
 			return []docker.RegistryHost{
 				{
@@ -60,6 +60,7 @@ func (c *PolicyApp) Push(userRef string) error {
 
 							return creds.Username, creds.Password, nil
 						}),
+						// TODO: is this needed?
 						docker.WithAuthHeader(http.Header{
 							"Authorization": []string{},
 						})),
@@ -70,7 +71,13 @@ func (c *PolicyApp) Push(userRef string) error {
 
 	refDescriptor.Annotations[ocispec.AnnotationTitle] = ref
 
-	pushDescriptor, err := oras.Push(c.Context, resolver, ref, ociStore, []ocispec.Descriptor{refDescriptor})
+	pushDescriptor, err := oras.Push(c.Context,
+		resolver,
+		ref,
+		ociStore,
+		[]ocispec.Descriptor{refDescriptor},
+		oras.WithConfigMediaType(MediaTypeConfig))
+
 	if err != nil {
 		return err
 	}

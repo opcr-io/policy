@@ -1,6 +1,8 @@
 package app
 
 import (
+	"net/http"
+
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
@@ -28,19 +30,37 @@ func (c *PolicyApp) Pull(userRef string) error {
 		WithStringValue("ref", userRef).
 		Msg("Pulling.")
 
-	resolver := docker.NewResolver(
-		docker.ResolverOptions{
-			Credentials: func(s string) (string, string, error) {
-				serverCreds, ok := c.Configuration.Servers[s]
-				if !ok {
-					return "", "", nil
-				}
+	resolver := docker.NewResolver(docker.ResolverOptions{
+		Hosts: func(s string) ([]docker.RegistryHost, error) {
+			client := &http.Client{Transport: c.TransportWithTrustedCAs()}
 
-				return serverCreds.Username, serverCreds.Password, nil
-			},
+			return []docker.RegistryHost{
+				{
+					Host:         s,
+					Scheme:       "https",
+					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
+					Client:       client,
+					Path:         "/v2",
+					Authorizer: docker.NewDockerAuthorizer(
+						docker.WithAuthClient(client),
+						docker.WithAuthCreds(func(s string) (string, string, error) {
+							creds, ok := c.Configuration.Servers[s]
+							if !ok {
+								return "", "", nil
+							}
+
+							return creds.Username, creds.Password, nil
+						}),
+						// TODO: is this needed?
+						docker.WithAuthHeader(http.Header{
+							"Authorization": []string{},
+						})),
+				},
+			}, nil
 		},
-	)
-	allowedMediaTypes := []string{MediaTypeImageLayer}
+	})
+
+	allowedMediaTypes := []string{MediaTypeImageLayer, MediaTypeConfig}
 	opts := []oras.PullOpt{
 		oras.WithAllowedMediaTypes(allowedMediaTypes),
 		oras.WithContentProvideIngester(ociStore),
