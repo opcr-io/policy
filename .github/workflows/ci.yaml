@@ -25,6 +25,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Read Configuration
+        uses: hashicorp/vault-action@v2.1.0
+        id: vault
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/github  "SSH_PRIVATE_KEY"     | SSH_PRIVATE_KEY;
       - name: Install Vault CLI
         uses: innovationnorway/setup-vault@v1.0.3
         with:
@@ -50,7 +58,14 @@ jobs:
         env:
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: |
-          eval `ssh-agent`
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+          
           go run mage.go deps lint test
       - name: Upload code coverage
         uses: shogo82148/actions-goveralls@v1
@@ -71,6 +86,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
+            kv/data/github  "SSH_PRIVATE_KEY"     | SSH_PRIVATE_KEY;
             kv/data/github  "USERNAME"            | DOCKER_USERNAME;
             kv/data/github  "DOCKER_PUSH_TOKEN"   | DOCKER_PASSWORD;
       - name: Install Vault CLI
@@ -104,8 +120,16 @@ jobs:
           password: ${{ env.DOCKER_PASSWORD }}
       - name: Build and push image
         run: |
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+          
           eval `ssh-agent`
-          ssh-add $HOME/.ssh/id_rsa
+
           go run mage.go deps dockerImage
           go run mage.go dockerPush ghcr.io "aserto-dev"
 
@@ -138,6 +162,7 @@ jobs:
           secrets: |
             kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
             kv/data/github  "ASERTO_TAP"        | ASERTO_TAP;
+            kv/data/github  "SSH_PRIVATE_KEY"   | SSH_PRIVATE_KEY;
       - name: Install Vault CLI
         uses: innovationnorway/setup-vault@v1.0.3
         with:
@@ -152,4 +177,12 @@ jobs:
           GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
           ASERTO_TAP: ${{ steps.vault.outputs.ASERTO_TAP }}
         run: |
+          mkdir -p $HOME/.ssh
+          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
+          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
+          git config --global url."git@github.com:".insteadOf https://github.com/
+          git config --global user.email "github-bot@aserto.com"
+          git config --global user.name "Aserto Bot"
+
           go run mage.go deps release
