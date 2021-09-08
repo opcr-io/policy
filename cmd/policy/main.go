@@ -44,6 +44,7 @@ var PolicyCLI struct {
 	Login   LoginCmd   `cmd:"" help:"Login to a registry."`
 	Save    SaveCmd    `cmd:"" help:"Save a policy to a local bundle tarball."`
 	Tag     TagCmd     `cmd:"" help:"Create a new tag for an existing policy."`
+	Rm      RmCmd      `cmd:"" help:"Removes a policy from the local registry."`
 	Version VersionCmd `cmd:"" help:"Prints version information."`
 }
 
