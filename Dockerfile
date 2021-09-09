@@ -10,6 +10,7 @@ RUN mkdir -p $HOME/.ssh && umask 0700 \
 	&& ssh-keyscan github.com >> $HOME/.ssh/known_hosts
 
 ENV GOBIN=/bin
+ENV GOPRIVATE=github.com/aserto-dev
 ENV ROOT_DIR=/src
 
 # generate & build
