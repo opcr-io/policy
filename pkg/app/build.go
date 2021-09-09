@@ -5,13 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/aserto-dev/policy/pkg/opa"
+	runtime "github.com/aserto-dev/aserto-runtime"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/google/uuid"
-	"github.com/open-policy-agent/opa/compile"
-	"github.com/open-policy-agent/opa/util"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -47,46 +45,35 @@ func (c *PolicyApp) Build(ref string, path []string,
 		}
 	}()
 
-	params := &opa.BuildParams{
-		BundleMode:         true,
-		OptimizationLevel:  optimizationLevel,
-		Revision:           revision,
-		Ignore:             ignore,
-		Debug:              c.Logger.Debug().Enabled(),
-		Algorithm:          algorithm,
-		ExcludeVerifyFiles: excludeVerifyFiles,
-		PubKey:             verificationKey,
-		PubKeyID:           verificationKeyID,
-		Key:                signingKey,
-		Scope:              scope,
-		ClaimsFile:         claimsFile,
-	}
-
-	params.Target = util.NewEnumFlag(compile.TargetRego, []string{compile.TargetRego, compile.TargetWasm})
-	err = params.Target.Set(target)
+	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
+		InstanceID: "policy-build",
+	})
 	if err != nil {
-		return errors.Wrap(err, "invalid value for target flag")
+		return errors.Wrap(err, "failed to setup the OPA runtime")
 	}
+	defer cleanup()
 
-	params.Capabilities = &opa.CapabilitiesFlag{}
-	if capabilities != "" {
-		err = params.Capabilities.Set(capabilities)
-		if err != nil {
-			return errors.Wrap(err, "invalid value for capabilities flag")
-		}
-	}
+	outfile := filepath.Join(workdir, "bundle.tgz")
 
-	params.Entrypoints = opa.RepeatedStringFlag{}
-	for _, e := range entrypoints {
-		err = params.Entrypoints.Set(e)
-		if err != nil {
-			return err
-		}
-	}
-
-	tarball, err := c.buildBundleTgz(workdir, params, path)
+	err = opaRuntime.Build(runtime.BuildParams{
+		CapabilitiesJsonFile: capabilities,
+		Target:               runtime.Rego,
+		OptimizationLevel:    optimizationLevel,
+		Entrypoints:          entrypoints,
+		OutputFile:           outfile,
+		Revision:             revision,
+		Ignore:               ignore,
+		Debug:                c.Logger.Debug().Enabled(),
+		Algorithm:            algorithm,
+		Key:                  signingKey,
+		Scope:                scope,
+		ClaimsFile:           claimsFile,
+		PubKey:               verificationKey,
+		PubKeyID:             verificationKeyID,
+		ExcludeVerifyFiles:   excludeVerifyFiles,
+	}, path)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
 	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
@@ -98,7 +85,7 @@ func (c *PolicyApp) Build(ref string, path []string,
 		return err
 	}
 
-	descriptor, err := c.createImage(ociStore, tarball)
+	descriptor, err := c.createImage(ociStore, outfile)
 	if err != nil {
 		return err
 	}
@@ -235,17 +222,4 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 	}
 
 	return fDigest, nil
-}
-
-func (c *PolicyApp) buildBundleTgz(workdir string, params *opa.BuildParams, bundleDirs []string) (string, error) {
-	outfile := filepath.Join(workdir, "bundle.tgz")
-
-	params.OutputFile = outfile
-
-	err := opa.Build(params, bundleDirs)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to build policy")
-	}
-
-	return outfile, nil
 }
