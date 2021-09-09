@@ -129,6 +129,7 @@ jobs:
           git config --global user.name "Aserto Bot"
           
           eval `ssh-agent`
+          ssh-add $HOME/.ssh/id_rsa
 
           go run mage.go deps dockerImage
           go run mage.go dockerPush ghcr.io "aserto-dev"
