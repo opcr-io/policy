@@ -78,7 +78,7 @@ func (c *PolicyApp) startRunShell(opaRuntime *runtime.Runtime) {
 		Prompt:      ">> ",
 	})
 
-	shell.Println("\n\nPolicy Interactive Shell (you can run 'help' for some pointers)\n")
+	shell.Printf("\n\nPolicy Interactive Shell (you can run 'help' for some pointers)\n\n")
 
 	var (
 		input map[string]interface{}
@@ -135,5 +135,8 @@ func (c *PolicyApp) startRunShell(opaRuntime *runtime.Runtime) {
 	})
 
 	// run shell
-	shell.Run()
+	err := shell.Run()
+	if err != nil {
+		c.UI.Problem().WithErr(err).Do()
+	}
 }
