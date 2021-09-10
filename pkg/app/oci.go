@@ -10,7 +10,7 @@ import (
 const (
 	// MediaTypeImageLayer = "application/vnd.opa.policy.v1.tar+gzip"
 	MediaTypeImageLayer = "application/vnd.oci.image.layer.v1.tar+gzip"
-	MediaTypeConfig = "application/vnd.oci.image.config.v1+json"
+	MediaTypeConfig     = "application/vnd.oci.image.config.v1+json"
 
 	DefaultCanonicalDomain = "docker.io"
 )
