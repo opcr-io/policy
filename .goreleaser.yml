@@ -20,9 +20,9 @@ builds:
     ldflags:
       - -s
       - -w
-      - -X main.ver={{.Version}}
-      - -X main.commit={{.ShortCommit}}
-      - -X main.date={{.Date}}
+      - -X github.com/aserto-dev/policy/pkg/version.ver={{.Version}}
+      - -X github.com/aserto-dev/policy/pkg/version.commit={{.ShortCommit}}
+      - -X github.com/aserto-dev/policy/pkg/version.date={{.Date}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
