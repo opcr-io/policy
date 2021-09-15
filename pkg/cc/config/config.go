@@ -64,7 +64,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 
 	// Set defaults
 	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".policy", "policies-root"))
-	v.SetDefault("default_domain", "registry.aserto.com") // policyregistry.io
+	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
 
