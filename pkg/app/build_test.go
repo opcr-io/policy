@@ -12,9 +12,9 @@ var refExamples = []struct {
 	userRef             string
 	expectedInternalRef string
 }{
-	{"foo/bar:baz", "registry.aserto.com/foo/bar:baz"},
+	{"foo/bar:baz", "opcr.io/foo/bar:baz"},
 	{"docker.io/foo/bar:baz", "docker.io/foo/bar:baz"},
-	{"foo/bar", "registry.aserto.com/foo/bar:latest"},
+	{"foo/bar", "opcr.io/foo/bar:latest"},
 }
 
 func TestRefCalculation(t *testing.T) {
