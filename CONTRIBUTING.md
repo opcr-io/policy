@@ -1,18 +1,18 @@
-# Contributing to Open Policy Registry
+# Contributing to Open Policy Registry (OPCR)
 
-Welcome, and thank you for considering contributing to Open Policy Registry. We encourage
+Welcome, and thank you for considering contributing to OPCR. We encourage
 you to help out by raising issues, improving documentation, fixing bugs, or
 adding new features
 
 If you're interested in contributing please start by reading this document. If
 you have any questions at all, or don't know where to start, please reach out to
 us on [Slack]. Please also take a look at our [code of conduct], which details
-how contributors are expected to conduct themselves as part of the Open Policy Registry
+how contributors are expected to conduct themselves as part of the OPCR
 community.
 
 ## Contributing Code
 
-To contribute bug fixes or features to Open Policy Registry:
+To contribute bug fixes or features to OPCR:
 
 1. Communicate your intent.
 1. Make your changes.
@@ -20,7 +20,7 @@ To contribute bug fixes or features to Open Policy Registry:
 1. Update documentation and examples where appropriate.
 1. Open a Pull Request (PR).
 
-Communicating your intent lets the Open Policy Registry maintainers know that you intend
+Communicating your intent lets the OPCR maintainers know that you intend
 to contribute, and how. This sets you up for success - you can avoid duplicating
 an effort that may already be underway, adding a feature that may be rejected,
 or heading down a path that you would be steered away from at review time. The

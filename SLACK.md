@@ -1,4 +1,4 @@
-# Open Policy Registry Slack Guidelines
+# Open Policy Registry (OPCR) Slack Guidelines
 
 The [CNCF Code of
 Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
@@ -13,7 +13,7 @@ unsolicited or frequent messages is not allowed.
 
 ## Vendor Advertisements
 
-This workspace is intended for conversations related to Open Policy Registry 
+This workspace is intended for conversations related to OPCR 
 projects. Please do not use the Slack to advertise proprietary vendor products,
 services, webinars, blogs, etc.
 

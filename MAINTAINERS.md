@@ -1,6 +1,6 @@
 # Maintainers
 
-The following table lists Open Policy Registry project maintainers and areas of expertise in alphabetical order:
+The following table lists Open Policy Registry (OPCR) project maintainers and areas of expertise in alphabetical order:
 
 | Name | GitHub | Email | Organization | Repositories/Area of Expertise | Added/Renewed On |
 | --- | --- | --- | --- | --- | --- |
