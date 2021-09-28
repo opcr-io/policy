@@ -1,0 +1,32 @@
+{
+  "product": "Policy CLI",
+  "company": "Aserto, Inc.",
+  "license": "LICENSE",
+  "upgrade-code": "af677eae-09b4-4080-afe1-10db43e0f103",
+  "files": {
+    "guid": "7b8fa533-ede9-4a05-b521-6a36693c05ad",
+    "items": [
+      "policy.exe"
+    ]
+  },
+  "env": {
+    "guid": "adb8a1d8-b09c-4329-8b86-d089f191de37",
+    "vars": [
+      {
+        "name": "PATH",
+        "value": "[INSTALLDIR]",
+        "permanent": "yes",
+        "system": "no",
+        "action": "set",
+        "part": "last"
+      }
+    ]
+  },
+  "shortcuts": {},
+  "choco": {
+    "description": "Polocy CLI",
+    "project-url": "https://github.com/aserto-dev/policy",
+    "tags": "aserto policy cli",
+    "license-url": "https://github.com/aserto-dev/policy/blob/main/LICENSE"
+  }
+}
