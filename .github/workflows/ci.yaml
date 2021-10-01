@@ -65,7 +65,7 @@ jobs:
           git config --global url."git@github.com:".insteadOf https://github.com/
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
-          
+
           go run mage.go deps lint test
       - name: Upload code coverage
         uses: shogo82148/actions-goveralls@v1
@@ -127,7 +127,7 @@ jobs:
           git config --global url."git@github.com:".insteadOf https://github.com/
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
-          
+
           eval `ssh-agent`
           ssh-add $HOME/.ssh/id_rsa
 
@@ -187,3 +187,66 @@ jobs:
           git config --global user.name "Aserto Bot"
 
           go run mage.go deps release
+
+  msi:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Read Configuration
+        uses: hashicorp/vault-action@v2.1.0
+        id: vault
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
+      - name: Install Vault CLI
+        uses: innovationnorway/setup-vault@v1.0.3
+        with:
+          version: 1.4.2
+      - name: Renew Vault Token
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          vault token renew
+      - name: Download exe
+        id: download_exe
+        shell: bash
+        run: |
+          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_x86_64*.zip'
+          printf "::set-output name=zip::%s\n" *.zip
+          unzip -o *.zip && rm -v *.zip
+        env:
+          GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
+      - name: Install go-msi
+        run: choco install -y "go-msi"
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+      - name: Build MSI
+        id: buildmsi
+        shell: bash
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: |
+          mkdir -p build
+          msi="$(basename "$ZIP_FILE" ".zip").msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
+      - name: Upload MSI
+        shell: bash
+        run: |
+          tag_name="${GITHUB_REF#refs/tags/}"
+          hub release edit "$tag_name" -m "" -a "$MSI_FILE"
+          release_url="$(gh api repos/:owner/:repo/releases -q ".[]|select(.tag_name==\"${tag_name}\")|.url")"
+          publish_args=( -F draft=false )
+          gh api -X PATCH "$release_url" "${publish_args[@]}"
+        env:
+          MSI_FILE: ${{ steps.buildmsi.outputs.msi }}
+          GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
