@@ -7,21 +7,21 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 
 ---
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/aserto-dev/policy?)](https://goreportcard.com/report/github.com/aserto-dev/policy)
+[![Go Report Card](https://goreportcard.com/badge/github.com/opcr-io/policy?)](https://goreportcard.com/report/github.com/opcr-io/policy)
 TODO: add more badges once the repo is open
 
 ---
 
 ## Documentation
 
-Please refer to our [documentation](https://opcr.io) site for installation, usage, customization and tips.
+Please refer to our [documentation](https://openpolicyregistry.io) site for installation, usage, customization and tips.
 
 ## Slack Channel
 
 Wanna discuss features or show your support for this tool?
 
-* Channel: [Slack](https://aserto.slack.com/)
-* Invite: [Invite Link](TODO: generate an invite link)
+* Channel: [Slack](https://asertocommunity.slack.com/)
+* Invite: [Invite Link](https://asertocommunity.slack.com/join/shared_invite/zt-p06gin84-xNswWpTGyPDPxCz0LMux3g#/shared-invite/email)
 
 ---
 
@@ -29,7 +29,7 @@ Wanna discuss features or show your support for this tool?
 
 `policy` is available on Linux, macOS and Windows platforms.
 
-* Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/aserto-dev/policy/releases) page.
+* Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/opcr-io/policy/releases) page.
 
 * Via Homebrew for macOS or LinuxBrew for Linux
 
@@ -41,7 +41,7 @@ Wanna discuss features or show your support for this tool?
 
   ```shell
   # NOTE: The dev version will be in effect!
-  go get -u github.com/aserto-dev/policy
+  go get -u github.com/opcr-io/policy
   ```
 
 ---
@@ -67,7 +67,7 @@ Wanna discuss features or show your support for this tool?
   You can run as a Docker container:
 
   ```shell
-  docker run -it --rm ghcr.io/aserto-dev/policy:latest --help
+  docker run -it --rm ghcr.io/opcr-io/policy:latest --help
   ```
 
 
