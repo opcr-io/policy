@@ -38,7 +38,7 @@ var PolicyCLI struct {
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 
 	Build   BuildCmd   `cmd:"" help:"Build policies."`
-	List    ListCmd    `cmd:"" help:"List policies."`
+	Images  ImagesCmd  `cmd:"" help:"List policy images."`
 	Push    PushCmd    `cmd:"" help:"Push policies to a registry."`
 	Pull    PullCmd    `cmd:"" help:"Pull policies from a registry."`
 	Login   LoginCmd   `cmd:"" help:"Login to a registry."`

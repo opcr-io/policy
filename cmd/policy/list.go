@@ -1,9 +1,9 @@
 package main
 
-type ListCmd struct {
+type ImagesCmd struct {
 }
 
-func (c *ListCmd) Run(g *Globals) error {
+func (c *ImagesCmd) Run(g *Globals) error {
 	err := g.App.List()
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Failed to list local policies.")
