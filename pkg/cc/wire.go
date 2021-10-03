@@ -1,4 +1,5 @@
-//+build wireinject
+//go:build wireinject
+// +build wireinject
 
 package cc
 
@@ -9,8 +10,8 @@ import (
 	"github.com/aserto-dev/go-utils/logger"
 	"github.com/google/wire"
 
-	"github.com/aserto-dev/policy/pkg/cc/config"
-	cc_context "github.com/aserto-dev/policy/pkg/cc/context"
+	"github.com/opcr-io/policy/pkg/cc/config"
+	cc_context "github.com/opcr-io/policy/pkg/cc/context"
 )
 
 var (

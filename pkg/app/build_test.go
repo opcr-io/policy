@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/stretchr/testify/require"
 )
 

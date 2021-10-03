@@ -20,9 +20,9 @@ builds:
     ldflags:
       - -s
       - -w
-      - -X github.com/aserto-dev/policy/pkg/version.ver={{.Version}}
-      - -X github.com/aserto-dev/policy/pkg/version.commit={{.ShortCommit}}
-      - -X github.com/aserto-dev/policy/pkg/version.date={{.Date}}
+      - -X github.com/opcr-io/policy/pkg/version.ver={{.Version}}
+      - -X github.com/opcr-io/policy/pkg/version.commit={{.ShortCommit}}
+      - -X github.com/opcr-io/policy/pkg/version.date={{.Date}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
@@ -67,7 +67,7 @@ brews:
       name: aserto-tap
       token: "{{ .Env.ASERTO_TAP }}"
 
-    url_template: "https://github.com/aserto-dev/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/opcr-io/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     download_strategy: CustomGitHubPrivateRepositoryReleaseDownloadStrategy
     custom_require: "lib/custom_download_strategy"
 

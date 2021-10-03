@@ -1,6 +1,6 @@
 package main
 
-import "github.com/aserto-dev/policy/pkg/cc/config"
+import "github.com/opcr-io/policy/pkg/cc/config"
 
 type LoginCmd struct {
 	Server   string `name:"server" short:"s" help:"Server to connect to."`

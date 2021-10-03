@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/aserto-dev/clui"
-	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/cc/config"
 )
 
 // PolicyApp represents the policy CLI

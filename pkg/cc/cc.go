@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )

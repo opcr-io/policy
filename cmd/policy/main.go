@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/aserto-dev/policy/pkg/app"
-	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/app"
+	"github.com/opcr-io/policy/pkg/cc/config"
 )
 
 func EnvExpander() kong.Resolver {
@@ -70,7 +70,7 @@ func (g *Globals) setup() func() {
 
 	if err != nil {
 		fmt.Printf(`Application setup failed: %+v.
-This might be a bug. Please open an issue here: https://github.com/aserto-dev/policy\n`,
+This might be a bug. Please open an issue here: https://github.com/opcr-io/policy\n`,
 			err)
 	}
 

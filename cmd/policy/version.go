@@ -1,6 +1,6 @@
 package main
 
-import "github.com/aserto-dev/policy/pkg/version"
+import "github.com/opcr-io/policy/pkg/version"
 
 type VersionCmd struct {
 }

@@ -25,8 +25,8 @@
   "shortcuts": {},
   "choco": {
     "description": "Polocy CLI",
-    "project-url": "https://github.com/aserto-dev/policy",
+    "project-url": "https://github.com/opcr-io/policy",
     "tags": "aserto policy cli",
-    "license-url": "https://github.com/aserto-dev/policy/blob/main/LICENSE"
+    "license-url": "https://github.com/opcr-io/policy/blob/main/LICENSE"
   }
 }

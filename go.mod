@@ -1,4 +1,4 @@
-module github.com/aserto-dev/policy
+module github.com/opcr-io/policy
 
 go 1.16
 

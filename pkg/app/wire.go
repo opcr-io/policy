@@ -1,4 +1,5 @@
-//+build wireinject
+//go:build wireinject
+// +build wireinject
 
 package app
 
@@ -8,8 +9,8 @@ import (
 	"github.com/google/wire"
 
 	"github.com/aserto-dev/clui"
-	"github.com/aserto-dev/policy/pkg/cc"
-	"github.com/aserto-dev/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/cc"
+	"github.com/opcr-io/policy/pkg/cc/config"
 )
 
 var (
