@@ -132,7 +132,7 @@ jobs:
           ssh-add $HOME/.ssh/id_rsa
 
           go run mage.go deps dockerImage
-          go run mage.go dockerPush ghcr.io "aserto-dev"
+          go run mage.go dockerPush ghcr.io "opcr-io"
 
   release:
     needs: push

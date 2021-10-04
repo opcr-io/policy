@@ -52,7 +52,7 @@ changelog:
 
 release:
   github:
-    owner: aserto-dev
+    owner: opcr-io
     name: policy
 
   draft: false
@@ -63,7 +63,7 @@ brews:
   - name: policy
 
     tap:
-      owner: aserto-dev
+      owner: opcr-io
       name: aserto-tap
       token: "{{ .Env.ASERTO_TAP }}"
 
