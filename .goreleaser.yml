@@ -63,7 +63,7 @@ brews:
   - name: policy
 
     tap:
-      owner: opcr-io
+      owner: aserto-dev
       name: aserto-tap
       token: "{{ .Env.ASERTO_TAP }}"
 
