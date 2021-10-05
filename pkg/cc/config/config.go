@@ -8,6 +8,7 @@ import (
 
 	"github.com/aserto-dev/go-utils/certs"
 	"github.com/aserto-dev/go-utils/logger"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
@@ -19,18 +20,21 @@ type Overrider func(*Config)
 
 // Config holds the configuration for the app.
 type Config struct {
-	FileStoreRoot string        `mapstructure:"file_store_root"`
-	DefaultDomain string        `mapstructure:"default_domain"`
-	Logging       logger.Config `mapstructure:"logging"`
-	CA            []string      `mapstructure:"ca"`
+	FileStoreRoot string        `json:"file_store_root"`
+	DefaultDomain string        `json:"default_domain"`
+	Logging       logger.Config `json:"logging"`
+	CA            []string      `json:"ca"`
+	Repl          struct {
+		HistoryFile string `json:"history_file"`
+	} `json:"repl"`
 
-	Servers map[string]ServerCredentials `mapstructure:"servers"`
+	Servers map[string]ServerCredentials `json:"servers"`
 }
 
 type ServerCredentials struct {
-	Type     string `mapstructure:"type"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
+	Type     string `json:"type"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // Path is a string that points to a config file
@@ -67,6 +71,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
+	v.SetDefault("repl.history_file", filepath.Join(os.ExpandEnv("$HOME"), ".policy", "repl_history"))
 
 	configExists, err := fileExists(file)
 	if err != nil {
@@ -80,7 +85,9 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	}
 	v.AutomaticEnv()
 
-	err = v.UnmarshalExact(cfg)
+	err = v.UnmarshalExact(cfg, func(dc *mapstructure.DecoderConfig) {
+		dc.TagName = "json"
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal config file")
 	}
@@ -173,61 +180,3 @@ func fileExists(path string) (bool, error) {
 		return false, errors.Wrapf(err, "failed to stat file '%s'", path)
 	}
 }
-
-// func (c *Config) LoadCreds() error {
-// 	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
-
-// 	if _, err := os.Stat(path); err == nil {
-// 		contents, err := os.ReadFile(path)
-// 		if err != nil {
-// 			return errors.Wrapf(err, "failed to read registry creds file [%s]", path)
-// 		}
-
-// 		err = yaml.Unmarshal(contents, &c.Servers)
-// 		if err != nil {
-// 			return errors.Wrapf(err, "failed to unmarshal registry creds file [%s]", path)
-// 		}
-
-// 	} else if !os.IsNotExist(err) {
-// 		return errors.Wrapf(err, "failed to determine if creds file [%s] exists", path)
-// 	}
-
-// 	for server, creds := range c.Servers {
-// 		pass, err := keyring.Get(keyringPrefix+server, creds.Username)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		creds.Password = pass
-// 	}
-
-// 	return nil
-// }
-
-// func (c *Config) SaveCreds() error {
-// 	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
-
-// 	for server, creds := range c.Servers {
-// 		err := keyring.Set(keyringPrefix+server, creds.Username, creds.Password)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		creds.Password = ""
-// 	}
-
-// 	cfgBytes, err := yaml.Marshal(c.Servers)
-// 	if err != nil {
-// 		return errors.Wrap(err, "failed to marshal registry creds for writing")
-// 	}
-
-// 	err = os.MkdirAll(filepath.Dir(path), 0700)
-// 	if err != nil {
-// 		return errors.Wrapf(err, "failed to create registry creds dir [%s]", filepath.Dir(path))
-// 	}
-
-// 	err = os.WriteFile(path, cfgBytes, 0600)
-// 	if err != nil {
-// 		return errors.Wrapf(err, "failed to write registry creds file [%s]", path)
-// 	}
-
-// 	return nil
-// }

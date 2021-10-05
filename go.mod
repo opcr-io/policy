@@ -16,7 +16,7 @@ require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
 	github.com/aserto-dev/clui v0.1.3
-	github.com/aserto-dev/go-utils v0.0.2
+	github.com/aserto-dev/go-utils v0.0.8
 	github.com/aserto-dev/mage-loot v0.4.6
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect
 	github.com/containerd/containerd v1.5.3
@@ -30,6 +30,8 @@ require (
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/magefile/mage v1.11.0
+	github.com/mitchellh/mapstructure v1.4.1
+	github.com/open-policy-agent/opa v0.31.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283
 	github.com/pkg/errors v0.9.1
