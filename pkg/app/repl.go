@@ -19,7 +19,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return err
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
+	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return errors.Errorf("ref [%s] not found in the local store", ref)
 	}
 
-	bundleFile := filepath.Join(c.Configuration.FileStoreRoot, "blobs", "sha256", descriptor.Digest.Hex())
+	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", descriptor.Digest.Hex())
 
 	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
 		InstanceID: "policy-run",
@@ -62,7 +62,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return errors.Wrap(err, "plugins didn't start on time")
 	}
 
-	loop := repl.New(opaRuntime.Store, c.Configuration.Repl.HistoryFile, c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
+	loop := repl.New(opaRuntime.Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
 	loop.Loop(c.Context)
 
 	return nil

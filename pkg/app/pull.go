@@ -17,7 +17,7 @@ func (c *PolicyApp) Pull(userRef string) error {
 		return err
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
+	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}

@@ -25,9 +25,6 @@ type Config struct {
 	Logging       logger.Config `json:"logging"`
 	CA            []string      `json:"ca"`
 	Insecure      bool          `json:"insecure"`
-	Repl          struct {
-		HistoryFile string `json:"history_file"`
-	} `json:"repl"`
 
 	Servers map[string]ServerCredentials `json:"servers"`
 }
@@ -68,11 +65,10 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	// Set defaults
-	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".policy", "policies-root"))
+	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".policy"))
 	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
-	v.SetDefault("repl.history_file", filepath.Join(os.ExpandEnv("$HOME"), ".policy", "repl_history"))
 
 	configExists, err := fileExists(file)
 	if err != nil {
@@ -130,8 +126,16 @@ func NewLoggerConfig(configPath Path, overrides Overrider) (*logger.Config, erro
 	return &cfg.Logging, nil
 }
 
+func (c *Config) PoliciesRoot() string {
+	return filepath.Join(c.FileStoreRoot, "policies-root")
+}
+
+func (c *Config) ReplHistoryFile() string {
+	return filepath.Join(c.FileStoreRoot, "repl_history")
+}
+
 func (c *Config) LoadCreds() error {
-	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
+	path := filepath.Join(c.FileStoreRoot, "policy-registries.yaml")
 
 	if _, err := os.Stat(path); err == nil {
 		contents, err := os.ReadFile(path)

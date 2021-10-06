@@ -8,7 +8,7 @@ import (
 func (c *PolicyApp) Rm(existingRef string) error {
 	defer c.Cancel()
 
-	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
+	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}

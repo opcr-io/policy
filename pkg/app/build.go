@@ -76,7 +76,7 @@ func (c *PolicyApp) Build(ref string, path []string,
 		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
+	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
