@@ -6,13 +6,20 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"runtime"
 )
 
 func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 	// Get the SystemCertPool, continue with an empty pool on error
-	rootCAs, err := x509.SystemCertPool()
-	if err != nil {
-		c.UI.Problem().WithErr(err).WithEnd(1).Msg("Failed to load system cert pool.")
+	var (
+		rootCAs *x509.CertPool
+		err     error
+	)
+	if runtime.GOOS != `windows` {
+		rootCAs, err = x509.SystemCertPool()
+		if err != nil {
+			c.UI.Problem().WithErr(err).WithEnd(1).Msg("Failed to load system cert pool.")
+		}
 	}
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
