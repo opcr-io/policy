@@ -36,6 +36,7 @@
     "GOMODCACHE",
     "goreleaser",
     "gosampleproject",
+    "gosec",
     "gotest",
     "gotestsum",
     "goveralls",

@@ -10,6 +10,9 @@ import (
 )
 
 func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
+	if c.Configuration.Insecure {
+		return &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}} // nolint:gosec // feature used for debugging
+	}
 	// Get the SystemCertPool, continue with an empty pool on error
 	var (
 		rootCAs *x509.CertPool
@@ -37,7 +40,6 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 			log.Println("No certs appended, using system certs only")
 			c.UI.Exclamation().Msgf("Cert %q not appended to RootCAs.", localCertFile)
 		}
-
 	}
 
 	// Trust the augmented cert pool in our client

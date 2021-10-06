@@ -27,6 +27,7 @@ type Globals struct {
 	Debug     bool
 	Config    string
 	Verbosity int
+	Insecure  bool
 	App       *app.PolicyApp
 }
 
@@ -36,6 +37,7 @@ var PolicyCLI struct {
 	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"$HOME/.config/policy/config.yaml"`
 	Debug     bool   `help:"Enable debug mode."`
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
+	Insecure  bool   `short:"k" help:"Do not verify TLS connections."`
 
 	Build   BuildCmd   `cmd:"" help:"Build policies."`
 	Images  ImagesCmd  `cmd:"" help:"List policy images."`
@@ -66,6 +68,7 @@ func (g *Globals) setup() func() {
 			default:
 				c.Logging.LogLevel = "trace"
 			}
+			c.Insecure = g.Insecure
 		})
 
 	if err != nil {
@@ -86,6 +89,7 @@ func main() {
 		Debug:     PolicyCLI.Debug,
 		Config:    PolicyCLI.Config,
 		Verbosity: PolicyCLI.Verbosity,
+		Insecure:  PolicyCLI.Insecure,
 	}
 	cleanup := g.setup()
 	defer cleanup()

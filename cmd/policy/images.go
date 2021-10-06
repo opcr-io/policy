@@ -7,12 +7,12 @@ type ImagesCmd struct {
 
 func (c *ImagesCmd) Run(g *Globals) error {
 	if c.Remote {
-		err := g.App.ListRemote(c.Sever)
+		err := g.App.ImagesRemote(c.Sever)
 		if err != nil {
-			g.App.UI.Problem().WithErr(err).Msg("Failed to list local policies.")
+			g.App.UI.Problem().WithErr(err).Msg("Failed to list remote policies.")
 		}
 	} else {
-		err := g.App.List()
+		err := g.App.Images()
 		if err != nil {
 			g.App.UI.Problem().WithErr(err).Msg("Failed to list local policies.")
 		}

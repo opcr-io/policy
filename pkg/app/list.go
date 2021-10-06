@@ -14,7 +14,7 @@ import (
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) List() error {
+func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
 	ociStore, err := content.NewOCIStore(c.Configuration.FileStoreRoot)
@@ -62,7 +62,9 @@ func (c *PolicyApp) List() error {
 	return nil
 }
 
-func (c *PolicyApp) ListRemote(server string) error {
+func (c *PolicyApp) ImagesRemote(server string) error {
+	defer c.Cancel()
+
 	creds := c.Configuration.Servers[server]
 
 	xClient := extendedclient.NewExtendedClient(c.Logger, &extendedclient.Config{
@@ -81,17 +83,15 @@ func (c *PolicyApp) ListRemote(server string) error {
 	// Get a list of all images
 	images, err := xClient.ListImages()
 	if err != nil {
-		c.UI.Problem().WithErr(err).Msg("Failed to list images.")
 		return err
 	}
 
 	table := c.UI.Normal().WithTable("Repository", "Tag")
 	for _, image := range images {
-		repo := server + "/" + creds.Username + "/" + image
+		repo := server + "/" + image
 
 		tags, err := c.imageTags(repo, creds.Username, creds.Password)
 		if err != nil {
-			c.UI.Problem().WithErr(err).WithStringValue("image", image).Msg("Failed to list tags for policy image.")
 			return err
 		}
 
@@ -116,10 +116,13 @@ func (c *PolicyApp) imageTags(repoName, username, password string) ([]string, er
 		return nil, errors.Wrapf(err, "invalid repo name [%s]", repoName)
 	}
 
-	tags, err := remote.List(repo, remote.WithAuth(&authn.Basic{
-		Username: username,
-		Password: password,
-	}))
+	tags, err := remote.List(repo,
+		remote.WithAuth(&authn.Basic{
+			Username: username,
+			Password: password,
+		}),
+		remote.WithTransport(c.TransportWithTrustedCAs()))
+
 	if err != nil {
 		if tErr, ok := err.(*transport.Error); ok {
 			switch tErr.StatusCode {

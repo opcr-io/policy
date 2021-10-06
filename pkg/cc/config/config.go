@@ -24,6 +24,7 @@ type Config struct {
 	DefaultDomain string        `json:"default_domain"`
 	Logging       logger.Config `json:"logging"`
 	CA            []string      `json:"ca"`
+	Insecure      bool          `json:"insecure"`
 	Repl          struct {
 		HistoryFile string `json:"history_file"`
 	} `json:"repl"`
