@@ -22,6 +22,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/snappy v0.0.4-0.20210608040537-544b4180ac70 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/go-containerregistry v0.6.0
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gorilla/handlers v1.5.1 // indirect
@@ -38,6 +39,7 @@ require (
 	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
+	github.com/tidwall/gjson v1.8.1
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
