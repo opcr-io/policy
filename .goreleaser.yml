@@ -65,7 +65,7 @@ brews:
     tap:
       owner: opcr-io
       name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP }}"
+      token: "{{ .Env.ASERTO_TAP }}"
 
     url_template: "https://github.com/opcr-io/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
