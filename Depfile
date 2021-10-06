@@ -1,26 +1,27 @@
 ---
 bin:
   vault:
-    url: "https://releases.hashicorp.com/vault/{{.Version}}/vault_{{.Version}}_{{.OS}}_amd64.zip"
-    version: "1.7.1"
+    url: "https://releases.hashicorp.com/vault/{{.Version}}/vault_{{.Version}}_{{.OS}}_{{.Arch}}.zip"
+    version: "1.8.1"
     zipPaths:
     - "./vault"
     sha:
-      linux-amd64: "61795d2deeffddee0b556869097c997c5afccbde556d3a103ec273cc24523808"
-      darwin-amd64: "f08f61231a31875334204ac94e726cf032e284ee95b096ab475b3699b9fb3f90"
+      linux-amd64: "bb411f2bbad79c2e4f0640f1d3d5ef50e2bda7d4f40875a56917c95ff783c2db"
+      darwin-amd64: "f87221e4f56b3da41f0a029bf2b48896ec3be84dd7075bdb9466def1e056f809"
+      darwin-arm64: "571985c34990a2a7b913cee8c50be42b34c8d8cb751a2aed2c80121ad4b4e44b"
 go:
   goreleaser:
     importPath: github.com/goreleaser/goreleaser
-    version: "v0.174.2"
+    version: "v0.180.3"
   wire:
     importPath: "github.com/google/wire/cmd/wire"
     version: "v0.5.0"
   sver:
     importPath: "github.com/aserto-dev/sver/cmd/sver"
-    version: "v1.2.3"
+    version: "v1.3.2"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
-    version: "v1.6.2"
+    version: "v1.7.0"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    version: "v1.38.0"
+    version: "v1.42.1"

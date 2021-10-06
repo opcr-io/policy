@@ -71,6 +71,7 @@ linters:
     - deadcode
     - depguard
     - errcheck
+    - exportloopref
     - funlen
     - gochecknoinits
     - goconst
@@ -78,14 +79,13 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
-    - scopelint
+    - revive
     - staticcheck
     - structcheck
     - stylecheck
