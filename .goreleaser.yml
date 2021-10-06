@@ -63,13 +63,11 @@ brews:
   - name: policy
 
     tap:
-      owner: aserto-dev
-      name: aserto-tap
-      token: "{{ .Env.ASERTO_TAP }}"
+      owner: opcr-io
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP }}"
 
     url_template: "https://github.com/opcr-io/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    download_strategy: CustomGitHubPrivateRepositoryReleaseDownloadStrategy
-    custom_require: "lib/custom_download_strategy"
 
     commit_author:
       name: Aserto Bot

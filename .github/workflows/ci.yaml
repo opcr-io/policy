@@ -162,7 +162,7 @@ jobs:
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
-            kv/data/github  "ASERTO_TAP"        | ASERTO_TAP;
+            kv/data/github  "HOMEBREW_TAP"      | HOMEBREW_TAP;
             kv/data/github  "SSH_PRIVATE_KEY"   | SSH_PRIVATE_KEY;
       - name: Install Vault CLI
         uses: innovationnorway/setup-vault@v1.0.3
@@ -176,7 +176,7 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
-          ASERTO_TAP: ${{ steps.vault.outputs.ASERTO_TAP }}
+          HOMEBREW_TAP: ${{ steps.vault.outputs.HOMEBREW_TAP }}
         run: |
           mkdir -p $HOME/.ssh
           umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
