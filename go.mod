@@ -41,6 +41,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
+	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 	google.golang.org/genproto v0.0.0-20210811021853-ddbe55d93216 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	oras.land/oras-go v0.4.0
