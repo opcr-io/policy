@@ -65,8 +65,8 @@ func (c *ExtendedClient) ListImages() ([]string, error) {
 }
 
 func (c *ExtendedClient) extendedAPIAddress() (string, error) {
-	url := c.cfg.Address + "/info"
-	response, err := c.get(url)
+	strURL := c.cfg.Address + "/info"
+	response, err := c.get(strURL)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get /info")
 	}

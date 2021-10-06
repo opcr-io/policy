@@ -40,7 +40,7 @@ func (c *PolicyApp) List() error {
 			return err
 		}
 
-		name := ref.Name()
+		refName := ref.Name()
 
 		tagOrDigest := ""
 		tag, okTag := ref.(docker.Tagged)
@@ -50,7 +50,7 @@ func (c *PolicyApp) List() error {
 			tagOrDigest = info.Digest.String()
 		}
 
-		familiarName, err := c.familiarPolicyRef(name)
+		familiarName, err := c.familiarPolicyRef(refName)
 		if err != nil {
 			return err
 		}
