@@ -11,8 +11,6 @@ go 1.16
 require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.20 // indirect
-	github.com/abiosoft/ishell v2.0.0+incompatible // indirect
-	github.com/abiosoft/ishell/v2 v2.0.2
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
 	github.com/aserto-dev/clui v0.1.3
@@ -20,7 +18,6 @@ require (
 	github.com/aserto-dev/mage-loot v0.4.6
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect
 	github.com/containerd/containerd v1.5.3
-	github.com/desertbit/grumble v1.1.1
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/snappy v0.0.4-0.20210608040537-544b4180ac70 // indirect
