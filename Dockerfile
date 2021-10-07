@@ -29,10 +29,21 @@ LABEL org.opencontainers.image.version=$VERSION
 LABEL org.opencontainers.image.source=https://github.com/opcr-io/policy
 LABEL org.opencontainers.image.title="policy"
 LABEL org.opencontainers.image.revision=$COMMIT
-LABEL org.opencontainers.image.url="https://aserto.com"
+LABEL org.opencontainers.image.url="https://openpolicyregistry.io"
 
 RUN apk add --no-cache bash
 WORKDIR /app
 COPY --from=build /src/dist/build_linux_amd64/policy /app/
+
+COPY ./scripts/login.sh /app/login.sh
+RUN  chmod +x /app/login.sh
+
+COPY ./scripts/build.sh /app/build.sh
+RUN  chmod +x /app/build.sh
+
+COPY ./scripts/push.sh  /app/push.sh
+RUN  chmod +x /app/push.sh
+
+ENV POLICY_FILE_STORE_ROOT=/github/workspace/_policy
 
 ENTRYPOINT ["./policy"]
