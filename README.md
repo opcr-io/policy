@@ -8,7 +8,12 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 ---
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/opcr-io/policy?)](https://goreportcard.com/report/github.com/opcr-io/policy)
-TODO: add more badges once the repo is open
+[![ci](https://github.com/opcr-io/policy/actions/workflows/ci.yaml/badge.svg)](https://github.com/opcr-io/policy/actions/workflows/ci.yaml)
+[![codebeat badge](https://codebeat.co/badges/8e9c8690-9890-46d4-accc-17e5ac24cd88)](https://codebeat.co/projects/github-com-opcr-io-policy-main)
+![GitHub all releases](https://img.shields.io/github/downloads/opcr-io/policy/total)
+![Apache 2.0](https://img.shields.io/github/license/opcr-io/policy)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/opcr-io/policy)
+[<img src="https://img.shields.io/badge/slack-@asertocommunity-yellow.svg?logo=slack">](https://asertocommunity.slack.com/)
 
 ---
 
@@ -34,7 +39,7 @@ Wanna discuss features or show your support for this tool?
 * Via Homebrew for macOS or LinuxBrew for Linux
 
    ```shell
-   brew install policy
+  brew tap opcr-io/tap && brew install opcr-io/tap/policy
    ```
 
 * Via a GO install
@@ -126,8 +131,7 @@ Logs are printed to `stderr`. You can increase detail using the verbosity flag (
 
 ## Demo Videos/Recordings
 
-TODO: record a demo
-
+[![asciicast](https://asciinema.org/a/440630.svg)](https://asciinema.org/a/440630?speed=2)
 ---
 
 ## Known Issues
