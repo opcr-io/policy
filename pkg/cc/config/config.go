@@ -156,7 +156,7 @@ func (c *Config) LoadCreds() error {
 }
 
 func (c *Config) SaveCreds() error {
-	path := os.ExpandEnv("$HOME/.policy/policy-registries.yaml")
+	path := filepath.Join(c.FileStoreRoot, "policy-registries.yaml")
 
 	cfgBytes, err := yaml.Marshal(c.Servers)
 	if err != nil {
