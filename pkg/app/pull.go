@@ -60,9 +60,7 @@ func (c *PolicyApp) Pull(userRef string) error {
 		},
 	})
 
-	allowedMediaTypes := []string{MediaTypeImageLayer, MediaTypeConfig}
 	opts := []oras.PullOpt{
-		oras.WithAllowedMediaTypes(allowedMediaTypes),
 		oras.WithContentProvideIngester(ociStore),
 	}
 	_, descriptors, err := oras.Pull(c.Context, resolver, ref, ociStore,
