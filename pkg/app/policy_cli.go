@@ -38,3 +38,23 @@ func (c *PolicyApp) SaveServerCreds(server string, creds config.ServerCredential
 
 	return nil
 }
+
+func (c *PolicyApp) RemoveServerCreds(server string) error {
+	defer c.Cancel()
+	if server == "" {
+		server = c.Configuration.DefaultDomain
+	}
+
+	if c.Configuration.Servers == nil {
+		c.Configuration.Servers = map[string]config.ServerCredentials{}
+	}
+
+	c.Configuration.Servers[server] = config.ServerCredentials{}
+
+	err := c.Configuration.SaveCreds()
+	if err != nil {
+		return errors.Wrap(err, "failed to save server credentials")
+	}
+
+	return nil
+}

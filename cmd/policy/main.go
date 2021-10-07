@@ -44,6 +44,7 @@ var PolicyCLI struct {
 	Push    PushCmd    `cmd:"" help:"Push policies to a registry."`
 	Pull    PullCmd    `cmd:"" help:"Pull policies from a registry."`
 	Login   LoginCmd   `cmd:"" help:"Login to a registry."`
+	Logout  LogoutCmd  `cmd:"" help:"Logout from a registry."`
 	Save    SaveCmd    `cmd:"" help:"Save a policy to a local bundle tarball."`
 	Tag     TagCmd     `cmd:"" help:"Create a new tag for an existing policy."`
 	Rm      RmCmd      `cmd:"" help:"Removes a policy from the local registry."`
