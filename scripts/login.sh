@@ -26,11 +26,10 @@ printf "\n"
 #
 e_code=0
 
-# construct commandline arguments 
-CMD="/app/policy login --username=${INPUT_USERNAME} --password=${INPUT_PASSWORD} --server=${INPUT_SERVER} --verbosity=${INPUT_VERBOSITY}"
-
 # execute command
-eval "$CMD" || e_code=1
+echo ${INPUT_PASSWORD} | /app/policy login --username=${INPUT_USERNAME} --password-stdin --server=${INPUT_SERVER} --verbosity=${INPUT_VERBOSITY}
+e_code=$?
+
 printf "\n"
 
 exit $e_code

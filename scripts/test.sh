@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-[ -z "$1" ] && echo "provide container version" && exit 1
+[ -z "$1" ] && echo "provide container version, for example: latest" && exit 1
 
-CONTAINER=policy:$1
+CONTAINER=ghcr.io/opcr-io/policy:$1
 
 # reset
 sudo rm -rf /tmp/policytest
@@ -23,7 +23,7 @@ ${CONTAINER}
 
 docker run -ti \
 -e INPUT_SRC=peoplefinder/src \
--e INPUT_TAG=peoplefinder:$(sver -n patch) \
+-e INPUT_TAG=datadude/peoplefinder:$(sver -n patch) \
 -e INPUT_REVISION=$(sver) \
 -e INPUT_SERVER= \
 -e INPUT_VERBOSITY= \
@@ -33,7 +33,7 @@ docker run -ti \
 ${CONTAINER}
 
 docker run -ti \
--e INPUT_TAG=peoplefinder:$(sver -n patch) \
+-e INPUT_TAG=datadude/peoplefinder:$(sver -n patch) \
 -e INPUT_SERVER= \
 -e INPUT_VERBOSITY= \
 -e GITHUB_WORKSPACE=/github/workspace \
