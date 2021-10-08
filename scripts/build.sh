@@ -3,7 +3,7 @@
 # set defaults when not set
 [ -z "${INPUT_REVISION}" ]  && INPUT_REVISION=${GITHUB_SHA}
 [ -z "${INPUT_SERVER}" ]    && INPUT_SERVER="opcr.io"
-[ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="0"
+[ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="error"
 
 # validate if values are set
 [ -z "${INPUT_SRC}" ]       && echo "INPUT_SRC is not set exiting" && exit 2
@@ -21,6 +21,22 @@ if [[ ! -d ${SRC_PATH} ]]; then
     exit 1
 fi
 
+VERBOSITY=0
+case ${INPUT_VERBOSITY} in
+  "info")
+    VERBOSITY=1
+    ;;
+  "error")
+    VERBOSITY=0
+    ;;
+  "debug")
+    VERBOSITY=2
+    ;;
+  "trace")
+    VERBOSITY=3
+    ;;
+esac
+
 # output all inputs env variables
 echo "POLICY-BUILD        $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
@@ -29,10 +45,7 @@ echo "INPUT_SRC           ${INPUT_SRC}"
 echo "INPUT_TAG           ${INPUT_TAG}"
 echo "INPUT_REVISION      ${INPUT_REVISION}"
 echo "INPUT_SERVER        ${INPUT_SERVER}"
-echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY}"
-echo "GITHUB_WORKSPACE    ${GITHUB_WORKSPACE}"
-printf "\n"
-echo ">>> CALCULATED VALUES"
+echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 echo "SRC_PATH            ${SRC_PATH}"
 printf "\n"
 
@@ -42,7 +55,7 @@ printf "\n"
 e_code=0
 
 # construct commandline arguments 
-CMD="/app/policy build ${SRC_PATH} -t ${INPUT_TAG}"
+CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --server=${INPUT_SERVER} --verbosity=${VERBOSITY}"
 
 # execute command
 eval "$CMD" || e_code=1

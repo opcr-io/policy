@@ -38,6 +38,9 @@ COPY --from=build /src/dist/build_linux_amd64/policy /app/
 COPY ./scripts/login.sh /app/login.sh
 RUN  chmod +x /app/login.sh
 
+COPY ./scripts/logout.sh /app/logout.sh
+RUN  chmod +x /app/logout.sh
+
 COPY ./scripts/build.sh /app/build.sh
 RUN  chmod +x /app/build.sh
 

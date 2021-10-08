@@ -40,3 +40,11 @@ docker run -ti \
 -v "/tmp/policytest":"/github/workspace" \
 --entrypoint=/app/push.sh \
 ${CONTAINER}
+
+docker run -ti \
+-e INPUT_SERVER= \
+-e INPUT_VERBOSITY= \
+-e GITHUB_WORKSPACE=/github/workspace \
+-v "/tmp/policytest":"/github/workspace" \
+--entrypoint=/app/logout.sh \
+${CONTAINER}
