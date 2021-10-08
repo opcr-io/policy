@@ -2,6 +2,8 @@ package app
 
 import (
 	"net/http"
+	"sort"
+	"time"
 
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
@@ -17,6 +19,8 @@ import (
 func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
+	var data [][]string
+
 	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
@@ -29,6 +33,7 @@ func (c *PolicyApp) Images() error {
 
 	table := c.UI.Normal().WithTable("Repository", "Tag", "Size", "Created At")
 	refs := ociStore.ListReferences()
+
 	for k, v := range refs {
 		info, err := ociStore.Info(c.Context, v.Digest)
 		if err != nil {
@@ -55,8 +60,20 @@ func (c *PolicyApp) Images() error {
 			return err
 		}
 
-		table.WithTableRow(familiarName, tagOrDigest, humanize.Bytes(uint64(v.Size)), humanize.Time(info.CreatedAt))
+		arrData := []string{familiarName, tagOrDigest, humanize.Bytes(uint64(v.Size)), humanize.Time(info.CreatedAt), info.CreatedAt.Format(time.RFC3339Nano)}
+
+		data = append(data, arrData)
 	}
+
+	// sort data by CreatedAt DESC
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i][4] > data[j][4]
+	})
+
+	for _, v := range data {
+		table.WithTableRow(v[0], v[1], v[2], v[3])
+	}
+
 	table.Do()
 
 	return nil
