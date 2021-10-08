@@ -2,14 +2,12 @@
 
 # set defaults when not set
 [ -z "${INPUT_REVISION}" ]  && INPUT_REVISION=${GITHUB_SHA}
-[ -z "${INPUT_SERVER}" ]    && INPUT_SERVER="opcr.io"
 [ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="error"
 
 # validate if values are set
 [ -z "${INPUT_SRC}" ]       && echo "INPUT_SRC is not set exiting" && exit 2
 [ -z "${INPUT_TAG}" ]       && exit "INPUT_TAG is not set exiting" && exit 2
 [ -z "${INPUT_REVISION}" ]  && exit "INPUT_REVISION is not set exiting" && exit 2
-[ -z "${INPUT_SERVER}" ]    && exit "INPUT_SERVER is not set exiting" && exit 2
 [ -z "${INPUT_VERBOSITY}" ] && exit "INPUT_VERBOSITY is not set exiting" && exit 2
 
 # calculate paths relative to the workspace (GITHUB_WORKSPACE).
@@ -44,7 +42,6 @@ printf "\n"
 echo "INPUT_SRC           ${INPUT_SRC}"
 echo "INPUT_TAG           ${INPUT_TAG}"
 echo "INPUT_REVISION      ${INPUT_REVISION}"
-echo "INPUT_SERVER        ${INPUT_SERVER}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 echo "SRC_PATH            ${SRC_PATH}"
 printf "\n"
@@ -55,7 +52,7 @@ printf "\n"
 e_code=0
 
 # construct commandline arguments 
-CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --server=${INPUT_SERVER} --verbosity=${VERBOSITY}"
+CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --verbosity=${VERBOSITY}"
 
 # execute command
 eval "$CMD" || e_code=1
