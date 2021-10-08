@@ -24,7 +24,7 @@ case ${INPUT_VERBOSITY} in
 esac
 
 # output all inputs env variables
-echo "POLICY-PUSH         $(/app/policy version | sed 's/Policy CLI.//g')"
+echo "POLICY-PULL         $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
 printf "\n"
 echo "INPUT_TAG           ${INPUT_TAG}"
@@ -37,15 +37,15 @@ printf "\n"
 e_code=0
 
 # construct commandline arguments 
-CMD="/app/policy push ${INPUT_TAG} --verbosity=${VERBOSITY}"
+CMD="/app/policy pull ${INPUT_TAG} --verbosity=${VERBOSITY}"
 
 # execute command
 eval "$CMD" || e_code=1
 printf "\n"
 
 if [ "${VERBOSITY}" -ge "2" ]; then 
-  /app/policy images --remote
-  printf "\n"
+    /app/policy images
+    printf "\n"
 fi
 
 exit $e_code

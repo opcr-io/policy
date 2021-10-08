@@ -58,7 +58,9 @@ CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --verbosity=${VERBOSITY}"
 eval "$CMD" || e_code=1
 printf "\n"
 
-/app/policy images
-printf "\n"
+if [ "${VERBOSITY}" -ge "2" ]; then 
+  /app/policy images
+  printf "\n"
+fi 
 
 exit $e_code

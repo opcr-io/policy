@@ -4,8 +4,9 @@
 [ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="error"
 
 # validate if values are set
-[ -z "${INPUT_TAG}" ]       && echo "INPUT_TAG is not set exiting" && exit 2
-[ -z "${INPUT_VERBOSITY}" ] && exit "INPUT_VERBOSITY is not set exiting" && exit 2
+[ -z "${INPUT_TAG}" ]       && exit "INPUT_TAG is not set, exiting" && exit 2
+[ -z "${INPUT_FILE}" ]      && echo "INPUT_FILE is not set, exiting" && exit 2
+[ -z "${INPUT_VERBOSITY}" ] && exit "INPUT_VERBOSITY is not set, exiting" && exit 2
 
 VERBOSITY=0
 case ${INPUT_VERBOSITY} in
@@ -24,10 +25,11 @@ case ${INPUT_VERBOSITY} in
 esac
 
 # output all inputs env variables
-echo "POLICY-PUSH         $(/app/policy version | sed 's/Policy CLI.//g')"
+echo "POLICY-SAVE         $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
 printf "\n"
 echo "INPUT_TAG           ${INPUT_TAG}"
+echo "INPUT_FILE          ${INPUT_FILE}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 printf "\n"
 
@@ -37,15 +39,10 @@ printf "\n"
 e_code=0
 
 # construct commandline arguments 
-CMD="/app/policy push ${INPUT_TAG} --verbosity=${VERBOSITY}"
+CMD="/app/policy save ${INPUT_TAG} --file=${INPUT_FILE} --verbosity=${VERBOSITY}"
 
 # execute command
 eval "$CMD" || e_code=1
 printf "\n"
-
-if [ "${VERBOSITY}" -ge "2" ]; then 
-  /app/policy images --remote
-  printf "\n"
-fi
 
 exit $e_code
