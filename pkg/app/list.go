@@ -103,7 +103,10 @@ func (c *PolicyApp) ImagesRemote(server string) error {
 		return err
 	}
 
-	table := c.UI.Normal().WithTable("Repository", "Tag")
+	p := c.UI.Progress("Fetching tags for images")
+	p.Start()
+
+	imageData := [][]string{}
 	for _, image := range images {
 		repo := server + "/" + image
 
@@ -117,9 +120,25 @@ func (c *PolicyApp) ImagesRemote(server string) error {
 			return err
 		}
 
-		for _, tag := range tags {
-			table.WithTableRow(familiarName, tag)
+		if len(tags) == 0 {
+			imageData = append(imageData, []string{familiarName, "<no tags>"})
+			continue
 		}
+
+		for _, tag := range tags {
+			imageData = append(imageData, []string{familiarName, tag})
+		}
+	}
+
+	p.Stop()
+
+	sort.SliceStable(imageData, func(i, j int) bool {
+		return imageData[i][0] < imageData[j][0] || (imageData[i][0] == imageData[j][0] && imageData[i][1] < imageData[j][1])
+	})
+
+	table := c.UI.Normal().WithTable("Repository", "Tag")
+	for _, image := range imageData {
+		table.WithTableRow(image[0], image[1])
 	}
 	table.Do()
 
