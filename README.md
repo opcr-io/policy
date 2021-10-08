@@ -131,7 +131,8 @@ Logs are printed to `stderr`. You can increase detail using the verbosity flag (
 
 ## Demo Videos/Recordings
 
-[![asciicast](https://asciinema.org/a/440630.svg)](https://asciinema.org/a/440630?speed=2)
+![demo](./assets/demo-policy.gif)
+
 ---
 
 ## Known Issues
