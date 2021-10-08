@@ -10,6 +10,7 @@ import (
 
 func (c *PolicyApp) Save(userRef, outputFile string) error {
 	defer c.Cancel()
+	var o *os.File
 
 	ref, err := c.calculatePolicyRef(userRef)
 	if err != nil {
@@ -33,9 +34,11 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 		return errors.Errorf("policy [%s] not found in the local store", ref)
 	}
 
-	c.UI.Normal().
-		WithStringValue("digest", refDescriptor.Digest.String()).
-		Msgf("Resolved ref [%s].", ref)
+	if outputFile != "-" {
+		c.UI.Normal().
+			WithStringValue("digest", refDescriptor.Digest.String()).
+			Msgf("Resolved ref [%s].", ref)
+	}
 
 	reader, err := ociStore.ReaderAt(c.Context, refDescriptor)
 	if err != nil {
@@ -49,7 +52,12 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 		}
 	}()
 
-	o, err := os.Create(outputFile)
+	if outputFile == "-" {
+		o = os.Stdout
+	} else {
+		o, err = os.Create(outputFile)
+	}
+
 	if err != nil {
 		return errors.Wrapf(err, "failed to create output file [%s]", outputFile)
 	}

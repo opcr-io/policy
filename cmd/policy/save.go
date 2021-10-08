@@ -2,7 +2,7 @@ package main
 
 type SaveCmd struct {
 	Policy string `arg:"" name:"policy" help:"Policy to save."`
-	File   string `name:"file" short:"f" help:"Output file path" default:"bundle.tar.gz"`
+	File   string `name:"file" short:"f" help:"Output file path, '-' is accepted for stdout" default:"bundle.tar.gz"`
 }
 
 func (c *SaveCmd) Run(g *Globals) error {
