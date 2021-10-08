@@ -4,12 +4,14 @@ import (
 	"io"
 	"os"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
 
 func (c *PolicyApp) Save(userRef, outputFile string) error {
 	defer c.Cancel()
+	var o *os.File
 
 	ref, err := c.calculatePolicyRef(userRef)
 	if err != nil {
@@ -33,11 +35,36 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 		return errors.Errorf("policy [%s] not found in the local store", ref)
 	}
 
-	c.UI.Normal().
-		WithStringValue("digest", refDescriptor.Digest.String()).
-		Msgf("Resolved ref [%s].", ref)
+	if outputFile == "-" {
+		o = os.Stdout
+	} else {
+		c.UI.Normal().
+			WithStringValue("digest", refDescriptor.Digest.String()).
+			Msgf("Resolved ref [%s].", ref)
+		o, err = os.Create(outputFile)
 
-	reader, err := ociStore.ReaderAt(c.Context, refDescriptor)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create output file [%s]", outputFile)
+		}
+
+		defer func() {
+			err := o.Close()
+			if err != nil {
+				c.UI.Problem().WithErr(err).Msg("Failed to close policy bundle tarball.")
+			}
+		}()
+	}
+
+	err = c.writePolicy(ociStore, &refDescriptor, o)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.Descriptor, o *os.File) error {
+	reader, err := ociStore.ReaderAt(c.Context, *refDescriptor)
 	if err != nil {
 		return errors.Wrap(err, "failed to open store reader")
 	}
@@ -46,17 +73,6 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 		err := reader.Close()
 		if err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close OCI policy reader.")
-		}
-	}()
-
-	o, err := os.Create(outputFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create output file [%s]", outputFile)
-	}
-	defer func() {
-		err := o.Close()
-		if err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to close policy bundle tarball.")
 		}
 	}()
 
@@ -84,6 +100,5 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 
 		i += chunkSize
 	}
-
 	return nil
 }
