@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -13,11 +14,6 @@ import (
 
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	defer c.Cancel()
-
-	err := c.Pull(ref)
-	if err != nil {
-		return err
-	}
 
 	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -36,7 +32,25 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 
 	descriptor, ok := existingRefs[existingRefParsed]
 	if !ok {
-		return errors.Errorf("ref [%s] not found in the local store", ref)
+		err := c.Pull(ref)
+		if err != nil {
+			return err
+		}
+
+		err = ociStore.LoadIndex()
+		if err != nil {
+			return err
+		}
+
+		existingRefs = ociStore.ListReferences()
+		existingRefParsed, err := c.calculatePolicyRef(ref)
+		if err != nil {
+			return err
+		}
+		descriptor, ok = existingRefs[existingRefParsed]
+		if !ok {
+			return errors.Errorf("ref [%s] not found in the local store", ref)
+		}
 	}
 
 	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", descriptor.Digest.Hex())
@@ -63,7 +77,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	}
 
 	loop := repl.New(opaRuntime.Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
-	loop.Loop(c.Context)
+	loop.Loop(context.Background())
 
 	return nil
 }
