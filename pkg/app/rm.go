@@ -29,7 +29,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	}
 
 	if !confirmation {
-		c.UI.Exclamation().Msg("Operation cancelled by user.")
+		c.UI.Exclamation().Msg("Operation canceled by user.")
 		return nil
 	}
 
@@ -96,7 +96,7 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 	}
 
 	if !confirmation {
-		c.UI.Exclamation().Msg("Operation cancelled by user.")
+		c.UI.Exclamation().Msg("Operation canceled by user.")
 		return nil
 	}
 

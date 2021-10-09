@@ -64,7 +64,7 @@ func (c *ExtendedClient) ListImages() ([]string, error) {
 	return result, nil
 }
 
-func (c *ExtendedClient) RemoveImage(image string, tag string) error {
+func (c *ExtendedClient) RemoveImage(image, tag string) error {
 	address, err := c.extendedAPIAddress()
 	if err != nil {
 		return err
