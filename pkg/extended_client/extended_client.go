@@ -64,6 +64,26 @@ func (c *ExtendedClient) ListImages() ([]string, error) {
 	return result, nil
 }
 
+func (c *ExtendedClient) RemoveImage(image string, tag string) error {
+	address, err := c.extendedAPIAddress()
+	if err != nil {
+		return err
+	}
+
+	toDelete := address + "/api/v1/registry/images/" + image
+	if tag != "" {
+		toDelete += "?tag=" + url.QueryEscape(tag)
+	}
+
+	// TODO: error handling from body/header
+	_, err = c.delete(toDelete)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove image")
+	}
+
+	return nil
+}
+
 func (c *ExtendedClient) extendedAPIAddress() (string, error) {
 	strURL := c.cfg.Address + "/info"
 	response, err := c.get(strURL)
@@ -115,6 +135,52 @@ func (c *ExtendedClient) get(urlStr string) (string, error) {
 
 	if response.StatusCode != http.StatusOK {
 		return "", errors.Errorf("get failed with status code [%d]", response.StatusCode)
+	}
+
+	return strBody.String(), nil
+}
+
+func (c *ExtendedClient) delete(urlStr string) (string, error) {
+	c.logger.Trace().Str("url", urlStr).Msg("extended api delete start")
+
+	httpClient := http.Client{}
+	httpClient.Transport = c.transport
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse url")
+	}
+	req := &http.Request{
+		URL:    parsedURL,
+		Method: "DELETE",
+		Header: http.Header{
+			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
+		},
+	}
+
+	response, err := httpClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "delete failed")
+	}
+
+	strBody := &strings.Builder{}
+
+	defer func() {
+		err := response.Body.Close()
+		if err != nil {
+			c.logger.Trace().Err(err).Msg("failed to close response body")
+		}
+
+		c.logger.Trace().Str("url", urlStr).Str("body", strBody.String()).Msg("extended api delete end")
+	}()
+
+	_, err = io.Copy(strBody, response.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return "", errors.Errorf("delete failed with status code [%d]", response.StatusCode)
 	}
 
 	return strBody.String(), nil

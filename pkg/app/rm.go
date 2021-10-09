@@ -1,12 +1,37 @@
 package app
 
 import (
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) Rm(existingRef string) error {
+func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	defer c.Cancel()
+
+	existingRefParsed, err := c.calculatePolicyRef(existingRef)
+	if err != nil {
+		return err
+	}
+
+	confirmation := force
+	if !force {
+		c.UI.Exclamation().
+			WithStringValue("reference", existingRefParsed).
+			WithAskBoolMap("[Y/n]", &confirmation, map[string]bool{
+				"":  true,
+				"y": true,
+				"n": false,
+			}).Msgf("Are you sure?")
+	}
+
+	if !confirmation {
+		c.UI.Exclamation().Msg("Operation cancelled by user.")
+		return nil
+	}
 
 	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -18,10 +43,6 @@ func (c *PolicyApp) Rm(existingRef string) error {
 	}
 
 	existingRefs := ociStore.ListReferences()
-	existingRefParsed, err := c.calculatePolicyRef(existingRef)
-	if err != nil {
-		return err
-	}
 
 	_, ok := existingRefs[existingRefParsed]
 	if !ok {
@@ -41,6 +62,92 @@ func (c *PolicyApp) Rm(existingRef string) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
+	defer c.Cancel()
+
+	ref, err := c.calculatePolicyRef(existingRef)
+	if err != nil {
+		return err
+	}
+
+	refParsed, err := name.ParseReference(ref)
+	if err != nil {
+		return errors.Wrapf(err, "invalid reference [%s]", ref)
+	}
+
+	server := refParsed.Context().Registry
+	creds := c.Configuration.Servers[server.Name()]
+
+	tagsToRemove := []string{}
+
+	confirmation := force
+	if !force {
+		c.UI.Exclamation().
+			WithStringValue("reference", ref).
+			WithAskBoolMap("[Y/n]", &confirmation, map[string]bool{
+				"":  true,
+				"y": true,
+				"n": false,
+			}).Msgf("Are you sure?")
+	}
+
+	if !confirmation {
+		c.UI.Exclamation().Msg("Operation cancelled by user.")
+		return nil
+	}
+
+	if removeAll {
+		tagsToRemove, err = c.imageTags(refParsed.Context().RegistryStr()+"/"+refParsed.Context().RepositoryStr(), creds.Username, creds.Password)
+		if err != nil {
+			return err
+		}
+	} else {
+		tagsToRemove = append(tagsToRemove, refParsed.Identifier())
+	}
+
+	for _, tag := range tagsToRemove {
+		refToRemove := refParsed.Context().Tag(tag)
+		c.UI.Normal().Compact().
+			WithStringValue("ref", refToRemove.String()).
+			Msg("Removing tag.")
+
+		err = remote.Delete(refToRemove,
+			remote.WithAuth(&authn.Basic{
+				Username: creds.Username,
+				Password: creds.Password,
+			}),
+			remote.WithTransport(c.TransportWithTrustedCAs()))
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete reference [%s]", ref)
+		}
+	}
+
+	if removeAll {
+		xClient := extendedclient.NewExtendedClient(c.Logger,
+			&extendedclient.Config{
+				Address:  "https://" + server.Name(),
+				Username: creds.Username,
+				Password: creds.Password,
+			},
+			c.TransportWithTrustedCAs())
+
+		if xClient.Supported() {
+			policyDef := refParsed.Context().RepositoryStr()
+			c.UI.Normal().
+				WithStringValue("definition", policyDef).
+				Msg("Removing policy definition.")
+			err := xClient.RemoveImage(policyDef, "")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	c.UI.Normal().Msg("OK.")
 
 	return nil
 }

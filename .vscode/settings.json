@@ -64,6 +64,7 @@
     "libsodium",
     "magefile",
     "mergo",
+    "Messagef",
     "mikefarah",
     "mkdir",
     "Msgf",
