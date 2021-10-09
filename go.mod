@@ -9,7 +9,6 @@ go 1.16
 // replace github.com/aserto-dev/aserto-runtime => ../aserto-runtime
 
 require (
-	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.20 // indirect
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
@@ -21,7 +20,6 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/snappy v0.0.4-0.20210608040537-544b4180ac70 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/go-containerregistry v0.6.0
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0

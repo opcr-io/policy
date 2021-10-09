@@ -35,17 +35,8 @@ RUN apk add --no-cache bash
 WORKDIR /app
 COPY --from=build /src/dist/build_linux_amd64/policy /app/
 
-COPY ./scripts/login.sh /app/login.sh
-RUN  chmod +x /app/login.sh
-
-COPY ./scripts/logout.sh /app/logout.sh
-RUN  chmod +x /app/logout.sh
-
-COPY ./scripts/build.sh /app/build.sh
-RUN  chmod +x /app/build.sh
-
-COPY ./scripts/push.sh  /app/push.sh
-RUN  chmod +x /app/push.sh
+COPY --from=build /src/scripts /app/
+RUN  chmod +x /app/*.sh
 
 ENV POLICY_FILE_STORE_ROOT=/github/workspace/_policy
 

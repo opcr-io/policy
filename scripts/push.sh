@@ -43,7 +43,7 @@ CMD="/app/policy push ${INPUT_TAG} --verbosity=${VERBOSITY}"
 eval "$CMD" || e_code=1
 printf "\n"
 
-if [ "${VERBOSITY}" -ge "2" ]; then 
+if [ "${VERBOSITY}" -ge "1" ]; then 
   /app/policy images --remote
   printf "\n"
 fi
