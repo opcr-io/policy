@@ -12,9 +12,9 @@ require (
 	github.com/Microsoft/hcsshim v0.8.20 // indirect
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
-	github.com/aserto-dev/clui v0.1.4
+	github.com/aserto-dev/clui v0.1.5
 	github.com/aserto-dev/go-utils v0.0.8
-	github.com/aserto-dev/mage-loot v0.4.6
+	github.com/aserto-dev/mage-loot v0.4.12
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect
 	github.com/containerd/containerd v1.5.3
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
@@ -37,12 +37,12 @@ require (
 	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.8.1
+	github.com/tidwall/gjson v1.9.0
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
-	google.golang.org/genproto v0.0.0-20210811021853-ddbe55d93216 // indirect
+	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	oras.land/oras-go v0.4.0
 	rsc.io/letsencrypt v0.0.3 // indirect

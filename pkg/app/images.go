@@ -79,16 +79,17 @@ func (c *PolicyApp) Images() error {
 	return nil
 }
 
-func (c *PolicyApp) ImagesRemote(server string) error {
+func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 	defer c.Cancel()
 
 	creds := c.Configuration.Servers[server]
 
-	xClient := extendedclient.NewExtendedClient(c.Logger, &extendedclient.Config{
-		Address:  "https://" + server,
-		Username: creds.Username,
-		Password: creds.Password,
-	},
+	xClient := extendedclient.NewExtendedClient(c.Logger,
+		&extendedclient.Config{
+			Address:  "https://" + server,
+			Username: creds.Username,
+			Password: creds.Password,
+		},
 		c.TransportWithTrustedCAs())
 
 	// If the server doesn't support list APIs, print a message and return.
@@ -120,7 +121,7 @@ func (c *PolicyApp) ImagesRemote(server string) error {
 			return err
 		}
 
-		if len(tags) == 0 {
+		if len(tags) == 0 && showEmpty {
 			imageData = append(imageData, []string{familiarName, "<no tags>"})
 			continue
 		}
