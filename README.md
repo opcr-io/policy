@@ -14,7 +14,7 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 ![Apache 2.0](https://img.shields.io/github/license/opcr-io/policy)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/opcr-io/policy)
 [<img src="https://img.shields.io/badge/slack-@asertocommunity-yellow.svg?logo=slack">](https://asertocommunity.slack.com/)
-
+[<img src="https://img.shields.io/badge/docs-%F0%9F%95%B6-blue">](https://www.openpolicyregistry.io/docs/intro)
 ---
 
 ## Documentation
