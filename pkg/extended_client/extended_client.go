@@ -212,7 +212,7 @@ func (c *ExtendedClient) delete(urlStr string) (string, error) {
 	return strBody.String(), nil
 }
 
-func (c *ExtendedClient) post(urlStr string, payload string) (string, error) {
+func (c *ExtendedClient) post(urlStr, payload string) (string, error) {
 	c.logger.Trace().Str("url", urlStr).Msg("extended api post start")
 
 	httpClient := http.Client{}
