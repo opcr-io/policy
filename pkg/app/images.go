@@ -109,7 +109,7 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	imageData := [][]string{}
 	for _, image := range images {
-		repo := server + "/" + image
+		repo := server + "/" + image.Name
 
 		tags, err := c.imageTags(repo, creds.Username, creds.Password)
 		if err != nil {
@@ -126,8 +126,13 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 			continue
 		}
 
+		publicMark := "No"
+		if image.Public {
+			publicMark = "Yes"
+		}
+
 		for _, tag := range tags {
-			imageData = append(imageData, []string{familiarName, tag})
+			imageData = append(imageData, []string{familiarName, tag, publicMark})
 		}
 	}
 
@@ -137,9 +142,9 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		return imageData[i][0] < imageData[j][0] || (imageData[i][0] == imageData[j][0] && imageData[i][1] < imageData[j][1])
 	})
 
-	table := c.UI.Normal().WithTable("Repository", "Tag")
+	table := c.UI.Normal().WithTable("Repository", "Tag", "Public")
 	for _, image := range imageData {
-		table.WithTableRow(image[0], image[1])
+		table.WithTableRow(image[0], image[1], image[2])
 	}
 	table.Do()
 

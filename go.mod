@@ -13,6 +13,7 @@ require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
 	github.com/aserto-dev/clui v0.1.6
+	github.com/aserto-dev/go-grpc v0.0.12 // indirect
 	github.com/aserto-dev/go-utils v0.0.8
 	github.com/aserto-dev/mage-loot v0.4.12
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect

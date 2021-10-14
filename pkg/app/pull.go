@@ -46,14 +46,10 @@ func (c *PolicyApp) Pull(userRef string) error {
 						docker.WithAuthCreds(func(s string) (string, string, error) {
 							creds, ok := c.Configuration.Servers[s]
 							if !ok {
-								return "", "", nil
+								return " ", " ", nil
 							}
 
 							return creds.Username, creds.Password, nil
-						}),
-						// TODO: is this needed?
-						docker.WithAuthHeader(http.Header{
-							"Authorization": []string{},
 						})),
 				},
 			}, nil

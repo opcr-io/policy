@@ -49,6 +49,7 @@ var PolicyCLI struct {
 	Tag     TagCmd     `cmd:"" help:"Create a new tag for an existing policy."`
 	Rm      RmCmd      `cmd:"" help:"Removes a policy from the local registry."`
 	Repl    ReplCmd    `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
+	Remote  RemoteCmd  `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
 	Version VersionCmd `cmd:"" help:"Prints version information."`
 }
 

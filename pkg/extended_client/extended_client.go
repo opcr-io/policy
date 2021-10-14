@@ -2,7 +2,10 @@ package extendedclient
 
 import (
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -24,6 +27,11 @@ type ExtendedClient struct {
 	transport *http.Transport
 }
 
+type PolicyImage struct {
+	Name   string `json:"name"`
+	Public bool   `json:"public"`
+}
+
 func NewExtendedClient(logger *zerolog.Logger, cfg *Config, transport *http.Transport) *ExtendedClient {
 	return &ExtendedClient{
 		cfg:       cfg,
@@ -42,7 +50,7 @@ func (c *ExtendedClient) Supported() bool {
 	return address != ""
 }
 
-func (c *ExtendedClient) ListImages() ([]string, error) {
+func (c *ExtendedClient) ListImages() ([]PolicyImage, error) {
 	address, err := c.extendedAPIAddress()
 	if err != nil {
 		return nil, err
@@ -53,15 +61,16 @@ func (c *ExtendedClient) ListImages() ([]string, error) {
 		return nil, errors.Wrap(err, "failed to list images")
 	}
 
-	images := gjson.Get(jsonBody, "images").Array()
+	response := struct {
+		Images []PolicyImage `json:"images"`
+	}{}
 
-	result := make([]string, len(images))
-	for idx, image := range images {
-		name := image.Get("name")
-		result[idx] = name.String()
+	err = json.Unmarshal([]byte(jsonBody), &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal policy list response")
 	}
 
-	return result, nil
+	return response.Images, nil
 }
 
 func (c *ExtendedClient) RemoveImage(image, tag string) error {
@@ -79,6 +88,23 @@ func (c *ExtendedClient) RemoveImage(image, tag string) error {
 	_, err = c.delete(toDelete)
 	if err != nil {
 		return errors.Wrap(err, "failed to remove image")
+	}
+
+	return nil
+}
+
+func (c *ExtendedClient) SetVisibility(image string, public bool) error {
+	address, err := c.extendedAPIAddress()
+	if err != nil {
+		return err
+	}
+
+	toUpdate := address + "/api/v1/registry/images/" + image + "/visibility"
+
+	// TODO: error handling from body/header
+	_, err = c.post(toUpdate, fmt.Sprintf(`{"public": %t}`, public))
+	if err != nil {
+		return errors.Wrap(err, "failed to update image visibility")
 	}
 
 	return nil
@@ -181,6 +207,54 @@ func (c *ExtendedClient) delete(urlStr string) (string, error) {
 
 	if response.StatusCode != http.StatusOK {
 		return "", errors.Errorf("delete failed with status code [%d]", response.StatusCode)
+	}
+
+	return strBody.String(), nil
+}
+
+func (c *ExtendedClient) post(urlStr string, payload string) (string, error) {
+	c.logger.Trace().Str("url", urlStr).Msg("extended api post start")
+
+	httpClient := http.Client{}
+	httpClient.Transport = c.transport
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse url")
+	}
+
+	req := &http.Request{
+		URL:    parsedURL,
+		Method: "POST",
+		Header: http.Header{
+			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
+		},
+		Body: ioutil.NopCloser(strings.NewReader(payload)),
+	}
+
+	response, err := httpClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "get failed")
+	}
+
+	strBody := &strings.Builder{}
+
+	defer func() {
+		err := response.Body.Close()
+		if err != nil {
+			c.logger.Trace().Err(err).Msg("failed to close response body")
+		}
+
+		c.logger.Trace().Str("url", urlStr).Str("body", strBody.String()).Msg("extended api post end")
+	}()
+
+	_, err = io.Copy(strBody, response.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return "", errors.Errorf("get failed with status code [%d]", response.StatusCode)
 	}
 
 	return strBody.String(), nil

@@ -59,10 +59,6 @@ func (c *PolicyApp) Push(userRef string) error {
 							}
 
 							return creds.Username, creds.Password, nil
-						}),
-						// TODO: is this needed?
-						docker.WithAuthHeader(http.Header{
-							"Authorization": []string{},
 						})),
 				},
 			}, nil
