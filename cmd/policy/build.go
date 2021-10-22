@@ -1,8 +1,9 @@
 package main
 
 type BuildCmd struct {
-	Tag  string   `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format"`
-	Path []string `arg:"" name:"path" help:"Path to the policy sources." type:"string"`
+	Tag         string            `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format"`
+	Path        []string          `arg:"" name:"path" help:"Path to the policy sources." type:"string"`
+	Annotations map[string]string `name:"annotations" short:"a" help:"Annotations to apply to the policy." type:"string:string"`
 
 	RunConfigFile      string   `name:"build-config-file" help:"Set path of configuration file."`
 	Target             string   `name:"target" short:"t" default:"rego" help:"Set the output bundle target type."`
@@ -24,6 +25,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 	err := g.App.Build(
 		c.Tag,
 		c.Path,
+		c.Annotations,
 		c.RunConfigFile,
 		c.Target,
 		c.OptimizationLevel,

@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	runtime "github.com/aserto-dev/aserto-runtime"
 	containerd_content "github.com/containerd/containerd/content"
@@ -16,7 +17,7 @@ import (
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) Build(ref string, path []string,
+func (c *PolicyApp) Build(ref string, path []string, annotations map[string]string,
 	runConfigFile string,
 	target string,
 	optimizationLevel int,
@@ -85,7 +86,10 @@ func (c *PolicyApp) Build(ref string, path []string,
 		return err
 	}
 
-	descriptor, err := c.createImage(ociStore, outfile)
+	annotations[ocispec.AnnotationTitle] = ref
+	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+
+	descriptor, err := c.createImage(ociStore, outfile, annotations)
 	if err != nil {
 		return err
 	}
@@ -129,7 +133,7 @@ func (c *PolicyApp) calculatePolicyRef(userRef string) (string, error) {
 	return userRef, nil
 }
 
-func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 
 	fDigest, err := c.fileDigest(tarball)
@@ -137,69 +141,68 @@ func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string) (oci
 		return descriptor, err
 	}
 
-	existingInfo, err := ociStore.Info(c.Context, fDigest)
+	_, err = ociStore.Info(c.Context, fDigest)
 	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
 		return descriptor, err
 	}
 
 	if err == nil {
-		descriptor.Digest = existingInfo.Digest
-		descriptor.Size = existingInfo.Size
-
-		c.UI.Normal().
-			WithStringValue("digest", descriptor.Digest.String()).
-			Msg("Using existing image.")
-	} else {
-		tarballFile, err := os.Open(tarball)
+		err = ociStore.Delete(c.Context, fDigest)
 		if err != nil {
-			return descriptor, err
+			return descriptor, errors.Wrap(err, "couldn't overwrite existing image")
 		}
-		defer func() {
-			err := tarballFile.Close()
-			if err != nil {
-				c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
-			}
-		}()
-
-		fileInfo, err := tarballFile.Stat()
-		if err != nil {
-			return descriptor, err
-		}
-		descriptor = ocispec.Descriptor{
-			MediaType:   MediaTypeImageLayer,
-			Digest:      fDigest,
-			Size:        fileInfo.Size(),
-			Annotations: map[string]string{},
-		}
-
-		ociWriter, err := ociStore.Writer(
-			c.Context,
-			containerd_content.WithDescriptor(descriptor),
-			containerd_content.WithRef(uuid.NewString()))
-		if err != nil {
-			return descriptor, err
-		}
-		defer func() {
-			err := ociWriter.Close()
-			if err != nil {
-				c.UI.Problem().WithErr(err).Msg("Failed to close local OCI store.")
-			}
-		}()
-
-		_, err = io.Copy(ociWriter, tarballFile)
-		if err != nil {
-			return descriptor, err
-		}
-
-		err = ociWriter.Commit(c.Context, fileInfo.Size(), fDigest)
-		if err != nil {
-			return descriptor, err
-		}
-
-		c.UI.Normal().
-			WithStringValue("digest", ociWriter.Digest().String()).
-			Msg("Created new image.")
 	}
+
+	tarballFile, err := os.Open(tarball)
+	if err != nil {
+		return descriptor, err
+	}
+	defer func() {
+		err := tarballFile.Close()
+		if err != nil {
+			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
+		}
+	}()
+
+	fileInfo, err := tarballFile.Stat()
+	if err != nil {
+		return descriptor, err
+	}
+
+	descriptor = ocispec.Descriptor{
+		MediaType:   MediaTypeImageLayer,
+		Digest:      fDigest,
+		Size:        fileInfo.Size(),
+		Annotations: annotations,
+	}
+
+	ociWriter, err := ociStore.Writer(
+		c.Context,
+		containerd_content.WithDescriptor(descriptor),
+		containerd_content.WithRef(uuid.NewString()))
+	if err != nil {
+		return descriptor, err
+	}
+	defer func() {
+		err := ociWriter.Close()
+		if err != nil {
+			c.UI.Problem().WithErr(err).Msg("Failed to close local OCI store.")
+		}
+	}()
+
+	_, err = io.Copy(ociWriter, tarballFile)
+	if err != nil {
+		return descriptor, err
+	}
+
+	err = ociWriter.Commit(c.Context, fileInfo.Size(), fDigest)
+	if err != nil {
+		return descriptor, err
+	}
+
+	c.UI.Normal().
+		WithStringValue("digest", ociWriter.Digest().String()).
+		Msg("Created new image.")
 
 	return descriptor, nil
 }
