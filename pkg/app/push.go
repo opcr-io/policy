@@ -2,7 +2,6 @@ package app
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/containerd/containerd/remotes/docker"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -65,9 +64,6 @@ func (c *PolicyApp) Push(userRef string) error {
 			}, nil
 		},
 	})
-
-	refDescriptor.Annotations[ocispec.AnnotationTitle] = ref
-	refDescriptor.Annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	pushDescriptor, err := oras.Push(c.Context,
 		resolver,

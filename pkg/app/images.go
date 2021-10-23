@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/containerd/containerd/reference/docker"
@@ -31,7 +32,7 @@ func (c *PolicyApp) Images() error {
 		return nil
 	}
 
-	table := c.UI.Normal().WithTable("Repository", "Tag", "Size", "Created At")
+	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Created", "Size")
 	refs := ociStore.ListReferences()
 
 	for k, v := range refs {
@@ -47,12 +48,10 @@ func (c *PolicyApp) Images() error {
 
 		refName := ref.Name()
 
-		tagOrDigest := ""
+		tagOrNone := "<none>"
 		tag, okTag := ref.(docker.Tagged)
 		if okTag {
-			tagOrDigest = tag.Tag()
-		} else {
-			tagOrDigest = info.Digest.String()
+			tagOrNone = tag.Tag()
 		}
 
 		familiarName, err := c.familiarPolicyRef(refName)
@@ -60,18 +59,24 @@ func (c *PolicyApp) Images() error {
 			return err
 		}
 
-		arrData := []string{familiarName, tagOrDigest, humanize.Bytes(uint64(v.Size)), humanize.Time(info.CreatedAt), info.CreatedAt.Format(time.RFC3339Nano)}
+		arrData := []string{
+			familiarName,
+			tagOrNone,
+			info.Digest.Encoded()[:12],
+			humanize.Time(info.CreatedAt),
+			strings.ReplaceAll(humanize.Bytes(uint64(v.Size)), " ", ""),
+			info.CreatedAt.Format(time.RFC3339Nano)}
 
 		data = append(data, arrData)
 	}
 
 	// sort data by CreatedAt DESC
 	sort.SliceStable(data, func(i, j int) bool {
-		return data[i][4] > data[j][4]
+		return data[i][5] > data[j][5]
 	})
 
 	for _, v := range data {
-		table.WithTableRow(v[0], v[1], v[2], v[3])
+		table.WithTableRow(v[0], v[1], v[2], v[3], v[4])
 	}
 
 	table.Do()

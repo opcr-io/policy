@@ -113,6 +113,8 @@ github.com/aserto-dev/clui v0.1.5 h1:9YM/f1GCwruQqDrKo6U1Np2wNx9h9Uo4lQdNIk0ZgHU
 github.com/aserto-dev/clui v0.1.5/go.mod h1:mXYK1s48N0bAfpThOZvGfXk0bwehNHAzE5UxeJ/8q6c=
 github.com/aserto-dev/clui v0.1.6 h1:ET1ywVDPFs+Flin5UAEXPmgNXD3ubgBD0kGJve6Cqxo=
 github.com/aserto-dev/clui v0.1.6/go.mod h1:mXYK1s48N0bAfpThOZvGfXk0bwehNHAzE5UxeJ/8q6c=
+github.com/aserto-dev/clui v0.1.8 h1:OtKRKKgOSYI0l8weMCGELY1e71I0l8tz6X89Jophf7Y=
+github.com/aserto-dev/clui v0.1.8/go.mod h1:Q9dQB0hm/3GUaYQiL5028k+WuWIO/J4KLa6CVlwwEdY=
 github.com/aserto-dev/go-grpc v0.0.11 h1:0B6FJpos9b2BPcoW8QYYSqGx/W2S7+ZrR0gJpk3NejY=
 github.com/aserto-dev/go-grpc v0.0.11/go.mod h1:i/wtqO0K0qcvgZqGmR965h+S/Gd2TEbLxnHXR8l7KzY=
 github.com/aserto-dev/go-grpc v0.0.12 h1:JxxHeCcHxssf5tUqjoR09HiORX1V1DxN96IGa15lYrQ=
@@ -1142,6 +1144,7 @@ golang.org/x/sys v0.0.0-20210510120138-977fb7262007/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20210514084401-e8d321eab015/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210603125802-9665404d3644/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 h1:rw6UNGRMfarCepjI8qOepea/SXwIBVfTKjztZ5gBbq4=
@@ -1150,6 +1153,8 @@ golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXR
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d h1:SZxvLBoTP5yHO3Frd4z4vrF+DBX9vMVanchswa69toE=
 golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
+golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 h1:JGgROgKl9N8DuW20oFS5gxc+lE67/N3FcwmBPMe7ArY=
+golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
