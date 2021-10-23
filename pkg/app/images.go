@@ -62,7 +62,7 @@ func (c *PolicyApp) Images() error {
 		arrData := []string{
 			familiarName,
 			tagOrNone,
-			info.Digest.Encoded()[:8],
+			info.Digest.Encoded()[:12],
 			humanize.Time(info.CreatedAt),
 			strings.ReplaceAll(humanize.Bytes(uint64(v.Size)), " ", ""),
 			info.CreatedAt.Format(time.RFC3339Nano)}
