@@ -13,7 +13,6 @@ require (
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/aserto-runtime v0.0.24-0.20210902103415-12e69833e705
 	github.com/aserto-dev/clui v0.1.8
-	github.com/aserto-dev/go-grpc v0.0.12 // indirect
 	github.com/aserto-dev/go-utils v0.0.8
 	github.com/aserto-dev/mage-loot v0.4.12
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect
@@ -38,8 +37,7 @@ require (
 	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.9.0
-	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/tidwall/gjson v1.10.2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
