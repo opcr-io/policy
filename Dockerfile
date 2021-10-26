@@ -4,13 +4,7 @@ FROM golang:$GO_VERSION-alpine AS build
 RUN apk add --no-cache bash build-base git tree curl protobuf openssh
 WORKDIR /src
 
-# make sure git ssh is properly setup so we can access private repos
-RUN mkdir -p $HOME/.ssh && umask 0700 \
-	&& git config --global url."git@github.com:".insteadOf https://github.com/ \
-	&& ssh-keyscan github.com >> $HOME/.ssh/known_hosts
-
 ENV GOBIN=/bin
-ENV GOPRIVATE=github.com/aserto-dev
 ENV ROOT_DIR=/src
 
 # generate & build
@@ -19,7 +13,6 @@ ARG COMMIT
 COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod \
 		--mount=type=cache,target=/root/.cache/go-build \
-		--mount=type=ssh \
 		go run mage.go deps build
 
 FROM alpine:3

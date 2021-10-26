@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	runtime "github.com/aserto-dev/aserto-runtime"
+	"github.com/aserto-dev/runtime"
 	"github.com/open-policy-agent/opa/repl"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"

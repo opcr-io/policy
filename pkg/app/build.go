@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	runtime "github.com/aserto-dev/aserto-runtime"
+	"github.com/aserto-dev/runtime"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
