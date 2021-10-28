@@ -86,6 +86,9 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
 	annotations[ocispec.AnnotationTitle] = ref
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
