@@ -79,7 +79,7 @@ func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.De
 	chunkSize := 64
 	buf := make([]byte, chunkSize)
 	for i := 0; i < int(reader.Size()); {
-		if chunkSize < int(reader.Size())-i {
+		if chunkSize > int(reader.Size())-i {
 			chunkSize = int(reader.Size()) - i
 			buf = make([]byte, chunkSize)
 		}
