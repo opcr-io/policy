@@ -1,7 +1,7 @@
 package main
 
 type LogoutCmd struct {
-	Server string `name:"server" short:"s" help:"Server to logout from." default:"opcr.io"`
+	Server string `name:"server" short:"s" help:"Server to logout from." default:"{{ .DefaultDomain }}"`
 }
 
 func (c *LogoutCmd) Run(g *Globals) error {

@@ -8,13 +8,13 @@ type RemoteCmd struct {
 }
 
 type SetPublicCmd struct {
-	Server string `name:"server" short:"s" help:"Registry server to connect to" default:"opcr.io"`
+	Server string `name:"server" short:"s" help:"Registry server to connect to" default:"{{ .DefaultDomain }}"`
 	Policy string `arg:"" name:"policy" help:"Policy to publish."`
 	Public string `arg:"" default:"true" help:"Set to 'false' to make the policy private. Default is 'true' and makes a policy world-readable."`
 }
 
 type RemoteImagesCmd struct {
-	Server    string `name:"server" short:"s" help:"Registry server to connect to" default:"opcr.io"`
+	Server    string `name:"server" short:"s" help:"Registry server to connect to" default:"{{ .DefaultDomain }}"`
 	ShowEmpty bool   `name:"show-empty" short:"e" help:"Show policies with no images."`
 }
 

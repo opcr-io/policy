@@ -65,7 +65,11 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	// Set defaults
-	v.SetDefault("file_store_root", filepath.Join(os.ExpandEnv("$HOME"), ".policy"))
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to determine user home directory")
+	}
+	v.SetDefault("file_store_root", filepath.Join(home, ".policy"))
 	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)

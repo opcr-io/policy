@@ -7,6 +7,9 @@ go 1.16
 // replace github.com/aserto-dev/mage-loot => ../mage-loot
 
 require (
+	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/hcsshim v0.8.20 // indirect
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/clui v0.1.8
@@ -21,6 +24,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gorilla/handlers v1.5.1 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/magefile/mage v1.11.0
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect

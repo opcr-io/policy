@@ -2,7 +2,7 @@ package main
 
 type ImagesCmd struct {
 	Remote    bool   `name:"remote" short:"r" help:"List policies from a remote registry."`
-	Server    string `name:"server" short:"s" help:"Registry server to connect to" default:"opcr.io"`
+	Server    string `name:"server" short:"s" help:"Registry server to connect to." default:"{{ .DefaultDomain }}"`
 	ShowEmpty bool   `name:"show-empty" short:"e" help:"Show policies with no images."`
 }
 

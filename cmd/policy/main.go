@@ -1,13 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
+	"text/template"
 
+	"github.com/Masterminds/sprig"
 	"github.com/alecthomas/kong"
+	"github.com/aserto-dev/go-utils/logger"
 	"github.com/opcr-io/policy/pkg/app"
 	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/pkg/errors"
 )
+
+var tmpConfig *config.Config
 
 func EnvExpander() kong.Resolver {
 	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
@@ -23,6 +31,70 @@ func EnvExpander() kong.Resolver {
 	return f
 }
 
+func ConfigExpander() kong.Resolver {
+	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
+		resolveTmpConfig(context, flag)
+		t, err := template.New("value").Parse(flag.Default)
+		if err != nil {
+			return nil, err
+		}
+
+		t = t.Funcs(sprig.TxtFuncMap())
+		buf := &bytes.Buffer{}
+		err = t.Execute(buf, tmpConfig)
+		if err != nil {
+			return nil, err
+		}
+		expanded := buf.String()
+		if expanded != flag.Default {
+			flag.Default = expanded
+			return expanded, nil
+		}
+
+		return nil, nil
+	}
+
+	return f
+}
+
+func resolveTmpConfig(context *kong.Context, flag *kong.Flag) {
+	if tmpConfig != nil {
+		return
+	}
+
+	allFlags := context.Flags()
+	var configFlag *kong.Flag
+	for _, f := range allFlags {
+		if f.Name == "config" {
+			configFlag = f
+		}
+	}
+
+	if configFlag == nil {
+		return
+	}
+
+	configPath := context.FlagValue(configFlag).(string)
+
+	cfgLogger, err := config.NewLoggerConfig(config.Path(configPath), nil)
+	if err != nil {
+		panic(err)
+	}
+	logger, err := logger.NewLogger(io.Discard, cfgLogger)
+	if err != nil {
+		panic(err)
+	}
+
+	tmpConfig, err = config.NewConfig(
+		config.Path(config.Path(configPath)),
+		logger,
+		nil,
+		nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
 type Globals struct {
 	Debug     bool
 	Config    string
@@ -34,7 +106,7 @@ type Globals struct {
 var g *Globals
 
 var PolicyCLI struct {
-	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"$HOME/.config/policy/config.yaml"`
+	Config    string `short:"c" type:"path" help:"Path to the policy CLI config file." default:"${userHome}/.config/policy/config.yaml"`
 	Debug     bool   `help:"Enable debug mode."`
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 	Insecure  bool   `short:"k" help:"Do not verify TLS connections."`
@@ -85,8 +157,12 @@ This might be a bug. Please open an issue here: https://github.com/opcr-io/polic
 }
 
 func main() {
-	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(
-		EnvExpander()))
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to determine user home directory"))
+	}
+
+	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home})
 
 	g = &Globals{
 		Debug:     PolicyCLI.Debug,
@@ -97,7 +173,7 @@ func main() {
 	cleanup := g.setup()
 	defer cleanup()
 
-	err := ctx.Run(g)
+	err = ctx.Run(g)
 
 	ctx.FatalIfErrorf(err)
 }
