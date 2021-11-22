@@ -17,20 +17,6 @@ import (
 
 var tmpConfig *config.Config
 
-func EnvExpander() kong.Resolver {
-	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
-		expanded := os.ExpandEnv(flag.Default)
-		if expanded != flag.Default {
-			flag.Default = expanded
-			return expanded, nil
-		}
-
-		return nil, nil
-	}
-
-	return f
-}
-
 func ConfigExpander() kong.Resolver {
 	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
 		resolveTmpConfig(context, flag)
@@ -80,14 +66,14 @@ func resolveTmpConfig(context *kong.Context, flag *kong.Flag) {
 	if err != nil {
 		panic(err)
 	}
-	logger, err := logger.NewLogger(io.Discard, cfgLogger)
+	log, err := logger.NewLogger(io.Discard, cfgLogger)
 	if err != nil {
 		panic(err)
 	}
 
 	tmpConfig, err = config.NewConfig(
-		config.Path(config.Path(configPath)),
-		logger,
+		config.Path(configPath),
+		log,
 		nil,
 		nil)
 	if err != nil {
