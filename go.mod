@@ -10,14 +10,13 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Microsoft/hcsshim v0.8.20 // indirect
 	github.com/alecthomas/kong v0.2.17
 	github.com/aserto-dev/clui v0.1.8
 	github.com/aserto-dev/go-utils v0.0.8
 	github.com/aserto-dev/mage-loot v0.4.12
 	github.com/aserto-dev/runtime v0.1.0
 	github.com/bugsnag/bugsnag-go v1.0.5-0.20150529004307-13fd6b8acda0 // indirect
-	github.com/containerd/containerd v1.5.3
+	github.com/containerd/containerd v1.5.8
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/google/go-containerregistry v0.6.0
