@@ -6,7 +6,7 @@ type BuildCmd struct {
 	Annotations map[string]string `name:"annotations" short:"a" help:"Annotations to apply to the policy." type:"string:string"`
 
 	RunConfigFile      string   `name:"build-config-file" help:"Set path of configuration file."`
-	Target             string   `name:"target" short:"t" default:"rego" help:"Set the output bundle target type."`
+	Target             string   `name:"target" default:"rego" help:"Set the output bundle target type."`
 	OptimizationLevel  int      `name:"optimize" short:"O" default:"0" help:"Set optimization level."`
 	Entrypoints        []string `name:"entrypoint" short:"e" help:"Set slash separated entrypoint path."`
 	Revision           string   `name:"revision" short:"r" help:"Set output bundle revision."`

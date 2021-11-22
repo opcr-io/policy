@@ -76,80 +76,8 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return errors.Wrap(err, "plugins didn't start on time")
 	}
 
-	loop := repl.New(opaRuntime.Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
+	loop := repl.New(opaRuntime.PluginsManager.Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
 	loop.Loop(context.Background())
 
 	return nil
 }
-
-// func (c *PolicyApp) startRunShell(opaRuntime *runtime.Runtime) {
-// 	os.Args = []string{}
-
-// 	var shell = grumble.New(&grumble.Config{
-// 		Name:        "Policy Interactive Shell",
-// 		Description: "Run and debug queries using a loaded policy.",
-// 		Prompt:      ">> ",
-// 	})
-
-// 	shell.Printf("\n\nPolicy Interactive Shell (you can run 'help' for some pointers)\n\n")
-
-// 	var (
-// 		input map[string]interface{}
-// 	)
-
-// 	shell.AddCommand(&grumble.Command{
-// 		Name: "input",
-// 		Help: "Set input data for the query.",
-// 		Args: func(a *grumble.Args) {
-// 			a.String("input", "input JSON for your query", grumble.Default("{}"))
-// 		},
-// 		Run: func(s *grumble.Context) error {
-// 			err := json.Unmarshal([]byte(s.Args.String("input")), &input)
-// 			if err != nil {
-// 				c.UI.Problem().WithErr(err).Msg("Invalid JSON")
-// 			} else {
-// 				c.UI.Normal().Msg("Input set.")
-// 			}
-
-// 			return nil
-// 		},
-// 	})
-
-// 	shell.AddCommand(&grumble.Command{
-// 		Name: "query",
-// 		Help: "Run a query.",
-// 		Args: func(a *grumble.Args) {
-// 			a.String("query", "query to run", grumble.Default("x=data"))
-// 		},
-// 		Run: func(s *grumble.Context) error {
-// 			result, err := opaRuntime.Query(
-// 				context.Background(),
-// 				s.Args.String("query"),
-// 				input,
-// 				true,
-// 				false,
-// 				false,
-// 				"off",
-// 			)
-
-// 			if err != nil {
-// 				c.UI.Problem().WithErr(err).Msg("Query failed.")
-// 			} else {
-
-// 				out, err := json.MarshalIndent(result.Result, "", "  ")
-// 				if err != nil {
-// 					c.UI.Problem().WithErr(err).Msg("Can't marshal result JSON.")
-// 				}
-
-// 				c.UI.Normal().Compact().Msg(string(out))
-// 			}
-// 			return nil
-// 		},
-// 	})
-
-// 	// run shell
-// 	err := shell.Run()
-// 	if err != nil {
-// 		c.UI.Problem().WithErr(err).Do()
-// 	}
-// }
