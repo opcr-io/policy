@@ -12,13 +12,13 @@ bin:
 go:
   goreleaser:
     importPath: github.com/goreleaser/goreleaser
-    version: "v0.180.3"
+    version: "v1.0.0"
   wire:
     importPath: "github.com/google/wire/cmd/wire"
     version: "v0.5.0"
   sver:
     importPath: "github.com/aserto-dev/sver/cmd/sver"
-    version: "v1.3.2"
+    version: "v1.3.9"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
     version: "v1.7.0"
