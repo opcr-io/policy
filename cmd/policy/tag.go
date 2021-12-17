@@ -9,6 +9,7 @@ func (c *TagCmd) Run(g *Globals) error {
 	err := g.App.Tag(c.Policy, c.Tag)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Tagging failed.")
+		return err
 	}
 
 	<-g.App.Context.Done()

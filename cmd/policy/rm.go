@@ -13,11 +13,13 @@ func (c *RmCmd) Run(g *Globals) error {
 			err := g.App.RmRemote(policyRef, c.All, c.Force)
 			if err != nil {
 				g.App.UI.Problem().WithErr(err).Msg("Failed to remove policy.")
+				return err
 			}
 		} else {
 			err := g.App.Rm(policyRef, c.Force)
 			if err != nil {
 				g.App.UI.Problem().WithErr(err).Msg("Failed to remove policy.")
+				return err
 			}
 		}
 	}

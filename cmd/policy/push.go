@@ -9,6 +9,7 @@ func (c *PushCmd) Run(g *Globals) error {
 		err := g.App.Push(policyRef)
 		if err != nil {
 			g.App.UI.Problem().WithErr(err).Msg("Failed to push policy.")
+			return err
 		}
 	}
 

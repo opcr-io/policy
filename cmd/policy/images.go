@@ -11,11 +11,13 @@ func (c *ImagesCmd) Run(g *Globals) error {
 		err := g.App.ImagesRemote(c.Server, c.ShowEmpty)
 		if err != nil {
 			g.App.UI.Problem().WithErr(err).Msg("Failed to list remote policies.")
+			return err
 		}
 	} else {
 		err := g.App.Images()
 		if err != nil {
 			g.App.UI.Problem().WithErr(err).Msg("Failed to list local policies.")
+			return err
 		}
 	}
 

@@ -43,6 +43,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 	)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Build failed.")
+		return err
 	}
 
 	<-g.App.Context.Done()

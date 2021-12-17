@@ -29,6 +29,7 @@ func (c *SetPublicCmd) Run(g *Globals) error {
 	err := g.App.SetVisibility(c.Server, c.Policy, public)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Failed to set policy visibility.")
+		return err
 	}
 
 	<-g.App.Context.Done()

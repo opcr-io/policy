@@ -9,6 +9,7 @@ func (c *PullCmd) Run(g *Globals) error {
 		err := g.App.Pull(policyRef)
 		if err != nil {
 			g.App.UI.Problem().WithErr(err).Msg("Failed to pull policy.")
+			return err
 		}
 	}
 

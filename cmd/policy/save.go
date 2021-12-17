@@ -9,6 +9,7 @@ func (c *SaveCmd) Run(g *Globals) error {
 	err := g.App.Save(c.Policy, c.File)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("Failed to save local bundle tarball.")
+		return err
 	}
 
 	<-g.App.Context.Done()

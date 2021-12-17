@@ -9,6 +9,7 @@ func (c *ReplCmd) Run(g *Globals) error {
 	err := g.App.Repl(c.Policy, c.MaxErrors)
 	if err != nil {
 		g.App.UI.Problem().WithErr(err).Msg("There was an error running the OPA runtime.")
+		return err
 	}
 
 	<-g.App.Context.Done()
