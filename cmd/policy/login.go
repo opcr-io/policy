@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"syscall"
@@ -43,7 +42,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 
 	password := c.Password
 	if c.Password == "" {
-		fmt.Print("Password: ")
+		g.App.UI.Normal().NoNewline().Msg("Password: ")
 		bytePassword, err := term.ReadPassword(int(syscall.Stdin)) // nolint:unconvert // needed for windows
 		if err != nil {
 			return errors.Wrap(err, "failed to read password from stdin")

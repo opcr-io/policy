@@ -116,7 +116,7 @@ func (g *Globals) setup() func() {
 	configFile := g.Config
 
 	policyAPP, cleanup, err := app.BuildPolicyApp(
-		os.Stdout,
+		os.Stderr,
 		config.Path(configFile),
 		func(c *config.Config) {
 			switch g.Verbosity {
@@ -133,7 +133,7 @@ func (g *Globals) setup() func() {
 		})
 
 	if err != nil {
-		fmt.Printf(`Application setup failed: %+v.
+		fmt.Fprintf(os.Stderr, `Application setup failed: %+v.
 This might be a bug. Please open an issue here: https://github.com/opcr-io/policy\n`,
 			err)
 	}
