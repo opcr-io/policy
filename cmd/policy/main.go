@@ -157,9 +157,13 @@ func main() {
 		Insecure:  PolicyCLI.Insecure,
 	}
 	cleanup := g.setup()
-	defer cleanup()
 
 	err = ctx.Run(g)
 
-	ctx.FatalIfErrorf(err)
+	if err != nil {
+		g.App.UI.Problem().Msg(err.Error())
+		cleanup()
+		os.Exit(1)
+	}
+	cleanup()
 }

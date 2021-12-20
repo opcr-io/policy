@@ -1,5 +1,7 @@
 package main
 
+import "github.com/pkg/errors"
+
 type BuildCmd struct {
 	Tag         string            `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format"`
 	Path        []string          `arg:"" name:"path" help:"Path to the policy sources." type:"string"`
@@ -42,8 +44,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		c.ClaimsFile,
 	)
 	if err != nil {
-		g.App.UI.Problem().WithErr(err).Msg("Build failed.")
-		return err
+		return errors.Wrap(err, "Build failed.")
 	}
 
 	<-g.App.Context.Done()

@@ -125,8 +125,9 @@ github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgI
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/aserto-dev/clui v0.1.1/go.mod h1:rk87XJefw6Pp8ef3nTirzMVTDE0g2BWojwAZy3cC/TY=
 github.com/aserto-dev/clui v0.1.2/go.mod h1:rk87XJefw6Pp8ef3nTirzMVTDE0g2BWojwAZy3cC/TY=
-github.com/aserto-dev/clui v0.1.8 h1:OtKRKKgOSYI0l8weMCGELY1e71I0l8tz6X89Jophf7Y=
 github.com/aserto-dev/clui v0.1.8/go.mod h1:Q9dQB0hm/3GUaYQiL5028k+WuWIO/J4KLa6CVlwwEdY=
+github.com/aserto-dev/clui v0.1.10 h1:3TxiZYoEISmlw9doym8JKuBPSjY90t/AXtQu8GKrRsE=
+github.com/aserto-dev/clui v0.1.10/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
 github.com/aserto-dev/go-utils v0.1.17 h1:WYNABs6lkZ17hwSfw4/toz/eSmMBBtQDgUaL/XHPuhY=
 github.com/aserto-dev/go-utils v0.1.17/go.mod h1:Y09FKFYigE5wbAeF6J7Mwp8j2mOZinGgwYW2tEVRbTA=
 github.com/aserto-dev/mage-loot v0.4.6/go.mod h1:7ZBHBeo88BCQlhVCDZXL2b9x1h9nRJBqkiMxhsPBunw=

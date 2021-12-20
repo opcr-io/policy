@@ -13,7 +13,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.2.18
-	github.com/aserto-dev/clui v0.1.8
+	github.com/aserto-dev/clui v0.1.10
 	github.com/aserto-dev/go-utils v0.1.17
 	github.com/aserto-dev/mage-loot v0.4.16
 	github.com/aserto-dev/runtime v0.1.4
@@ -24,7 +24,6 @@ require (
 	github.com/docker/docker v20.10.11+incompatible // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/google/go-containerregistry v0.7.0
 	github.com/google/subcommands v1.2.0 // indirect
 	github.com/google/uuid v1.3.0
