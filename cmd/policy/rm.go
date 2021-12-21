@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 type RmCmd struct {
 	Policies []string `arg:"" name:"policy" help:"Policies to remove from the local registry."`
 	Remote   bool     `name:"remote" short:"r" help:"Remove the policy from the remote server."`
@@ -8,21 +10,27 @@ type RmCmd struct {
 }
 
 func (c *RmCmd) Run(g *Globals) error {
+	var errs error
 	for _, policyRef := range c.Policies {
 		if c.Remote {
 			err := g.App.RmRemote(policyRef, c.All, c.Force)
 			if err != nil {
-				g.App.UI.Problem().WithErr(err).Msg("Failed to remove policy.")
+				g.App.UI.Problem().WithErr(err).Msgf("Failed to remove policy: %s", policyRef)
+				errs = err
 			}
 		} else {
 			err := g.App.Rm(policyRef, c.Force)
 			if err != nil {
-				g.App.UI.Problem().WithErr(err).Msg("Failed to remove policy.")
+				g.App.UI.Problem().WithErr(err).Msgf("Failed to remove policy: %s", policyRef)
+				errs = err
 			}
 		}
 	}
 
 	<-g.App.Context.Done()
+	if errs != nil {
+		return errors.New("failed to remove one or more policies")
+	}
 
 	return nil
 }
