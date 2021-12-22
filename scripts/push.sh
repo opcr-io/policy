@@ -4,7 +4,7 @@
 [ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="error"
 
 # validate if values are set
-[ -z "${INPUT_TAG}" ]       && echo "INPUT_TAG is not set exiting" && exit 2
+[ -z "${INPUT_TAGS}" ]       && echo "INPUT_TAGS is not set exiting" && exit 2
 [ -z "${INPUT_VERBOSITY}" ] && exit "INPUT_VERBOSITY is not set exiting" && exit 2
 
 VERBOSITY=0
@@ -27,7 +27,7 @@ esac
 echo "POLICY-PUSH         $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
 printf "\n"
-echo "INPUT_TAG           ${INPUT_TAG}"
+echo "INPUT_TAGS           ${INPUT_TAGS}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 printf "\n"
 
@@ -36,14 +36,16 @@ printf "\n"
 #
 e_code=0
 
-# construct commandline arguments 
-CMD="/app/policy push ${INPUT_TAG} --verbosity=${VERBOSITY}"
+for TAG in ${INPUT_TAGS}; do
+  # construct commandline arguments
+  CMD="/app/policy push ${TAG} --verbosity=${VERBOSITY}"
 
-# execute command
-eval "$CMD" || e_code=1
-printf "\n"
+  # execute command
+  eval "$CMD" || e_code=1
+  printf "\n"
+done
 
-if [ "${VERBOSITY}" -ge "1" ]; then 
+if [ "${VERBOSITY}" -ge "1" ]; then
   /app/policy images --remote
   printf "\n"
 fi
