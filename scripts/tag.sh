@@ -29,7 +29,7 @@ echo "POLICY-SAVE         $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
 printf "\n"
 echo "INPUT_SOURCE_TAG    ${INPUT_SOURCE_TAG}"
-echo "INPUT_TARGET_TAGS    ${INPUT_TARGET_TAGS}"
+echo "INPUT_TARGET_TAGS   ${INPUT_TARGET_TAGS}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 printf "\n"
 

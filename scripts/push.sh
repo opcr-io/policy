@@ -27,7 +27,7 @@ esac
 echo "POLICY-PUSH         $(/app/policy version | sed 's/Policy CLI.//g')"
 printf "\n"
 printf "\n"
-echo "INPUT_TAGS           ${INPUT_TAGS}"
+echo "INPUT_TAGS          ${INPUT_TAGS}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 printf "\n"
 
