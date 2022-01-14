@@ -60,11 +60,35 @@ func (c *LoginCmd) Run(g *Globals) error {
 		return err
 	}
 
+	setDefault := false
+	if c.Server != g.App.Configuration.DefaultDomain {
+		g.App.UI.Normal().WithAskBoolMap("Do you want to set this server as your default domain?[yes/no]", &setDefault, map[string]bool{
+			"yes": true,
+			"no":  false,
+			"y":   true,
+			"n":   false,
+		}).Do()
+	}
+
+	// Reset all defaults to false to allow only the current logged in to be default
+	if setDefault {
+		for k, v := range g.App.Configuration.Servers {
+			v.Default = false
+			g.App.Configuration.Servers[k] = v
+		}
+		err = g.App.Configuration.SaveCreds()
+		if err != nil {
+			return err
+		}
+	}
+
 	err = g.App.SaveServerCreds(c.Server, config.ServerCredentials{
 		Type:     "basic",
 		Username: c.Username,
 		Password: password,
+		Default:  setDefault,
 	})
+
 	if err != nil {
 		return err
 	}
