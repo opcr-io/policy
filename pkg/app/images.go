@@ -127,7 +127,7 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		}
 
 		if len(tags) == 0 && showEmpty {
-			imageData = append(imageData, []string{familiarName, "<no tags>"})
+			imageData = append(imageData, []string{familiarName, "<no tags>", "-"})
 			continue
 		}
 
