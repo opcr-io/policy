@@ -15,6 +15,7 @@ type LoginCmd struct {
 	Username      string `name:"username" short:"u" help:"Username for logging into the server."`
 	Password      string `name:"password" short:"p" help:"Password for logging into the server."`
 	PasswordStdin bool   `name:"password-stdin" help:"Take the password from stdin"`
+	DefaultDomain bool   `name:"default-domain" short:"d" help:"Do not ask for setting default domain"`
 }
 
 func (c *LoginCmd) Run(g *Globals) error {
@@ -60,26 +61,9 @@ func (c *LoginCmd) Run(g *Globals) error {
 		return err
 	}
 
-	setDefault := false
-	if c.Server != g.App.Configuration.DefaultDomain {
-		g.App.UI.Normal().WithAskBoolMap("Do you want to set this server as your default domain?[yes/no]", &setDefault, map[string]bool{
-			"yes": true,
-			"no":  false,
-			"y":   true,
-			"n":   false,
-		}).Do()
-	}
-
-	// Reset all defaults to false to allow only the current logged in to be default
-	if setDefault {
-		for k, v := range g.App.Configuration.Servers {
-			v.Default = false
-			g.App.Configuration.Servers[k] = v
-		}
-		err = g.App.Configuration.SaveCreds()
-		if err != nil {
-			return err
-		}
+	setDefault, err := checkDefault(g, c)
+	if err != nil {
+		return err
 	}
 
 	err = g.App.SaveServerCreds(c.Server, config.ServerCredentials{
@@ -97,4 +81,34 @@ func (c *LoginCmd) Run(g *Globals) error {
 
 	<-g.App.Context.Done()
 	return nil
+}
+
+func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
+	setDefault := false
+	if g.App.Configuration.DefaultDomain == "opcr.io" && c.Server != g.App.Configuration.DefaultDomain && !c.DefaultDomain {
+		g.App.UI.Normal().WithAskBoolMap("Do you want to set this server as your default domain?[yes/no]", &setDefault, map[string]bool{
+			"yes": true,
+			"no":  false,
+			"y":   true,
+			"n":   false,
+			"Y":   true,
+			"N":   false,
+		}).Do()
+	}
+	if c.DefaultDomain {
+		setDefault = true
+	}
+
+	// Reset all defaults to false to return true and set the current login as default
+	if setDefault {
+		for k, v := range g.App.Configuration.Servers {
+			v.Default = false
+			g.App.Configuration.Servers[k] = v
+		}
+		err := g.App.Configuration.SaveCreds()
+		if err != nil {
+			return false, err
+		}
+	}
+	return setDefault, nil
 }
