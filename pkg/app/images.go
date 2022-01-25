@@ -71,7 +71,7 @@ func (c *PolicyApp) Images() error {
 	}
 
 	// sort data by CreatedAt DESC
-	sort.Slice(data, func(i, j int) bool {
+	sort.SliceStable(data, func(i, j int) bool {
 		return data[i][5] < data[j][5] || (data[i][5] == data[j][5] && data[i][1] < data[j][1])
 	})
 
