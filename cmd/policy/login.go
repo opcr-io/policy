@@ -84,7 +84,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 }
 
 func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
-	setDefault := false
+	setDefault := c.DefaultDomain
 	if g.App.Configuration.DefaultDomain == "opcr.io" && c.Server != g.App.Configuration.DefaultDomain && !c.DefaultDomain {
 		g.App.UI.Normal().WithAskBoolMap("Do you want to set this server as your default domain?[yes/no]", &setDefault, map[string]bool{
 			"yes": true,
@@ -95,11 +95,8 @@ func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
 			"N":   false,
 		}).Do()
 	}
-	if c.DefaultDomain {
-		setDefault = true
-	}
 
-	// Reset all defaults to false to return true and set the current login as default
+	// Reset all defaults to false to return true in order to set the current login as default
 	if setDefault {
 		for k, v := range g.App.Configuration.Servers {
 			v.Default = false
