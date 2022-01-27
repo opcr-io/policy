@@ -21,7 +21,6 @@ const (
 	githubConfig  string = "config.yaml"
 	workflowsDir  string = "workflows"
 	workflowsFile string = "build-release-policy.yaml"
-	buildDir      string = "build"
 	srcDir        string = "src"
 	policiesDir   string = "policies"
 	manifestFile  string = ".manifest"
@@ -35,7 +34,7 @@ const (
 func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite bool) error {
 	defer c.Cancel()
 
-	if strings.ToLower(scc) != "github" {
+	if !strings.EqualFold(scc, "github") {
 		return errors.Errorf("not supported source code provider '%s'", scc)
 	}
 
@@ -51,32 +50,20 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite
 		return err
 	}
 
-	if err := hasGitIgnoreFile(path, overwrite); err != nil {
-		return err
+	fns := []func() error{
+		hasGitIgnoreFile(path, overwrite),
+		hasGithubConfig(path, overwrite, user, server, repo),
+		hasGithubWorkflow(path, overwrite, secret),
+		hasManifest(path, overwrite),
+		hasRegoSourceFile(path, overwrite),
+		hasMakefile(path, overwrite),
+		hasReadMe(path, overwrite),
 	}
 
-	if err := hasGithubConfig(path, user, server, repo, overwrite); err != nil {
-		return err
-	}
-
-	if err := hasGithubWorkflow(path, secret, overwrite); err != nil {
-		return err
-	}
-
-	if err := hasManifest(path, overwrite); err != nil {
-		return err
-	}
-
-	if err := hasRegoSourceFile(path, overwrite); err != nil {
-		return err
-	}
-
-	if err := hasMakefile(path, overwrite); err != nil {
-		return err
-	}
-
-	if err := hasReadMe(path, overwrite); err != nil {
-		return err
+	for _, fn := range fns {
+		if err := fn(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -108,77 +95,97 @@ func hasGitRemote(path string) error {
 		return errors.Errorf("no remotes configured")
 	}
 
-	if _, ok := gitConfig.Remotes["origin"]; !ok {
+	if _, ok := gitConfig.Remotes[gitOrigin]; !ok {
 		return errors.Errorf("no origin remote configured")
 	}
 
 	return nil
 }
 
-func hasGitIgnoreFile(path string, overwrite bool) error {
-	dirPath := dirpath.Join(path)
-	return writeTemplate(dirPath, gitIgnore, gitignoreTemplate, overwrite)
+func hasGitIgnoreFile(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		dirPath := dirpath.Join(path)
+		return writeTemplate(dirPath, gitIgnore, gitignoreTemplate, overwrite)
+	}
 }
 
-func hasGithubConfig(path, user, server, repo string, overwrite bool) error {
-	dirPath := dirpath.Join(path, githubDir)
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		return errors.Wrapf(err, "create directory '%s'", dirPath)
-	}
+func hasGithubConfig(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		var (
+			user   = params[0]
+			server = params[1]
+			repo   = params[2]
+		)
+		dirPath := dirpath.Join(path, githubDir)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			return errors.Wrapf(err, "create directory '%s'", dirPath)
+		}
 
-	filePath := filepath.Join(dirPath, githubConfig)
+		filePath := filepath.Join(dirPath, githubConfig)
 
-	exist, _ := fileExist(filePath)
-	if exist && !overwrite {
+		exist, _ := fileExist(filePath)
+		if exist && !overwrite {
+			return nil
+		}
+
+		cfg := struct {
+			Server   string `yaml:"server"`
+			Username string `yaml:"username"`
+			Repo     string `yaml:"repo"`
+		}{
+			Username: user,
+			Server:   server,
+			Repo:     repo,
+		}
+
+		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return errors.Wrapf(err, "open file '%s'", filePath)
+		}
+		defer f.Close()
+		enc := yaml.NewEncoder(f)
+		if err := enc.Encode(cfg); err != nil {
+			return errors.Wrapf(err, "encode file '%s'", filePath)
+		}
+
 		return nil
 	}
+}
 
-	cfg := struct {
-		Server   string `yaml:"server"`
-		Username string `yaml:"username"`
-		Repo     string `yaml:"repo"`
-	}{
-		Username: user,
-		Server:   server,
-		Repo:     repo,
+func hasGithubWorkflow(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		var secret = params[0]
+		dirPath := dirpath.Join(path, githubDir, workflowsDir)
+		return writeTemplate(dirPath, workflowsFile, workflowTemplate, overwrite, secret, secret)
 	}
+}
 
-	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return errors.Wrapf(err, "open file '%s'", filePath)
+func hasManifest(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		dirPath := dirpath.Join(path, srcDir)
+		return writeTemplate(dirPath, manifestFile, manifestTemplate, overwrite)
 	}
-	defer f.Close()
-	enc := yaml.NewEncoder(f)
-	if err := enc.Encode(cfg); err != nil {
-		return errors.Wrapf(err, "encode file '%s'", filePath)
+}
+
+func hasRegoSourceFile(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		dirPath := dirpath.Join(path, srcDir, policiesDir)
+		return writeTemplate(dirPath, regoFile, regoTemplate, overwrite)
 	}
-
-	return nil
 }
 
-func hasGithubWorkflow(path, secret string, overwrite bool) error {
-	dirPath := dirpath.Join(path, githubDir, workflowsDir)
-	return writeTemplate(dirPath, workflowsFile, workflowTemplate, overwrite, secret, secret)
+func hasMakefile(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		dirPath := dirpath.Join(path)
+		return writeTemplate(dirPath, makeFile, makeFileTemplate, overwrite)
+	}
 }
 
-func hasManifest(path string, overwrite bool) error {
-	dirPath := dirpath.Join(path, srcDir)
-	return writeTemplate(dirPath, manifestFile, manifestTemplate, overwrite)
-}
-
-func hasRegoSourceFile(path string, overwrite bool) error {
-	dirPath := dirpath.Join(path, srcDir)
-	return writeTemplate(dirPath, regoFile, regoTemplate, overwrite)
-}
-
-func hasMakefile(path string, overwrite bool) error {
-	dirPath := dirpath.Join(path)
-	return writeTemplate(dirPath, makeFile, makeFileTemplate, overwrite)
-}
-
-func hasReadMe(path string, overwrite bool) error {
-	dirPath := dirpath.Join(path)
-	return writeTemplate(dirPath, readmeFile, readmeTemplate, overwrite)
+func hasReadMe(path string, overwrite bool, params ...string) func() error {
+	return func() error {
+		dirPath := dirpath.Join(path)
+		return writeTemplate(dirPath, readmeFile, readmeTemplate, overwrite)
+	}
 }
 
 func fileExist(path string) (bool, error) {
@@ -197,7 +204,7 @@ func dirExist(path string) (bool, error) {
 	} else if os.IsNotExist(err) {
 		return false, nil
 	} else {
-		return false, errors.Wrapf(err, "failed to stat directory '%s', path")
+		return false, errors.Wrapf(err, "failed to stat directory '%s'", path)
 	}
 }
 
