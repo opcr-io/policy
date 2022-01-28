@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	git "github.com/go-git/go-git/v5/config"
+	"github.com/magefile/mage/sh"
 	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -35,16 +36,26 @@ const (
 func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite bool) error {
 	defer c.Cancel()
 
+	gitInit := false
+
 	if !strings.EqualFold(scc, "github") {
 		return errors.Errorf("not supported source code provider '%s'", scc)
 	}
 
 	if exist, _ := dirExist(path); !exist {
-		return errors.Errorf("root path not a directory '%s'", path)
+		if err := os.MkdirAll(path, 0700); err != nil {
+			return errors.Errorf("root path not a directory '%s'", path)
+		}
 	}
 
 	if err := isGitRepo(path); err != nil {
-		return err
+		if err := sh.RunV("git", "init", "--quiet", path); err != nil {
+			return err
+		}
+		if err := isGitRepo(path); err != nil {
+			return err
+		}
+		gitInit = true
 	}
 
 	if err := hasGitRemote(path); err != nil {
@@ -63,6 +74,31 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite
 
 	for _, fn := range fns {
 		if err := fn(); err != nil {
+			return err
+		}
+	}
+
+	if gitInit {
+		cwd, err := os.Getwd()
+		defer os.Chdir(cwd)
+
+		if err != nil {
+			return err
+		}
+
+		if err := os.Chdir(path); err != nil {
+			return err
+		}
+
+		if err := sh.Run("git", "add", "."); err != nil {
+			return err
+		}
+
+		if err := sh.Run("git", "commit", "-am", "init"); err != nil {
+			return err
+		}
+
+		if err := sh.Run("git", "tag", "v0.0.0"); err != nil {
 			return err
 		}
 	}
