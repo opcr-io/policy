@@ -1,13 +1,14 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	dirpath "path"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	git "github.com/go-git/go-git/v5/config"
+	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -47,17 +48,17 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite
 	}
 
 	if err := hasGitRemote(path); err != nil {
-		return err
+		c.UI.Exclamation().Msg("git repo does not contain a remote")
 	}
 
 	fns := []func() error{
-		hasGitIgnoreFile(path, overwrite),
-		hasGithubConfig(path, overwrite, user, server, repo),
-		hasGithubWorkflow(path, overwrite, secret),
-		hasManifest(path, overwrite),
-		hasRegoSourceFile(path, overwrite),
-		hasMakefile(path, overwrite),
-		hasReadMe(path, overwrite),
+		writeGitIgnore(path, overwrite),
+		writeGithubConfig(path, overwrite, user, server, repo),
+		writeGithubWorkflow(path, overwrite, secret),
+		writeManifest(path, overwrite),
+		writeRegoSourceFile(path, overwrite),
+		writeMakefile(path, overwrite),
+		writeReadMe(path, overwrite),
 	}
 
 	for _, fn := range fns {
@@ -102,14 +103,14 @@ func hasGitRemote(path string) error {
 	return nil
 }
 
-func hasGitIgnoreFile(path string, overwrite bool, params ...string) func() error {
+func writeGitIgnore(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path)
-		return writeTemplate(dirPath, gitIgnore, gitignoreTemplate, overwrite)
+		return writeTemplate(dirPath, gitIgnore, "github/gitignore.tmpl", overwrite)
 	}
 }
 
-func hasGithubConfig(path string, overwrite bool, params ...string) func() error {
+func writeGithubConfig(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		var (
 			user   = params[0]
@@ -152,39 +153,43 @@ func hasGithubConfig(path string, overwrite bool, params ...string) func() error
 	}
 }
 
-func hasGithubWorkflow(path string, overwrite bool, params ...string) func() error {
+func writeGithubWorkflow(path string, overwrite bool, params ...string) func() error {
 	return func() error {
-		var secret = params[0]
 		dirPath := dirpath.Join(path, githubDir, workflowsDir)
-		return writeTemplate(dirPath, workflowsFile, workflowTemplate, overwrite, secret, secret)
+		paramss := struct {
+			PushKey string
+		}{
+			PushKey: params[0],
+		}
+		return writeTemplate(dirPath, workflowsFile, "github/build-release-policy.tmpl", overwrite, paramss)
 	}
 }
 
-func hasManifest(path string, overwrite bool, params ...string) func() error {
+func writeManifest(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path, srcDir)
-		return writeTemplate(dirPath, manifestFile, manifestTemplate, overwrite)
+		return writeTemplate(dirPath, manifestFile, "opa/manifest.tmpl", overwrite)
 	}
 }
 
-func hasRegoSourceFile(path string, overwrite bool, params ...string) func() error {
+func writeRegoSourceFile(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path, srcDir, policiesDir)
-		return writeTemplate(dirPath, regoFile, regoTemplate, overwrite)
+		return writeTemplate(dirPath, regoFile, "opa/hello-rego.tmpl", overwrite)
 	}
 }
 
-func hasMakefile(path string, overwrite bool, params ...string) func() error {
+func writeMakefile(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path)
-		return writeTemplate(dirPath, makeFile, makeFileTemplate, overwrite)
+		return writeTemplate(dirPath, makeFile, "general/makefile.tmpl", overwrite)
 	}
 }
 
-func hasReadMe(path string, overwrite bool, params ...string) func() error {
+func writeReadMe(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path)
-		return writeTemplate(dirPath, readmeFile, readmeTemplate, overwrite)
+		return writeTemplate(dirPath, readmeFile, "general/readme.tmpl", overwrite)
 	}
 }
 
@@ -208,7 +213,7 @@ func dirExist(path string) (bool, error) {
 	}
 }
 
-func writeTemplate(dirPath, fileName, template string, overwrite bool, params ...interface{}) error {
+func writeTemplate(dirPath, fileName, templateName string, overwrite bool, params ...interface{}) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return errors.Wrapf(err, "create directory '%s'", dirPath)
 	}
@@ -220,302 +225,31 @@ func writeTemplate(dirPath, fileName, template string, overwrite bool, params ..
 		return nil
 	}
 
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrapf(err, "open file '%s'", filePath)
 	}
-	defer f.Close()
+	defer w.Close()
 
-	fmt.Fprintf(f, template, params...)
+	aFS := templates.Assets()
+	name := filepath.Base(templateName)
+	t, err := template.New(name).ParseFS(aFS, templateName)
+	if err != nil {
+		return err
+	}
+
+	var data interface{} = nil
+	if len(params) == 1 {
+		data = params[0]
+	}
+
+	if err := t.Execute(w, data); err != nil {
+		return err
+	}
+
+	if err := w.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }
-
-const gitignoreTemplate string = `.DS_Store
-bundle.tar.gz
-build/
-`
-
-const workflowTemplate string = `name: build-release
-
-on:
-  workflow_dispatch:
-  push:
-    tags:
-    - '*'
-
-jobs:
-  release_policy:
-    runs-on: ubuntu-latest
-    name: build
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Read config
-      id: config
-      uses: CumulusDS/get-yaml-paths-action@v0.1.1
-      with:
-        file: .github/config.yaml
-        username: username
-        repo: repo
-        server: server
-
-    - name: List Sver Tags
-      uses: aserto-dev/sver-action@v0.0.14
-      id: "sver"
-      with:
-        docker_image: ${{ steps.config.outputs.repo }}
-        docker_registry: ${{ steps.config.outputs.server }}
-        docker_username: ${{ steps.config.outputs.username }}
-        docker_password: ${{ secrets.%s }}
-
-    - name: Calculate image tags
-      id: "tags"
-      run: |
-        while read -r tag; do
-          tags="$tags ${{ steps.config.outputs.repo }}:$tag"
-        done < <(echo "${{ steps.sver.outputs.version }}")
-
-        echo ::set-output name=target_tags::$tags
-
-    - name: Policy Login
-      id: policy-login
-      uses: opcr-io/policy-login-action@v2
-      with:
-        username: ${{ steps.config.outputs.username }}
-        password: ${{ secrets.%s }}
-        server: ${{ steps.config.outputs.server }}
-
-    - name: Policy Build
-      id: policy-build
-      uses: opcr-io/policy-build-action@v2
-      with:
-        src: src
-        tag: ${{ steps.config.outputs.repo }}
-        revision: "$GITHUB_SHA"
-      env:
-        POLICY_DEFAULT_DOMAIN: ${{ steps.config.outputs.server }}
-
-    - name: Policy Tag
-      id: policy-tag
-      uses: opcr-io/policy-tag-action@v2
-      with:
-        source_tag: ${{ steps.config.outputs.repo }}
-        target_tags: ${{ steps.tags.outputs.target_tags }}
-      env:
-        POLICY_DEFAULT_DOMAIN: ${{ steps.config.outputs.server }}
-
-    - name: Policy Push
-      id: policy-push
-      uses: opcr-io/policy-push-action@v2
-      with:
-        tags: ${{ steps.tags.outputs.target_tags }}
-      env:
-        POLICY_DEFAULT_DOMAIN: ${{ steps.config.outputs.server }}
-
-    - name: Policy Logout
-      id: policy-logout
-      uses: opcr-io/policy-logout-action@v2
-      with:
-        server: ${{ steps.config.outputs.server }}
-`
-
-const manifestTemplate string = `{
-    "roots": [""],
-    "metadata": {
-      "required_builtins": {
-          "builtin1": [
-              {
-                  "name": "dir.user",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "dir.manager_of",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "dir.management_chain",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "res.get",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "dir.identity",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              }
-          ],
-          "builtin2": [
-              {
-                  "name": "dir.is_manager_of",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          },
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "boolean"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "dir.works_for",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          },
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "boolean"
-                      },
-                      "type": "function"
-                  }
-              },
-              {
-                  "name": "dir.is_same_user",
-                  "decl": {
-                      "args": [
-                          {
-                              "type": "string"
-                          },
-                          {
-                              "type": "string"
-                          }
-                      ],
-                      "result": {
-                          "type": "boolean"
-                      },
-                      "type": "function"
-                  }
-              }
-          ],
-          "builtinDyn": [
-              {
-                  "name": "res.list",
-                  "decl": {
-                      "result": {
-                          "type": "any"
-                      },
-                      "type": "function"
-                  }
-              }
-          ]
-      }
-  }
-}
-`
-const regoTemplate string = `package policies.hello
-
-# default to a "closed" system, 
-# only grant access when explicitly granted
-
-default allowed = false
-default visible = false
-default enabled = false
-
-allowed {
-    input.role == "web-admin"
-}
-
-enabled {
-    visible
-}
-
-visible {
-    input.app == "web-console"
-}
-`
-const makeFileTemplate string = `SHELL 	   := $(shell which bash)
-
-NO_COLOR   :=\033[0m
-OK_COLOR   :=\033[32;01m
-ERR_COLOR  :=\033[31;01m
-WARN_COLOR :=\033[36;01m
-ATTN_COLOR :=\033[33;01m
-
-.PHONY: all 
-all: login build tag push logout
-
-.PHONY: login
-login:
-	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-
-.PHONY: build
-build:
-	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-
-.PHONY: tag
-tag:
-	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-
-.PHONY: push
-push:
-	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-
-.PHONY: logout
-logout:
-	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-`
-
-const readmeTemplate string = ``
