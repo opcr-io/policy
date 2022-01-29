@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/template"
 
-	git "github.com/go-git/go-git/v5/config"
 	"github.com/magefile/mage/sh"
 	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
@@ -33,10 +32,8 @@ const (
 
 // Init
 // path is rootpath of project
-func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite bool) error {
+func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite, noSrc bool) error {
 	defer c.Cancel()
-
-	gitInit := false
 
 	if !strings.EqualFold(scc, "github") {
 		return errors.Errorf("not supported source code provider '%s'", scc)
@@ -55,50 +52,20 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite
 		if err := isGitRepo(path); err != nil {
 			return err
 		}
-		gitInit = true
-	}
-
-	if err := hasGitRemote(path); err != nil {
-		c.UI.Exclamation().Msg("git repo does not contain a remote")
 	}
 
 	fns := []func() error{
 		writeGitIgnore(path, overwrite),
 		writeGithubConfig(path, overwrite, user, server, repo),
 		writeGithubWorkflow(path, overwrite, secret),
-		writeManifest(path, overwrite),
-		writeRegoSourceFile(path, overwrite),
-		writeMakefile(path, overwrite),
-		writeReadMe(path, overwrite),
+		writeManifest(path, overwrite, noSrc),
+		writeRegoSourceFile(path, overwrite, noSrc),
+		writeMakefile(path, overwrite, true),
+		writeReadMe(path, overwrite, true),
 	}
 
 	for _, fn := range fns {
 		if err := fn(); err != nil {
-			return err
-		}
-	}
-
-	if gitInit {
-		cwd, err := os.Getwd()
-		defer os.Chdir(cwd)
-
-		if err != nil {
-			return err
-		}
-
-		if err := os.Chdir(path); err != nil {
-			return err
-		}
-
-		if err := sh.Run("git", "add", "."); err != nil {
-			return err
-		}
-
-		if err := sh.Run("git", "commit", "-am", "init"); err != nil {
-			return err
-		}
-
-		if err := sh.Run("git", "tag", "v0.0.0"); err != nil {
 			return err
 		}
 	}
@@ -113,29 +80,6 @@ func isGitRepo(path string) error {
 	if exist, _ := fileExist(filepath.Join(path, gitDir, gitConfig)); !exist {
 		return errors.Errorf(".git directory does not contain config file '%s'", path)
 	}
-	return nil
-}
-
-func hasGitRemote(path string) error {
-	filePath := filepath.Join(path, gitDir, gitConfig)
-	r, err := os.Open(filePath)
-	if err != nil {
-		return errors.Wrapf(err, "opening file '%s'", filePath)
-	}
-
-	gitConfig, err := git.ReadConfig(r)
-	if err != nil {
-		return errors.Wrapf(err, "reading file '%s'", filePath)
-	}
-
-	if len(gitConfig.Remotes) == 0 {
-		return errors.Errorf("no remotes configured")
-	}
-
-	if _, ok := gitConfig.Remotes[gitOrigin]; !ok {
-		return errors.Errorf("no origin remote configured")
-	}
-
 	return nil
 }
 
@@ -201,29 +145,41 @@ func writeGithubWorkflow(path string, overwrite bool, params ...string) func() e
 	}
 }
 
-func writeManifest(path string, overwrite bool, params ...string) func() error {
+func writeManifest(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
+		if noSrc {
+			return nil
+		}
 		dirPath := dirpath.Join(path, srcDir)
 		return writeTemplate(dirPath, manifestFile, "opa/manifest.tmpl", overwrite)
 	}
 }
 
-func writeRegoSourceFile(path string, overwrite bool, params ...string) func() error {
+func writeRegoSourceFile(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
+		if noSrc {
+			return nil
+		}
 		dirPath := dirpath.Join(path, srcDir, policiesDir)
 		return writeTemplate(dirPath, regoFile, "opa/hello-rego.tmpl", overwrite)
 	}
 }
 
-func writeMakefile(path string, overwrite bool, params ...string) func() error {
+func writeMakefile(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
+		if noSrc {
+			return nil
+		}
 		dirPath := dirpath.Join(path)
 		return writeTemplate(dirPath, makeFile, "general/makefile.tmpl", overwrite)
 	}
 }
 
-func writeReadMe(path string, overwrite bool, params ...string) func() error {
+func writeReadMe(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
+		if noSrc {
+			return nil
+		}
 		dirPath := dirpath.Join(path)
 		return writeTemplate(dirPath, readmeFile, "general/readme.tmpl", overwrite)
 	}

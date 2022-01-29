@@ -20,6 +20,7 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+/.dev
 /.ext
 /dist
 /cover.out
