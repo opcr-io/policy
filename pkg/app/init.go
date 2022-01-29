@@ -16,7 +16,6 @@ import (
 const (
 	gitDir        string = ".git"
 	gitConfig     string = "config"
-	gitOrigin     string = "origin"
 	gitIgnore     string = ".gitignore"
 	githubDir     string = ".github"
 	githubConfig  string = "config.yaml"
@@ -230,7 +229,7 @@ func writeTemplate(dirPath, fileName, templateName string, overwrite bool, param
 		return err
 	}
 
-	var data interface{} = nil
+	var data interface{}
 	if len(params) == 1 {
 		data = params[0]
 	}

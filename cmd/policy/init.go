@@ -109,9 +109,14 @@ func getDefaultUser(g *Globals, server string) string {
 }
 
 func getDefaultTokenName(g *Globals, server string) string {
+	const (
+		opcrDomain  string = "opcr.io"
+		githubToken string = "GITHUB_TOKEN" // nolint:gosec // this is a token name, not a hardcode token.
+	)
+
 	switch server {
-	case "opcr.io":
-		return "GITHUB_TOKEN"
+	case opcrDomain:
+		return githubToken
 	case "registry.beta.aserto.com":
 		return "ASERTO_BETA_PUSH_KEY"
 	case "registry.eng.aserto.com":
@@ -119,6 +124,6 @@ func getDefaultTokenName(g *Globals, server string) string {
 	case "registry.prod.aserto.com":
 		return "ASERTO_PUSH_KEY"
 	default:
-		return "GITHUB_TOKEN"
+		return githubToken
 	}
 }
