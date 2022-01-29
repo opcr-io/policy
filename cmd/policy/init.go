@@ -12,7 +12,7 @@ type InitCmd struct {
 	User      string `name:"user" short:"u" help:"user name"`
 	Server    string `name:"server" short:"s" help:"registry service name"`
 	Repo      string `name:"repo" short:"r" help:"repository (org/repo)"`
-	TokenName string `name:"token" short:"t" help:"Github Actions secret token name" default:"GITHUB_TOKEN"`
+	TokenName string `name:"token" short:"t" help:"Github Actions secret token name"`
 	SCC       string `name:"scc" help:"source code provider" required:"" enum:"github" default:"github"`
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
 	NoSrc     bool   `name:"no-src" help:"do not write src directory" default:"false"`

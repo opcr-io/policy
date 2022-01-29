@@ -32,7 +32,7 @@ const (
 
 // Init
 // path is rootpath of project
-func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite, noSrc bool) error {
+func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
 	defer c.Cancel()
 
 	if !strings.EqualFold(scc, "github") {
@@ -57,7 +57,7 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, secret string, overwrite
 	fns := []func() error{
 		writeGitIgnore(path, overwrite),
 		writeGithubConfig(path, overwrite, user, server, repo),
-		writeGithubWorkflow(path, overwrite, secret),
+		writeGithubWorkflow(path, overwrite, token),
 		writeManifest(path, overwrite, noSrc),
 		writeRegoSourceFile(path, overwrite, noSrc),
 		writeMakefile(path, overwrite, true),
