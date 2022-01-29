@@ -20,19 +20,20 @@ type Overrider func(*Config)
 
 // Config holds the configuration for the app.
 type Config struct {
-	FileStoreRoot string        `json:"file_store_root"`
-	DefaultDomain string        `json:"default_domain"`
-	Logging       logger.Config `json:"logging"`
-	CA            []string      `json:"ca"`
-	Insecure      bool          `json:"insecure"`
+	FileStoreRoot string        `json:"file_store_root" yaml:"file_store_root"`
+	DefaultDomain string        `json:"default_domain" yaml:"default_domain"`
+	Logging       logger.Config `json:"logging" yaml:"logging"`
+	CA            []string      `json:"ca" yaml:"ca"`
+	Insecure      bool          `json:"insecure" yaml:"insecure"`
 
-	Servers map[string]ServerCredentials `json:"servers"`
+	Servers map[string]ServerCredentials `json:"-" yaml:"-"`
 }
 
 type ServerCredentials struct {
-	Type     string `json:"type"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Type     string `json:"type" yaml:"type"`
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
+	Default  bool   `json:"default" yaml:"default"`
 }
 
 // Path is a string that points to a config file
@@ -114,6 +115,14 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	err = cfg.LoadCreds()
 	if err != nil {
 		return nil, err
+	}
+	if cfg.DefaultDomain == "" || cfg.DefaultDomain == "opcr.io" {
+		for key, val := range cfg.Servers {
+			if val.Default {
+				cfg.DefaultDomain = key
+				break
+			}
+		}
 	}
 
 	return cfg, nil

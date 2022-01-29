@@ -72,10 +72,11 @@ func (c *PolicyApp) Images() error {
 
 	// sort data by CreatedAt DESC
 	sort.SliceStable(data, func(i, j int) bool {
-		return data[i][5] > data[j][5]
+		return data[i][5] < data[j][5] || (data[i][5] == data[j][5] && data[i][1] < data[j][1])
 	})
 
-	for _, v := range data {
+	for i := len(data) - 1; i >= 0; i-- {
+		v := data[i]
 		table.WithTableRow(v[0], v[1], v[2], v[3], v[4])
 	}
 

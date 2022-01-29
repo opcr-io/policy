@@ -42,7 +42,7 @@ printf "\n"
 e_code=0
 
 # execute command
-echo ${INPUT_PASSWORD} | /app/policy login --username=${INPUT_USERNAME} --password-stdin --server=${INPUT_SERVER} --verbosity=${VERBOSITY}
+echo ${INPUT_PASSWORD} | /app/policy login --username=${INPUT_USERNAME} --password-stdin --server=${INPUT_SERVER} --verbosity=${VERBOSITY} --default-domain
 e_code=$?
 
 printf "\n"

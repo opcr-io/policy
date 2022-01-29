@@ -65,6 +65,8 @@ func (c *PolicyApp) Push(userRef string) error {
 		},
 	})
 
+	delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
+
 	pushDescriptor, err := oras.Push(c.Context,
 		resolver,
 		ref,
