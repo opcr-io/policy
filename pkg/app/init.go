@@ -96,7 +96,7 @@ func writeGithubConfig(path string, overwrite bool, params ...string) func() err
 			server = params[1]
 			repo   = params[2]
 		)
-		dirPath := dirpath.Join(path, githubDir)
+		dirPath := filepath.Join(path, githubDir)
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return errors.Wrapf(err, "create directory '%s'", dirPath)
 		}
