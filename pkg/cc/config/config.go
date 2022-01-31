@@ -20,11 +20,12 @@ type Overrider func(*Config)
 
 // Config holds the configuration for the app.
 type Config struct {
-	FileStoreRoot string        `json:"file_store_root" yaml:"file_store_root"`
-	DefaultDomain string        `json:"default_domain" yaml:"default_domain"`
-	Logging       logger.Config `json:"logging" yaml:"logging"`
-	CA            []string      `json:"ca" yaml:"ca"`
-	Insecure      bool          `json:"insecure" yaml:"insecure"`
+	FileStoreRoot string            `json:"file_store_root" yaml:"file_store_root"`
+	DefaultDomain string            `json:"default_domain" yaml:"default_domain"`
+	Logging       logger.Config     `json:"logging" yaml:"logging"`
+	CA            []string          `json:"ca" yaml:"ca"`
+	Insecure      bool              `json:"insecure" yaml:"insecure"`
+	TokenDefaults map[string]string `json:"token_defaults" yaml:"token_defaults"`
 
 	Servers map[string]ServerCredentials `json:"-" yaml:"-"`
 }
@@ -70,10 +71,12 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine user home directory")
 	}
+
 	v.SetDefault("file_store_root", filepath.Join(home, ".policy"))
 	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
+	v.SetDefault("token_defaults", map[string]string{"opcr.io": "GITHUB_TOKEN"})
 
 	configExists, err := fileExists(file)
 	if err != nil {

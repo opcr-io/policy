@@ -19,7 +19,6 @@ type InitCmd struct {
 }
 
 func (c *InitCmd) Run(g *Globals) error {
-
 	if c.Server == "" {
 		respServer := ""
 		defServer := getDefaultServer(g)
@@ -78,6 +77,9 @@ func iff(f bool, s1, s2 string) string {
 
 func getDefaultServer(g *Globals) string {
 	if len(g.App.Configuration.Servers) == 0 {
+		if g.App.Configuration.DefaultDomain != "" {
+			return g.App.Configuration.DefaultDomain
+		}
 		return ""
 	}
 
@@ -109,21 +111,13 @@ func getDefaultUser(g *Globals, server string) string {
 }
 
 func getDefaultTokenName(g *Globals, server string) string {
-	const (
-		opcrDomain  string = "opcr.io"
-		githubToken string = "GITHUB_TOKEN" // nolint:gosec // this is a token name, not a hardcoded token.
-	)
-
-	switch server {
-	case opcrDomain:
-		return githubToken
-	case "registry.beta.aserto.com":
-		return "ASERTO_BETA_PUSH_KEY"
-	case "registry.eng.aserto.com":
-		return "ASERTO_ENG_PUSH_KEY"
-	case "registry.prod.aserto.com":
-		return "ASERTO_PUSH_KEY"
-	default:
-		return githubToken
+	if token, ok := g.App.Configuration.TokenDefaults[server]; ok {
+		return token
 	}
+
+	if token, ok := g.App.Configuration.TokenDefaults[g.App.Configuration.DefaultDomain]; ok {
+		return token
+	}
+
+	return ""
 }
