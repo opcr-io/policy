@@ -84,7 +84,7 @@ func isGitRepo(path string) error {
 
 func writeGitIgnore(path string, overwrite bool, params ...string) func() error {
 	return func() error {
-		dirPath := dirpath.Join(path)
+		dirPath := filepath.Join(path)
 		return writeTemplate(dirPath, gitIgnore, "github/gitignore.tmpl", overwrite)
 	}
 }
