@@ -111,7 +111,7 @@ func getDefaultUser(g *Globals, server string) string {
 func getDefaultTokenName(g *Globals, server string) string {
 	const (
 		opcrDomain  string = "opcr.io"
-		githubToken string = "GITHUB_TOKEN" // nolint:gosec // this is a token name, not a hardcode token.
+		githubToken string = "GITHUB_TOKEN" // nolint:gosec // this is a token name, not a hardcoded token.
 	)
 
 	switch server {
