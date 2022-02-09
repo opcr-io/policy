@@ -12,7 +12,7 @@ import (
 
 type LoginCmd struct {
 	Server        string `name:"server" short:"s" help:"Server to connect to." default:"{{ .DefaultDomain }}"`
-	Username      string `name:"username" short:"u" help:"Username for logging into the server."`
+	Username      string `name:"username" required:"" short:"u" help:"Username for logging into the server."`
 	Password      string `name:"password" short:"p" help:"Password for logging into the server."`
 	PasswordStdin bool   `name:"password-stdin" help:"Take the password from stdin"`
 	DefaultDomain bool   `name:"default-domain" short:"d" help:"Do not ask for setting default domain"`
