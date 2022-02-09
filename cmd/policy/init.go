@@ -12,7 +12,7 @@ type InitCmd struct {
 	User      string `name:"user" short:"u" help:"user name"`
 	Server    string `name:"server" short:"s" help:"registry service name"`
 	Repo      string `name:"repo" short:"r" help:"repository (org/repo)"`
-	TokenName string `name:"secret" short:"t" help:"Github Actions secret token name"`
+	TokenName string `name:"token" short:"t" help:"Github Actions secret token name"`
 	SCC       string `name:"scc" help:"source code provider" required:"" enum:"github" default:"github"`
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
 	NoSrc     bool   `name:"no-src" help:"do not write src directory" default:"false"`
@@ -44,7 +44,7 @@ func (c *InitCmd) Run(g *Globals) error {
 		defTokenName := getDefaultTokenName(g, c.Server)
 
 		g.App.UI.Normal().Compact().WithAskString(
-			fmt.Sprintf("secret : (%s)", defTokenName), &respTokenName,
+			fmt.Sprintf("github secret name: (%s)", defTokenName), &respTokenName,
 		).Do()
 		c.TokenName = iff(respTokenName != "", respTokenName, defTokenName)
 	}
