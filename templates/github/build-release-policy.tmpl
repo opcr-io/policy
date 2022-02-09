@@ -21,7 +21,7 @@ jobs:
         file: .github/config.yaml
 
     - name: List Sver Tags
-      uses: aserto-dev/sver-action@v0
+      uses: aserto-dev/sver-action@v1
       id: "sver"
       with:
         docker_image:{{ ` ${{ steps.config.outputs.repo }}` }}
