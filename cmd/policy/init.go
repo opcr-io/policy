@@ -44,7 +44,7 @@ func (c *InitCmd) Run(g *Globals) error {
 		defTokenName := getDefaultTokenName(g, c.Server)
 
 		g.App.UI.Normal().Compact().WithAskString(
-			fmt.Sprintf("token : (%s)", defTokenName), &respTokenName,
+			fmt.Sprintf("github secret name: (%s)", defTokenName), &respTokenName,
 		).Do()
 		c.TokenName = iff(respTokenName != "", respTokenName, defTokenName)
 	}
