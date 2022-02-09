@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -87,6 +88,8 @@ func getDefaultServer(g *Globals) string {
 	for name := range g.App.Configuration.Servers {
 		servers = append(servers, name)
 	}
+
+	sort.Strings(servers)
 
 	allowedValues := make([]int, len(servers))
 	table := g.App.UI.Normal().WithTable("#", "Server")
