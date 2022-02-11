@@ -54,13 +54,13 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 	}
 
 	fns := []func() error{
-		writeGitIgnore(path, overwrite),
-		writeGithubConfig(path, overwrite, user, server, repo),
-		writeGithubWorkflow(path, overwrite, token),
-		writeManifest(path, overwrite, noSrc),
-		writeRegoSourceFile(path, overwrite, noSrc),
-		writeMakefile(path, overwrite, true),
-		writeReadMe(path, overwrite, true),
+		c.writeGitIgnore(path, overwrite),
+		c.writeGithubConfig(path, overwrite, user, server, repo),
+		c.writeGithubWorkflow(path, overwrite, token),
+		c.writeManifest(path, overwrite, noSrc),
+		c.writeRegoSourceFile(path, overwrite, noSrc),
+		c.writeMakefile(path, overwrite, true),
+		c.writeReadMe(path, overwrite, true),
 	}
 
 	for _, fn := range fns {
@@ -82,14 +82,14 @@ func isGitRepo(path string) error {
 	return nil
 }
 
-func writeGitIgnore(path string, overwrite bool, params ...string) func() error {
+func (c *PolicyApp) writeGitIgnore(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := filepath.Join(path)
-		return writeTemplate(dirPath, gitIgnore, "github/gitignore.tmpl", overwrite)
+		return c.writeTemplate(dirPath, gitIgnore, "github/gitignore.tmpl", overwrite)
 	}
 }
 
-func writeGithubConfig(path string, overwrite bool, params ...string) func() error {
+func (c *PolicyApp) writeGithubConfig(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		var (
 			user   = params[0]
@@ -105,7 +105,7 @@ func writeGithubConfig(path string, overwrite bool, params ...string) func() err
 
 		exist, _ := fileExist(filePath)
 		if exist && !overwrite {
-			return nil
+			c.UI.Exclamation().Msgf("config file '%s' already exists, skipping", filePath)
 		}
 
 		cfg := struct {
@@ -132,7 +132,7 @@ func writeGithubConfig(path string, overwrite bool, params ...string) func() err
 	}
 }
 
-func writeGithubWorkflow(path string, overwrite bool, params ...string) func() error {
+func (c *PolicyApp) writeGithubWorkflow(path string, overwrite bool, params ...string) func() error {
 	return func() error {
 		dirPath := dirpath.Join(path, githubDir, workflowsDir)
 		paramss := struct {
@@ -140,47 +140,47 @@ func writeGithubWorkflow(path string, overwrite bool, params ...string) func() e
 		}{
 			PushKey: params[0],
 		}
-		return writeTemplate(dirPath, workflowsFile, "github/build-release-policy.tmpl", overwrite, paramss)
+		return c.writeTemplate(dirPath, workflowsFile, "github/build-release-policy.tmpl", overwrite, paramss)
 	}
 }
 
-func writeManifest(path string, overwrite, noSrc bool, params ...string) func() error {
+func (c *PolicyApp) writeManifest(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
 		if noSrc {
 			return nil
 		}
 		dirPath := dirpath.Join(path, srcDir)
-		return writeTemplate(dirPath, manifestFile, "opa/manifest.tmpl", overwrite)
+		return c.writeTemplate(dirPath, manifestFile, "opa/manifest.tmpl", overwrite)
 	}
 }
 
-func writeRegoSourceFile(path string, overwrite, noSrc bool, params ...string) func() error {
+func (c *PolicyApp) writeRegoSourceFile(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
 		if noSrc {
 			return nil
 		}
 		dirPath := dirpath.Join(path, srcDir, policiesDir)
-		return writeTemplate(dirPath, regoFile, "opa/hello-rego.tmpl", overwrite)
+		return c.writeTemplate(dirPath, regoFile, "opa/hello-rego.tmpl", overwrite)
 	}
 }
 
-func writeMakefile(path string, overwrite, noSrc bool, params ...string) func() error {
+func (c *PolicyApp) writeMakefile(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
 		if noSrc {
 			return nil
 		}
 		dirPath := dirpath.Join(path)
-		return writeTemplate(dirPath, makeFile, "general/makefile.tmpl", overwrite)
+		return c.writeTemplate(dirPath, makeFile, "general/makefile.tmpl", overwrite)
 	}
 }
 
-func writeReadMe(path string, overwrite, noSrc bool, params ...string) func() error {
+func (c *PolicyApp) writeReadMe(path string, overwrite, noSrc bool, params ...string) func() error {
 	return func() error {
 		if noSrc {
 			return nil
 		}
 		dirPath := dirpath.Join(path)
-		return writeTemplate(dirPath, readmeFile, "general/readme.tmpl", overwrite)
+		return c.writeTemplate(dirPath, readmeFile, "general/readme.tmpl", overwrite)
 	}
 }
 
@@ -204,7 +204,7 @@ func dirExist(path string) (bool, error) {
 	}
 }
 
-func writeTemplate(dirPath, fileName, templateName string, overwrite bool, params ...interface{}) error {
+func (c *PolicyApp) writeTemplate(dirPath, fileName, templateName string, overwrite bool, params ...interface{}) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return errors.Wrapf(err, "create directory '%s'", dirPath)
 	}
@@ -213,7 +213,7 @@ func writeTemplate(dirPath, fileName, templateName string, overwrite bool, param
 
 	exist, _ := fileExist(filePath)
 	if exist && !overwrite {
-		return nil
+		c.UI.Exclamation().Msgf("file '%s' already exists, skipping", filePath)
 	}
 
 	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
