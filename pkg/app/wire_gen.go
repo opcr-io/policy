@@ -8,28 +8,28 @@ package app
 
 import (
 	"github.com/aserto-dev/clui"
+	"github.com/aserto-dev/go-utils/logger"
 	"github.com/google/wire"
 	"github.com/opcr-io/policy/pkg/cc"
 	"github.com/opcr-io/policy/pkg/cc/config"
-	"io"
 )
 
 // Injectors from wire.go:
 
-func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
-	ccCC, cleanup, err := cc.NewCC(logWriter, configPath, overrides)
+func BuildPolicyApp(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
+	ccCC, cleanup, err := cc.NewCC(logOutput, errOutput, configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
 	context := ccCC.Context
 	cancelFunc := ccCC.CancelFunc
-	logger := ccCC.Log
+	zerologLogger := ccCC.Log
 	configConfig := ccCC.Config
 	ui := clui.NewUI()
 	policyApp := &PolicyApp{
 		Context:       context,
 		Cancel:        cancelFunc,
-		Logger:        logger,
+		Logger:        zerologLogger,
 		Configuration: configConfig,
 		UI:            ui,
 	}
@@ -38,20 +38,20 @@ func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides confi
 	}, nil
 }
 
-func BuildTestPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
-	ccCC, cleanup, err := cc.NewTestCC(logWriter, configPath, overrides)
+func BuildTestPolicyApp(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
+	ccCC, cleanup, err := cc.NewTestCC(logOutput, errOutput, configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
 	context := ccCC.Context
 	cancelFunc := ccCC.CancelFunc
-	logger := ccCC.Log
+	zerologLogger := ccCC.Log
 	configConfig := ccCC.Config
 	ui := clui.NewUI()
 	policyApp := &PolicyApp{
 		Context:       context,
 		Cancel:        cancelFunc,
-		Logger:        logger,
+		Logger:        zerologLogger,
 		Configuration: configConfig,
 		UI:            ui,
 	}

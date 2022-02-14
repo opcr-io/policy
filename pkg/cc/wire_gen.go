@@ -12,21 +12,20 @@ import (
 	"github.com/google/wire"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/cc/context"
-	"io"
 )
 
 // Injectors from wire.go:
 
 // buildCC sets up the CC struct that contains all dependencies that
 // are cross cutting
-func buildCC(logOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func buildCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	errGroupAndContext := context.NewContext()
 	contextContext := errGroupAndContext.Ctx
 	loggerConfig, err := config.NewLoggerConfig(configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
-	zerologLogger, err := logger.NewLogger(logOutput, loggerConfig)
+	zerologLogger, err := logger.NewLogger(logOutput, errOutput, loggerConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -48,14 +47,14 @@ func buildCC(logOutput io.Writer, configPath config.Path, overrides config.Overr
 	}, nil
 }
 
-func buildTestCC(logOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func buildTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	errGroupAndContext := context.NewTestContext()
 	contextContext := errGroupAndContext.Ctx
 	loggerConfig, err := config.NewLoggerConfig(configPath, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
-	zerologLogger, err := logger.NewLogger(logOutput, loggerConfig)
+	zerologLogger, err := logger.NewLogger(logOutput, errOutput, loggerConfig)
 	if err != nil {
 		return nil, nil, err
 	}
