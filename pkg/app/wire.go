@@ -4,11 +4,10 @@
 package app
 
 import (
-	"io"
-
 	"github.com/google/wire"
 
 	"github.com/aserto-dev/clui"
+	"github.com/aserto-dev/go-utils/logger"
 	"github.com/opcr-io/policy/pkg/cc"
 	"github.com/opcr-io/policy/pkg/cc/config"
 )
@@ -32,7 +31,7 @@ var (
 	)
 )
 
-func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
+func BuildPolicyApp(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	wire.Build(
 		wire.Struct(new(PolicyApp), "*"),
 		policyAppSet,
@@ -40,7 +39,7 @@ func BuildPolicyApp(logWriter io.Writer, configPath config.Path, overrides confi
 	return &PolicyApp{}, func() {}, nil
 }
 
-func BuildTestPolicyApp(logWriter io.Writer, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
+func BuildTestPolicyApp(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*PolicyApp, func(), error) {
 	wire.Build(
 		wire.Struct(new(PolicyApp), "*"),
 		policyAppTestSet,

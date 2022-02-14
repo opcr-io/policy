@@ -66,7 +66,7 @@ func resolveTmpConfig(context *kong.Context, flag *kong.Flag) {
 	if err != nil {
 		panic(err)
 	}
-	log, err := logger.NewLogger(io.Discard, cfgLogger)
+	log, err := logger.NewLogger(io.Discard, io.Discard, cfgLogger)
 	if err != nil {
 		panic(err)
 	}
@@ -117,6 +117,7 @@ func (g *Globals) setup() func() {
 	configFile := g.Config
 
 	policyAPP, cleanup, err := app.BuildPolicyApp(
+		os.Stderr,
 		os.Stderr,
 		config.Path(configFile),
 		func(c *config.Config) {

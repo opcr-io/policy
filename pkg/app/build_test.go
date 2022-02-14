@@ -25,7 +25,7 @@ func TestRefCalculation(t *testing.T) {
 		t.Run(tc.userRef, func(t *testing.T) {
 			assert := require.New(t)
 
-			p, cleanup, err := BuildTestPolicyApp(ioutil.Discard, config.Path(""), func(c *config.Config) {})
+			p, cleanup, err := BuildTestPolicyApp(ioutil.Discard, ioutil.Discard, config.Path(""), func(c *config.Config) {})
 			assert.NoError(err)
 			defer cleanup()
 

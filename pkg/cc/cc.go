@@ -2,9 +2,9 @@ package cc
 
 import (
 	"context"
-	"io"
 	"sync"
 
+	"github.com/aserto-dev/go-utils/logger"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -28,9 +28,9 @@ var (
 )
 
 // NewCC creates a singleton CC
-func NewCC(logOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
-		cc, cleanup, singletonErr = buildCC(logOutput, configPath, overrides)
+		cc, cleanup, singletonErr = buildCC(logOutput, errOutput, configPath, overrides)
 	})
 
 	return cc, func() {
@@ -41,9 +41,9 @@ func NewCC(logOutput io.Writer, configPath config.Path, overrides config.Overrid
 
 // NewTestCC creates a singleton CC to be used for testing.
 // It uses a fake context (context.Background)
-func NewTestCC(logOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func NewTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
-		cc, cleanup, singletonErr = buildTestCC(logOutput, configPath, overrides)
+		cc, cleanup, singletonErr = buildTestCC(logOutput, errOutput, configPath, overrides)
 	})
 
 	return cc, func() {
