@@ -94,6 +94,9 @@ func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
 			"Y":   true,
 			"N":   false,
 		}).Do()
+	} else {
+		// already on default server
+		return true, nil
 	}
 
 	// Reset all defaults to false to return true in order to set the current login as default
