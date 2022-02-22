@@ -106,6 +106,8 @@ func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+	} else {
+		setDefault = true //do not change the already set default server
 	}
 	return setDefault, nil
 }
