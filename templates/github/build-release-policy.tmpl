@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Read config
       id: config
@@ -78,4 +80,3 @@ jobs:
       uses: opcr-io/policy-logout-action@v2
       with:
         server: {{`${{ steps.config.outputs.server }}` }}
-  
