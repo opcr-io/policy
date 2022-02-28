@@ -10,8 +10,12 @@
 [ -z "${INPUT_REVISION}" ]  && exit "INPUT_REVISION is not set exiting" && exit 2
 [ -z "${INPUT_VERBOSITY}" ] && exit "INPUT_VERBOSITY is not set exiting" && exit 2
 
-# calculate paths relative to the workspace (GITHUB_WORKSPACE).
-SRC_PATH=$GITHUB_WORKSPACE/$INPUT_SRC
+if [[ -z "${GITHUB_WORKSPACE}" ]]; then
+  SRC_PATH=$PWD/$INPUT_SRC
+else
+  # calculate paths relative to the workspace (GITHUB_WORKSPACE).
+  SRC_PATH=$GITHUB_WORKSPACE/$INPUT_SRC
+fi
 
 # validate path variables
 if [[ ! -d ${SRC_PATH} ]]; then
