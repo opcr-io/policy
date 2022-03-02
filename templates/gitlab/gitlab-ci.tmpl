@@ -1,0 +1,69 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+include:
+  - project: 'aserto/sver-ci'
+    ref: main
+    file:
+      - '/lib/gitlab/templates/Sver-Tags.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Sver-Image-Tags.gitlab-ci.yml'
+  - project: 'aserto/policy-ci'
+    ref: main
+    file:
+      - '/lib/gitlab/templates/Policy/Base.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Policy/Policy-Build.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Policy/Policy-Login.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Policy/Policy-Tag.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Policy/Policy-Push.gitlab-ci.yml'
+      - '/lib/gitlab/templates/Policy/Policy-Logout.gitlab-ci.yml'
+
+variables:
+  POLICY_TAG: '{{.Repo}}'
+  POLICY_DEFAULT_DOMAIN: '{{.Server}}'
+  POLICY_USERNAME: '{{.Username}}'
+  POLICY_PASSWORD: {{.PushKey}}
+
+stages:
+  - build
+  - deploy
+
+sver-tags:
+  variables:
+    SVER_DOCKER_REGISTRY: $POLICY_TAG
+    SVER_DOCKER_SERVER: $POLICY_DEFAULT_DOMAIN
+    SVER_DOCKER_USERNAME: $POLICY_USERNAME
+    SVER_DOCKER_PASSWORD: $POLICY_PASSWORD
+
+policy-tag:
+  needs:
+    - policy-build
+    - sver-image-tags
+  dependencies:
+    - policy-build
+    - sver-image-tags
+  variables:
+    POLICY_TARGET_TAGS: $SVER_IMAGE_VERSION
+
+policy-login:
+  needs: 
+    - policy-tag
+  dependencies:
+    - policy-tag
+
+policy-push:
+  needs:
+    - policy-login
+    - policy-tag
+    - sver-image-tags
+  dependencies:
+    - policy-login
+    - policy-tag
+    - sver-image-tags
+  variables:
+    POLICY_TARGET_TAGS: $SVER_IMAGE_VERSION
+
+policy-logout:
+  needs:
+    - policy-push
+  dependencies:
+    - policy-push

@@ -2,31 +2,12 @@ package app
 
 import (
 	"os"
-	dirpath "path"
-	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/magefile/mage/sh"
-	"github.com/opcr-io/policy/templates"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
-)
 
-const (
-	gitDir        string = ".git"
-	gitConfig     string = "config"
-	gitIgnore     string = ".gitignore"
-	githubDir     string = ".github"
-	githubConfig  string = "config.yaml"
-	workflowsDir  string = "workflows"
-	workflowsFile string = "build-release-policy.yaml"
-	srcDir        string = "src"
-	policiesDir   string = "policies"
-	manifestFile  string = ".manifest"
-	regoFile      string = "hello.rego"
-	makeFile      string = "Makefile"
-	readmeFile    string = "README.md"
+	"github.com/opcr-io/policy/pkg/generators"
+	"github.com/pkg/errors"
 )
 
 // Init
@@ -34,213 +15,71 @@ const (
 func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
 	defer c.Cancel()
 
-	if !strings.EqualFold(scc, "github") {
+	if !strings.EqualFold(scc, "github") && !strings.EqualFold(scc, "gitlab") {
 		return errors.Errorf("not supported source code provider '%s'", scc)
 	}
 
-	if exist, _ := dirExist(path); !exist {
+	names := strings.Split(repo, "/")
+	if len(names) < 2 {
+		return errors.New("invalid repo name, not org/repo")
+	}
+
+	err := c.validatePath(path)
+	if err != nil {
+		return err
+	}
+
+	var sccGenerator generators.Generator
+	sccStruct := &generators.SCC{
+		Path:   path,
+		Server: server,
+		User:   user,
+		Repo:   repo,
+		Token:  token,
+		UI:     c.UI,
+	}
+	switch scc {
+	case "github":
+		sccGenerator = generators.NewGithub(sccStruct)
+	case "gitlab":
+		sccGenerator = generators.NewGitlab(sccStruct)
+	}
+
+	if err := sccGenerator.Generate(overwrite); err != nil {
+		return err
+	}
+
+	if noSrc {
+		return nil
+	}
+
+	opa := generators.NewOpa(path, c.UI)
+	if err := opa.Generate(overwrite); err != nil {
+		return err
+	}
+
+	general := generators.NewGeneral(path, names[1], c.UI)
+	if err := general.Generate(overwrite); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *PolicyApp) validatePath(path string) error {
+	if exist, _ := generators.DirExist(path); !exist {
 		if err := os.MkdirAll(path, 0700); err != nil {
 			return errors.Errorf("root path not a directory '%s'", path)
 		}
 	}
 
-	if err := isGitRepo(path); err != nil {
+	if err := generators.IsGitRepo(path); err != nil {
 		if err := sh.RunV("git", "init", "--quiet", path); err != nil {
 			return err
 		}
-		if err := isGitRepo(path); err != nil {
+		if err := generators.IsGitRepo(path); err != nil {
 			return err
 		}
 	}
-
-	fns := []func() error{
-		c.writeGitIgnore(path, overwrite),
-		c.writeGithubConfig(path, overwrite, user, server, repo),
-		c.writeGithubWorkflow(path, overwrite, token),
-		c.writeManifest(path, overwrite, noSrc),
-		c.writeRegoSourceFile(path, overwrite, noSrc),
-		c.writeMakefile(path, overwrite, true),
-		c.writeReadMe(path, overwrite, true),
-	}
-
-	for _, fn := range fns {
-		if err := fn(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func isGitRepo(path string) error {
-	if exist, _ := dirExist(filepath.Join(path, gitDir)); !exist {
-		return errors.Errorf("root path does not contain .git directory '%s'", path)
-	}
-	if exist, _ := fileExist(filepath.Join(path, gitDir, gitConfig)); !exist {
-		return errors.Errorf(".git directory does not contain config file '%s'", path)
-	}
-	return nil
-}
-
-func (c *PolicyApp) writeGitIgnore(path string, overwrite bool, params ...string) func() error {
-	return func() error {
-		dirPath := filepath.Join(path)
-		return c.writeTemplate(dirPath, gitIgnore, "github/gitignore.tmpl", overwrite)
-	}
-}
-
-func (c *PolicyApp) writeGithubConfig(path string, overwrite bool, params ...string) func() error {
-	return func() error {
-		var (
-			user   = params[0]
-			server = params[1]
-			repo   = params[2]
-		)
-		dirPath := filepath.Join(path, githubDir)
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
-			return errors.Wrapf(err, "create directory '%s'", dirPath)
-		}
-
-		filePath := filepath.Join(dirPath, githubConfig)
-
-		exist, _ := fileExist(filePath)
-		if exist && !overwrite {
-			c.UI.Exclamation().Msgf("config file '%s' already exists, skipping", filePath)
-		}
-
-		cfg := struct {
-			Server   string `yaml:"server"`
-			Username string `yaml:"username"`
-			Repo     string `yaml:"repo"`
-		}{
-			Username: user,
-			Server:   server,
-			Repo:     repo,
-		}
-
-		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return errors.Wrapf(err, "open file '%s'", filePath)
-		}
-		defer f.Close()
-		enc := yaml.NewEncoder(f)
-		if err := enc.Encode(cfg); err != nil {
-			return errors.Wrapf(err, "encode file '%s'", filePath)
-		}
-
-		return nil
-	}
-}
-
-func (c *PolicyApp) writeGithubWorkflow(path string, overwrite bool, params ...string) func() error {
-	return func() error {
-		dirPath := dirpath.Join(path, githubDir, workflowsDir)
-		paramss := struct {
-			PushKey string
-		}{
-			PushKey: params[0],
-		}
-		return c.writeTemplate(dirPath, workflowsFile, "github/build-release-policy.tmpl", overwrite, paramss)
-	}
-}
-
-func (c *PolicyApp) writeManifest(path string, overwrite, noSrc bool, params ...string) func() error {
-	return func() error {
-		if noSrc {
-			return nil
-		}
-		dirPath := dirpath.Join(path, srcDir)
-		return c.writeTemplate(dirPath, manifestFile, "opa/manifest.tmpl", overwrite)
-	}
-}
-
-func (c *PolicyApp) writeRegoSourceFile(path string, overwrite, noSrc bool, params ...string) func() error {
-	return func() error {
-		if noSrc {
-			return nil
-		}
-		dirPath := dirpath.Join(path, srcDir, policiesDir)
-		return c.writeTemplate(dirPath, regoFile, "opa/hello-rego.tmpl", overwrite)
-	}
-}
-
-func (c *PolicyApp) writeMakefile(path string, overwrite, noSrc bool, params ...string) func() error {
-	return func() error {
-		if noSrc {
-			return nil
-		}
-		dirPath := dirpath.Join(path)
-		return c.writeTemplate(dirPath, makeFile, "general/makefile.tmpl", overwrite)
-	}
-}
-
-func (c *PolicyApp) writeReadMe(path string, overwrite, noSrc bool, params ...string) func() error {
-	return func() error {
-		if noSrc {
-			return nil
-		}
-		dirPath := dirpath.Join(path)
-		return c.writeTemplate(dirPath, readmeFile, "general/readme.tmpl", overwrite)
-	}
-}
-
-func fileExist(path string) (bool, error) {
-	if _, err := os.Stat(path); err == nil {
-		return true, nil
-	} else if os.IsNotExist(err) {
-		return false, nil
-	} else {
-		return false, errors.Wrapf(err, "failed to stat file '%s'", path)
-	}
-}
-
-func dirExist(path string) (bool, error) {
-	if fi, err := os.Stat(path); err == nil && fi.IsDir() {
-		return true, nil
-	} else if os.IsNotExist(err) {
-		return false, nil
-	} else {
-		return false, errors.Wrapf(err, "failed to stat directory '%s'", path)
-	}
-}
-
-func (c *PolicyApp) writeTemplate(dirPath, fileName, templateName string, overwrite bool, params ...interface{}) error {
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		return errors.Wrapf(err, "create directory '%s'", dirPath)
-	}
-
-	filePath := filepath.Join(dirPath, fileName)
-
-	exist, _ := fileExist(filePath)
-	if exist && !overwrite {
-		c.UI.Exclamation().Msgf("file '%s' already exists, skipping", filePath)
-	}
-
-	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return errors.Wrapf(err, "open file '%s'", filePath)
-	}
-	defer w.Close()
-
-	aFS := templates.Assets()
-	name := filepath.Base(templateName)
-	t, err := template.New(name).ParseFS(aFS, templateName)
-	if err != nil {
-		return err
-	}
-
-	var data interface{}
-	if len(params) == 1 {
-		data = params[0]
-	}
-
-	if err := t.Execute(w, data); err != nil {
-		return err
-	}
-
-	if err := w.Close(); err != nil {
-		return err
-	}
-
 	return nil
 }
