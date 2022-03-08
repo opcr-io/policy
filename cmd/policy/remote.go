@@ -16,6 +16,7 @@ type SetPublicCmd struct {
 type RemoteImagesCmd struct {
 	Server    string `name:"server" short:"s" help:"Registry server to connect to" default:"{{ .DefaultDomain }}"`
 	ShowEmpty bool   `name:"show-empty" short:"e" help:"Show policies with no images."`
+	Org       string `name:"organization" short:"o" help:"Show images for an organization." `
 }
 
 func (c *SetPublicCmd) Run(g *Globals) error {
@@ -28,7 +29,7 @@ func (c *SetPublicCmd) Run(g *Globals) error {
 
 	err := g.App.SetVisibility(c.Server, c.Policy, public)
 	if err != nil {
-		g.App.UI.Problem().WithErr(err).Msg("Failed to set policy visibility.")
+		g.App.UI.Problem().Msg("Failed to set policy visibility.")
 		return err
 	}
 
@@ -41,6 +42,7 @@ func (c *RemoteImagesCmd) Run(g *Globals) error {
 	return (&ImagesCmd{
 		Remote:    true,
 		Server:    c.Server,
+		Org:       c.Org,
 		ShowEmpty: c.ShowEmpty,
 	}).Run(g)
 }

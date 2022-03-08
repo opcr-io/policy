@@ -1,14 +1,21 @@
 package app
 
-import extendedclient "github.com/opcr-io/policy/pkg/extended_client"
+import (
+	"fmt"
+	"strings"
+
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/pkg/errors"
+)
 
 func (c *PolicyApp) SetVisibility(server, policy string, public bool) error {
 	defer c.Cancel()
 
 	creds := c.Configuration.Servers[server]
 
-	xClient := extendedclient.NewExtendedClient(c.Logger,
-		&extendedclient.Config{
+	xClient, err := extendedregistry.GetExtendedClient(server,
+		c.Logger,
+		&extendedregistry.Config{
 			Address:  "https://" + server,
 			Username: creds.Username,
 			Password: creds.Password,
@@ -16,12 +23,12 @@ func (c *PolicyApp) SetVisibility(server, policy string, public bool) error {
 		c.TransportWithTrustedCAs())
 
 	// If the server doesn't support list APIs, print a message and return.
-	if !xClient.Supported() {
-		c.UI.Exclamation().Msg("The registry doesn't support extended capabilities like publishing policies.")
-		return nil
+	if err != nil {
+		return errors.Wrap(err, "failed to get extended client")
 	}
-
-	err := xClient.SetVisibility(policy, public)
+	org := strings.Split(policy, "/")[0]
+	repo := strings.Replace(policy, fmt.Sprintf("%s/", org), "", -1)
+	err = xClient.SetVisibility(org, repo, public)
 	if err != nil {
 		return err
 	}

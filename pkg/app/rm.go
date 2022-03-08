@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/google/go-containerregistry/pkg/authn"
+	"strings"
+
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
@@ -99,9 +99,25 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 		c.UI.Exclamation().Msg("Operation canceled by user.")
 		return nil
 	}
-
+	xClient, err := extendedregistry.GetExtendedClient(server.Name(),
+		c.Logger,
+		&extendedregistry.Config{
+			Address:  "https://" + server.Name(),
+			Username: creds.Username,
+			Password: creds.Password,
+		},
+		c.TransportWithTrustedCAs())
+	if err != nil {
+		return errors.Wrap(err, "no extended remove supported")
+	}
 	if removeAll {
-		tagsToRemove, err = c.imageTags(refParsed.Context().RegistryStr()+"/"+refParsed.Context().RepositoryStr(), creds.Username, creds.Password)
+		policyDef := refParsed.Context().RepositoryStr()
+
+		c.UI.Normal().
+			WithStringValue("definition", policyDef).
+			Msg("Removing policy definition.")
+		policyInfo := strings.Split(policyDef, "/")
+		err = xClient.RemoveImage(policyInfo[0], policyInfo[1], "")
 		if err != nil {
 			return err
 		}
@@ -114,36 +130,11 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 		c.UI.Normal().Compact().
 			WithStringValue("ref", refToRemove.String()).
 			Msg("Removing tag.")
-
-		err = remote.Delete(refToRemove,
-			remote.WithAuth(&authn.Basic{
-				Username: creds.Username,
-				Password: creds.Password,
-			}),
-			remote.WithTransport(c.TransportWithTrustedCAs()))
+		policyDef := refParsed.Context().RepositoryStr()
+		policyInfo := strings.Split(policyDef, "/")
+		err = xClient.RemoveImage(policyInfo[0], policyInfo[1], tag)
 		if err != nil {
-			return errors.Wrapf(err, "failed to delete reference [%s]", ref)
-		}
-	}
-
-	if removeAll {
-		xClient := extendedclient.NewExtendedClient(c.Logger,
-			&extendedclient.Config{
-				Address:  "https://" + server.Name(),
-				Username: creds.Username,
-				Password: creds.Password,
-			},
-			c.TransportWithTrustedCAs())
-
-		if xClient.Supported() {
-			policyDef := refParsed.Context().RepositoryStr()
-			c.UI.Normal().
-				WithStringValue("definition", policyDef).
-				Msg("Removing policy definition.")
-			err := xClient.RemoveImage(policyDef, "")
-			if err != nil {
-				return err
-			}
+			return err
 		}
 	}
 

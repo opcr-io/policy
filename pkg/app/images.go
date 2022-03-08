@@ -1,19 +1,15 @@
 package app
 
 import (
-	"net/http"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
-	"github.com/pkg/errors"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"oras.land/oras-go/pkg/content"
 )
 
@@ -85,39 +81,39 @@ func (c *PolicyApp) Images() error {
 	return nil
 }
 
-func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
+func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	defer c.Cancel()
 
 	creds := c.Configuration.Servers[server]
 
-	xClient := extendedclient.NewExtendedClient(c.Logger,
-		&extendedclient.Config{
+	xClient, err := extendedregistry.GetExtendedClient(server,
+		c.Logger,
+		&extendedregistry.Config{
 			Address:  "https://" + server,
 			Username: creds.Username,
 			Password: creds.Password,
 		},
 		c.TransportWithTrustedCAs())
 
-	// If the server doesn't support list APIs, print a message and return.
-	if !xClient.Supported() {
+	if err != nil {
+		c.Logger.Debug().Err(err).Msgf("failed to get extended client for %s", server)
 		c.UI.Exclamation().Msg("The registry doesn't support extended capabilities like listing policies.")
 		return nil
-	}
-
-	// Get a list of all images
-	images, err := xClient.ListImages()
-	if err != nil {
-		return err
 	}
 
 	p := c.UI.Progress("Fetching tags for images")
 	p.Start()
 
-	imageData := [][]string{}
-	for _, image := range images {
-		repo := server + "/" + image.Name
+	//TODO: Expose pagination options
+	response, _, err := xClient.ListRepos(org, &api.PaginationRequest{Size: -1, Token: ""})
+	if err != nil {
+		return err
+	}
 
-		tags, err := c.imageTags(repo, creds.Username, creds.Password)
+	imageData := [][]string{}
+	for _, image := range response.Images {
+		repo := fmt.Sprintf("%s/%s", server, image.Name)
+		tags, _, err := xClient.ListTags(org, image.Name, &api.PaginationRequest{Size: -1, Token: ""})
 		if err != nil {
 			return err
 		}
@@ -138,7 +134,7 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		}
 
 		for _, tag := range tags {
-			imageData = append(imageData, []string{familiarName, tag, publicMark})
+			imageData = append(imageData, []string{familiarName, tag.Name, publicMark})
 		}
 	}
 
@@ -156,35 +152,6 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	// Get a list of tags for each image
 	return nil
-}
-
-func (c *PolicyApp) imageTags(repoName, username, password string) ([]string, error) {
-	repo, err := name.NewRepository(repoName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid repo name [%s]", repoName)
-	}
-
-	tags, err := remote.List(repo,
-		remote.WithAuth(&authn.Basic{
-			Username: username,
-			Password: password,
-		}),
-		remote.WithTransport(c.TransportWithTrustedCAs()))
-
-	if err != nil {
-		if tErr, ok := err.(*transport.Error); ok {
-			switch tErr.StatusCode {
-			case http.StatusUnauthorized:
-				return nil, errors.Wrap(err, "authentication to docker registry failed")
-			case http.StatusNotFound:
-				return []string{}, nil
-			}
-		}
-
-		return nil, errors.Wrap(err, "failed to list tags from registry")
-	}
-
-	return tags, nil
 }
 
 func (c *PolicyApp) familiarPolicyRef(userRef string) (string, error) {
