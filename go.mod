@@ -15,7 +15,7 @@ require (
 	github.com/aserto-dev/go-utils v0.8.0
 	github.com/aserto-dev/mage-loot v0.8.0
 	github.com/aserto-dev/runtime v0.37.0
-	github.com/containerd/containerd v1.5.9
+	github.com/containerd/containerd v1.5.10
 	github.com/dustin/go-humanize v1.0.0
 	github.com/google/go-containerregistry v0.7.0
 	github.com/google/uuid v1.3.0
