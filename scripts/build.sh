@@ -19,7 +19,7 @@ fi
 
 # validate path variables
 if [[ ! -d ${SRC_PATH} ]]; then
-    echo "INPUT_SRC path does not exist [${INPUT_SRC}]"
+    echo "SRC_PATH path does not exist [${SRC_PATH}]"
     exit 1
 fi
 
