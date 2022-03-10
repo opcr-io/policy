@@ -14,7 +14,7 @@ type GHCRClient struct {
 }
 
 func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
-	baseClient := NewExtendedClient(logger, cfg, client)
+	baseClient := newExtendedClient(logger, cfg, client)
 
 	return &GHCRClient{
 		base: baseClient,

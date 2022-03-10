@@ -36,7 +36,7 @@ type xClient struct {
 	client *http.Client
 }
 
-func NewExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client) *xClient {
+func newExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client) *xClient {
 	return &xClient{
 		cfg:    cfg,
 		logger: logger,
@@ -47,8 +47,8 @@ func NewExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client)
 func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
 	httpClient := http.Client{}
 	httpClient.Transport = transport
-	switch server {
-	case "opcr.io":
+	switch {
+	case server == "opcr.io", strings.Contains(server, "aserto"):
 		return NewAsertoClient(logger,
 			&Config{
 				Address:  cfg.Address,
@@ -56,7 +56,7 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 				Password: cfg.Password,
 			},
 			&httpClient), nil
-	case "ghcr.io":
+	case server == "ghcr.io":
 		return NewGHCRClient(logger,
 			&Config{
 				Address:  "https://api.github.com",
