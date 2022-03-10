@@ -4,7 +4,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
@@ -127,24 +127,27 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 	}
 
 	if removeAll {
-		xClient := extendedclient.NewExtendedClient(c.Logger,
-			&extendedclient.Config{
+		xClient, err := extendedregistry.GetExtendedClient(server.Name(),
+			c.Logger,
+			&extendedregistry.Config{
 				Address:  "https://" + server.Name(),
 				Username: creds.Username,
 				Password: creds.Password,
 			},
 			c.TransportWithTrustedCAs())
-
-		if xClient.Supported() {
-			policyDef := refParsed.Context().RepositoryStr()
-			c.UI.Normal().
-				WithStringValue("definition", policyDef).
-				Msg("Removing policy definition.")
-			err := xClient.RemoveImage(policyDef, "")
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return errors.Wrap(err, "no extended remove supported")
 		}
+
+		policyDef := refParsed.Context().RepositoryStr()
+		c.UI.Normal().
+			WithStringValue("definition", policyDef).
+			Msg("Removing policy definition.")
+		err = xClient.RemoveImage(policyDef, "")
+		if err != nil {
+			return err
+		}
+
 	}
 
 	c.UI.Normal().Msg("OK.")

@@ -77,11 +77,11 @@ func (g *GHCRClient) RemoveImage(image, tag string) error {
 	}
 
 	type Metadata struct {
-		Package_type string    `json:"package_type"`
-		Tags         Container `json:"container"`
+		PackageType string    `json:"package_type"`
+		Tags        Container `json:"container"`
 	}
 	var versions []struct {
-		Id   int      `json:"id"`
+		ID   int      `json:"id"`
 		Meta Metadata `json:"metadata"`
 	}
 
@@ -93,7 +93,7 @@ func (g *GHCRClient) RemoveImage(image, tag string) error {
 	for i := range versions {
 		for j := range versions[i].Meta.Tags.List {
 			if versions[i].Meta.Tags.List[j] == tag {
-				deleteid = versions[i].Id
+				deleteid = versions[i].ID
 				break
 			}
 		}

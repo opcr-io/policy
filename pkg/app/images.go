@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -121,13 +122,22 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	imageData := [][]string{}
 	for _, image := range images {
-		repo := server + "/" + image.Name
-
+		repo := fmt.Sprintf("%s/%s", server, image.Name)
 		tags, err := c.imageTags(repo, creds.Username, creds.Password)
 		if err != nil {
 			return err
 		}
-
+		skipImage := false
+		for i := range tags {
+			image := fmt.Sprintf("%s/%s:%s", server, image.Name, tags[i])
+			if !c.validImage(image, creds.Username, creds.Password) {
+				skipImage = true
+				break
+			}
+		}
+		if skipImage {
+			continue
+		}
 		familiarName, err := c.familiarPolicyRef(repo)
 		if err != nil {
 			return err
@@ -162,6 +172,24 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	// Get a list of tags for each image
 	return nil
+}
+
+func (c *PolicyApp) validImage(repoName, username, password string) bool {
+	repo, err := name.ParseReference(repoName)
+	if err != nil {
+		return false
+	}
+	descriptor, err := remote.Get(repo,
+		remote.WithAuth(&authn.Basic{
+			Username: username,
+			Password: password,
+		}),
+		remote.WithTransport(c.TransportWithTrustedCAs()))
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(descriptor.Manifest), "org.openpolicyregistry.type")
+
 }
 
 func (c *PolicyApp) imageTags(repoName, username, password string) ([]string, error) {
