@@ -31,29 +31,31 @@ type ExtendedClient interface {
 }
 
 type xClient struct {
-	cfg       *Config
-	logger    *zerolog.Logger
-	transport *http.Transport
+	cfg    *Config
+	logger *zerolog.Logger
+	client *http.Client
 }
 
-func NewExtendedClient(logger *zerolog.Logger, cfg *Config, transport *http.Transport) *xClient {
+func NewExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client) *xClient {
 	return &xClient{
-		cfg:       cfg,
-		logger:    logger,
-		transport: transport,
+		cfg:    cfg,
+		logger: logger,
+		client: client,
 	}
 }
 
 func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
+	httpClient := http.Client{}
+	httpClient.Transport = transport
 	switch server {
 	case "opcr.io":
 		return NewAsertoClient(logger,
 			&Config{
-				Address:  "https://" + cfg.Address,
+				Address:  cfg.Address,
 				Username: cfg.Username,
 				Password: cfg.Password,
 			},
-			transport), nil
+			&httpClient), nil
 	case "ghcr.io":
 		return NewGHCRClient(logger,
 			&Config{
@@ -61,7 +63,7 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 				Username: cfg.Username,
 				Password: cfg.Password,
 			},
-			transport), nil
+			&httpClient), nil
 	default:
 		return nil, errors.Errorf("server does not support extended registry [%s]", server)
 	}
@@ -80,9 +82,6 @@ func (c *xClient) RemoveImage(image, tag string) error {
 func (c *xClient) get(urlStr string) (string, error) {
 	c.logger.Trace().Str("url", urlStr).Msg("extended api get start")
 
-	httpClient := http.Client{}
-	httpClient.Transport = c.transport
-
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse url")
@@ -94,7 +93,7 @@ func (c *xClient) get(urlStr string) (string, error) {
 			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
 		},
 	}
-	response, err := httpClient.Do(req)
+	response, err := c.client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "get failed")
 	}
@@ -125,9 +124,6 @@ func (c *xClient) get(urlStr string) (string, error) {
 func (c *xClient) delete(urlStr string) (string, error) {
 	c.logger.Trace().Str("url", urlStr).Msg("extended api delete start")
 
-	httpClient := http.Client{}
-	httpClient.Transport = c.transport
-
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse url")
@@ -140,7 +136,7 @@ func (c *xClient) delete(urlStr string) (string, error) {
 		},
 	}
 
-	response, err := httpClient.Do(req)
+	response, err := c.client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "delete failed")
 	}
@@ -171,9 +167,6 @@ func (c *xClient) delete(urlStr string) (string, error) {
 func (c *xClient) post(urlStr, payload string) (string, error) {
 	c.logger.Trace().Str("url", urlStr).Msg("extended api post start")
 
-	httpClient := http.Client{}
-	httpClient.Transport = c.transport
-
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse url")
@@ -188,7 +181,7 @@ func (c *xClient) post(urlStr, payload string) (string, error) {
 		Body: ioutil.NopCloser(strings.NewReader(payload)),
 	}
 
-	response, err := httpClient.Do(req)
+	response, err := c.client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "get failed")
 	}

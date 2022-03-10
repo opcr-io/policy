@@ -15,11 +15,11 @@ type AsertoClient struct {
 	base *xClient
 }
 
-func NewAsertoClient(logger *zerolog.Logger, cfg *Config, transport *http.Transport) ExtendedClient {
-	client := NewExtendedClient(logger, cfg, transport)
+func NewAsertoClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
+	baseClient := NewExtendedClient(logger, cfg, client)
 
 	return &AsertoClient{
-		base: client,
+		base: baseClient,
 	}
 }
 

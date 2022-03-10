@@ -13,11 +13,11 @@ type GHCRClient struct {
 	base *xClient
 }
 
-func NewGHCRClient(logger *zerolog.Logger, cfg *Config, transport *http.Transport) ExtendedClient {
-	client := NewExtendedClient(logger, cfg, transport)
+func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
+	baseClient := NewExtendedClient(logger, cfg, client)
 
 	return &GHCRClient{
-		base: client,
+		base: baseClient,
 	}
 }
 
