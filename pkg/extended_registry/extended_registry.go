@@ -44,6 +44,29 @@ func NewExtendedClient(logger *zerolog.Logger, cfg *Config, transport *http.Tran
 	}
 }
 
+func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
+	switch server {
+	case "opcr.io":
+		return NewAsertoClient(logger,
+			&Config{
+				Address:  "https://" + cfg.Address,
+				Username: cfg.Username,
+				Password: cfg.Password,
+			},
+			transport), nil
+	case "ghcr.io":
+		return NewGHCRClient(logger,
+			&Config{
+				Address:  "https://api.github.com",
+				Username: cfg.Username,
+				Password: cfg.Password,
+			},
+			transport), nil
+	default:
+		return nil, errors.Errorf("server does not support extended registry [%s]", server)
+	}
+}
+
 func (c *xClient) ListRepos() ([]*PolicyImage, error) {
 	return nil, errors.New("not implemented")
 }

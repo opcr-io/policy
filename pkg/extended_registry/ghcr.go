@@ -32,6 +32,9 @@ func (g *GHCRClient) ListRepos() ([]*PolicyImage, error) {
 	var images []struct {
 		Name       string `json:"name"`
 		Visibility string `json:"visibility"`
+		Owner      struct {
+			Login string `json:"login"`
+		}
 	}
 
 	err = json.Unmarshal([]byte(resp), &images)
@@ -42,7 +45,7 @@ func (g *GHCRClient) ListRepos() ([]*PolicyImage, error) {
 	response := make([]*PolicyImage, len(images))
 	for i := range images {
 		policy := PolicyImage{}
-		policy.Name = images[i].Name
+		policy.Name = images[i].Owner.Login + "/" + images[i].Name
 		if images[i].Visibility == "public" {
 			policy.Public = true
 		} else {

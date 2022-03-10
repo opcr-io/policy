@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
@@ -90,22 +90,28 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	creds := c.Configuration.Servers[server]
 
-	xClient := extendedclient.NewExtendedClient(c.Logger,
-		&extendedclient.Config{
+	xClient, err := extendedregistry.GetExtendedClient(server,
+		c.Logger,
+		&extendedregistry.Config{
 			Address:  "https://" + server,
 			Username: creds.Username,
 			Password: creds.Password,
 		},
 		c.TransportWithTrustedCAs())
 
-	// If the server doesn't support list APIs, print a message and return.
-	if !xClient.Supported() {
+	if err != nil {
 		c.UI.Exclamation().Msg("The registry doesn't support extended capabilities like listing policies.")
 		return nil
 	}
 
+	// If the server doesn't support list APIs, print a message and return.
+	// if !xClient.Supported() {
+	// 	c.UI.Exclamation().Msg("The registry doesn't support extended capabilities like listing policies.")
+	// 	return nil
+	// }
+
 	// Get a list of all images
-	images, err := xClient.ListImages()
+	images, err := xClient.ListRepos()
 	if err != nil {
 		return err
 	}
