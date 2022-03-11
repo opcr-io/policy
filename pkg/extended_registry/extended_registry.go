@@ -25,7 +25,8 @@ type PolicyImage struct {
 
 type ExtendedClient interface {
 	// TODO - add a verify method - GetExtendedClient that will return the client that matches the address?
-	ListRepos() ([]*PolicyImage, error)
+	ListOrgs() ([]string, error)
+	ListRepos(org string) ([]*PolicyImage, error)
 	SetVisibility(image string, public bool) error
 	RemoveImage(image, tag string) error
 }
@@ -65,11 +66,13 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 			},
 			&httpClient), nil
 	default:
-		return nil, errors.Errorf("server does not support extended registry [%s]", server)
+		return newExtendedClient(logger, cfg, &httpClient), errors.Errorf("server does not support extended registry [%s]", server)
 	}
 }
-
-func (c *xClient) ListRepos() ([]*PolicyImage, error) {
+func (c *xClient) ListOrgs() ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+func (c *xClient) ListRepos(org string) ([]*PolicyImage, error) {
 	return nil, errors.New("not implemented")
 }
 func (c *xClient) SetVisibility(image string, public bool) error {

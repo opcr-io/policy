@@ -13,6 +13,14 @@ type GHCRClient struct {
 	base *xClient
 }
 
+var images []struct {
+	Name       string `json:"name"`
+	Visibility string `json:"visibility"`
+	Owner      struct {
+		Login string `json:"login"`
+	}
+}
+
 func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
 	baseClient := newExtendedClient(logger, cfg, client)
 
@@ -21,28 +29,39 @@ func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) Ext
 	}
 }
 
-func (g *GHCRClient) ListRepos() ([]*PolicyImage, error) {
-	g.base.logger.Debug().Msg("List images")
-	resp, err := g.base.get("https://api.github.com/user/packages?package_type=container")
+func (g *GHCRClient) ListOrgs() ([]string, error) {
+	orgsresponse, err := g.base.get("https://api.github.com/user/orgs")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list container type packages from ghcr")
+		return nil, errors.Wrap(err, "could not list organizations")
 	}
-	g.base.logger.Trace().Msgf("Response from api.github.com %v", resp)
+	var orgs []struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(orgsresponse), &orgs)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal")
+	}
+	var response []string
+	for i := range orgs {
+		response = append(response, orgs[i].Login)
+	}
+	return response, nil
+}
 
-	var images []struct {
-		Name       string `json:"name"`
-		Visibility string `json:"visibility"`
-		Owner      struct {
-			Login string `json:"login"`
-		}
+//TODO: List images from the specified org and current user
+func (g *GHCRClient) ListRepos(org string) ([]*PolicyImage, error) {
+	g.base.logger.Debug().Msg("List images")
+	orgresp, err := g.base.get(fmt.Sprintf("https://api.github.com/orgs/%s/packages?package_type=container", org))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to list containers for org %s", org)
 	}
 
-	err = json.Unmarshal([]byte(resp), &images)
+	err = json.Unmarshal([]byte(orgresp), &images)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal policy list response")
 	}
-
 	response := make([]*PolicyImage, len(images))
+
 	for i := range images {
 		policy := PolicyImage{}
 		policy.Name = images[i].Owner.Login + "/" + images[i].Name
@@ -53,10 +72,37 @@ func (g *GHCRClient) ListRepos() ([]*PolicyImage, error) {
 		}
 		response[i] = &policy
 	}
+
 	return response, nil
 }
+
+func (g *GHCRClient) ListUserRepos() ([]*PolicyImage, error) {
+	resp, err := g.base.get("https://api.github.com/user/packages?package_type=container")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list container type packages from ghcr")
+	}
+	g.base.logger.Trace().Msgf("Response from api.github.com %v", resp)
+
+	err = json.Unmarshal([]byte(resp), &images)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal policy list response")
+	}
+	response := make([]*PolicyImage, len(images))
+	for i := range images {
+		policy := PolicyImage{}
+		policy.Name = images[i].Owner.Login + "/" + images[i].Name
+		if images[i].Visibility == "public" {
+			policy.Public = true
+		} else {
+			policy.Public = false
+		}
+		response = append(response, &policy)
+	}
+	return response, nil
+}
+
 func (g *GHCRClient) SetVisibility(image string, public bool) error {
-	return errors.New("not implemented")
+	return errors.New("please set the visibility using the web UI")
 }
 
 func (g *GHCRClient) GetTags(image string) (string, error) {

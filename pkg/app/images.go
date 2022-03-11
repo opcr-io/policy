@@ -106,9 +106,17 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 	}
 
 	// Get a list of all images
-	images, err := xClient.ListRepos()
+	var images []*extendedregistry.PolicyImage
+	orgs, err := xClient.ListOrgs()
 	if err != nil {
 		return err
+	}
+	for i := range orgs {
+		orgimages, err := xClient.ListRepos(orgs[i])
+		if err != nil {
+			return err
+		}
+		images = append(images, orgimages...)
 	}
 
 	p := c.UI.Progress("Fetching tags for images")
@@ -121,9 +129,10 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		if err != nil {
 			return err
 		}
-		if c.skipImage(tags, server, image, creds.Username, creds.Password) {
+		//TODO: skip image - move this to list repos in extended client
+		/*if c.skipImage(tags, server, image, creds.Username, creds.Password) {
 			continue
-		}
+		}*/
 		familiarName, err := c.familiarPolicyRef(repo)
 		if err != nil {
 			return err

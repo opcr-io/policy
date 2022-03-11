@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	username = "testusername"
-	password = "testpassword"
+	username = "testuser"
+	password = "testpass"
 )
 
 var listResponse = `
@@ -117,20 +117,35 @@ var listVersions = `
 	}
   ]`
 
-func Test_GHCR_List(t *testing.T) {
+func Test_GHCR_ListOrgs(t *testing.T) {
 	testlog := zerolog.New(os.Stdout)
-
-	defer gock.Off() // Flush pending mocks after test execution
-
-	gock.New("https://api.github.com/user/packages?package_type=container").
-		Get("").Persist().
-		Reply(200).BodyString(listResponse)
-
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
-	images, err := client.ListRepos()
+	orgs, err := client.ListOrgs()
 	assert.NilError(t, err)
-	assert.Equal(t, len(images), 2)
+	t.Log(orgs)
+}
+
+func Test_GHCR_List(t *testing.T) {
+	testlog := zerolog.New(os.Stdout)
+	/*
+		defer gock.Off() // Flush pending mocks after test execution
+
+		gock.New("https://api.github.com/user/packages?package_type=container").
+			Get("").Persist().
+			Reply(200).BodyString(listResponse)
+	*/
+	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	orgs, err := client.ListOrgs()
+	assert.NilError(t, err)
+	var images []*PolicyImage
+	for i := range orgs {
+		orgimages, err := client.ListRepos(orgs[i])
+		assert.NilError(t, err)
+		images = append(images, orgimages...)
+	}
+	assert.NilError(t, err)
+	assert.Equal(t, len(images) > 0, true)
 	testlog.Debug().Msgf("Received images: %v", images)
 }
 

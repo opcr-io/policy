@@ -14,6 +14,13 @@ var opcrInfo = `
 {"info":{"Version":"v0.1.2","Date":"2022-02-11T11:55:20Z","Commit":"8005fd3"},"extended_api":"api.opcr.io","grpc_extended_api":"api.opcr.io:8443"}
 `
 
+func Test_Aserto_ListOrgs(t *testing.T) {
+	testlog := zerolog.New(os.Stdout)
+	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
+	orgs, err := client.ListOrgs()
+	assert.NilError(t, err)
+	t.Log(orgs)
+}
 func Test_Aserto_List(t *testing.T) {
 	testlog := zerolog.New(os.Stdout)
 	defer gock.Off() // Flush pending mocks after test execution
@@ -26,7 +33,7 @@ func Test_Aserto_List(t *testing.T) {
 		JSON(map[string]string{"foo": "bar"})
 
 	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
-	images, err := client.ListRepos()
+	images, err := client.ListRepos("")
 	assert.NilError(t, err)
 	t.Log(images)
 }

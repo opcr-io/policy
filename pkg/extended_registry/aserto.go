@@ -23,7 +23,36 @@ func NewAsertoClient(logger *zerolog.Logger, cfg *Config, client *http.Client) E
 	}
 }
 
-func (c *AsertoClient) ListRepos() ([]*PolicyImage, error) {
+func (c *AsertoClient) ListOrgs() ([]string, error) {
+	address, err := c.extendedAPIAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	jsonBody, err := c.base.get(address + "/api/v1/registry/organizations")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list organizations")
+	}
+	type Org struct {
+		Name string `json:"name"`
+	}
+	//TODO Add paginated information to read all orgs
+	var parseStruct struct {
+		Orgs []Org `json:"orgs"`
+	}
+
+	err = json.Unmarshal([]byte(jsonBody), &parseStruct)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal orgs")
+	}
+	var response []string
+	for i := range parseStruct.Orgs {
+		response = append(response, parseStruct.Orgs[i].Name)
+	}
+	return response, nil
+}
+
+func (c *AsertoClient) ListRepos(org string) ([]*PolicyImage, error) {
 	address, err := c.extendedAPIAddress()
 	if err != nil {
 		return nil, err
