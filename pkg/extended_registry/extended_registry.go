@@ -60,7 +60,7 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 	case server == "ghcr.io":
 		return NewGHCRClient(logger,
 			&Config{
-				Address:  "https://api.github.com",
+				Address:  cfg.Address,
 				Username: cfg.Username,
 				Password: cfg.Password,
 			},

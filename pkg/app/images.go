@@ -118,7 +118,6 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		}
 		images = append(images, orgimages...)
 	}
-
 	p := c.UI.Progress("Fetching tags for images")
 	p.Start()
 
@@ -129,10 +128,7 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		if err != nil {
 			return err
 		}
-		//TODO: skip image - move this to list repos in extended client
-		/*if c.skipImage(tags, server, image, creds.Username, creds.Password) {
-			continue
-		}*/
+
 		familiarName, err := c.familiarPolicyRef(repo)
 		if err != nil {
 			return err
@@ -167,37 +163,6 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 
 	// Get a list of tags for each image
 	return nil
-}
-
-func (c *PolicyApp) skipImage(tags []string, server string, image *extendedregistry.PolicyImage, username, password string) bool {
-	skipImage := false
-	for i := range tags {
-		image := fmt.Sprintf("%s/%s:%s", server, image.Name, tags[i])
-		if !c.validImage(image, username, password) {
-			skipImage = true
-			break
-		}
-	}
-	return skipImage
-}
-
-func (c *PolicyApp) validImage(repoName, username, password string) bool {
-	repo, err := name.ParseReference(repoName)
-	if err != nil {
-		c.Logger.Err(err)
-		return false
-	}
-	descriptor, err := remote.Get(repo,
-		remote.WithAuth(&authn.Basic{
-			Username: username,
-			Password: password,
-		}),
-		remote.WithTransport(c.TransportWithTrustedCAs()))
-	if err != nil {
-		c.Logger.Err(err)
-		return false
-	}
-	return strings.Contains(string(descriptor.Manifest), "org.openpolicyregistry.type")
 }
 
 func (c *PolicyApp) imageTags(repoName, username, password string) ([]string, error) {
