@@ -53,6 +53,9 @@ func (c *AsertoClient) ListOrgs() ([]string, error) {
 }
 
 func (c *AsertoClient) ListRepos(org string) ([]*PolicyImage, error) {
+	if org == "" {
+		return nil, nil
+	}
 	address, err := c.extendedAPIAddress()
 	if err != nil {
 		return nil, err

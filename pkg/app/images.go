@@ -105,12 +105,16 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		return nil
 	}
 
+	p := c.UI.Progress("Fetching tags for images")
+	p.Start()
+
 	// Get a list of all images
 	var images []*extendedregistry.PolicyImage
 	orgs, err := xClient.ListOrgs()
 	if err != nil {
 		return err
 	}
+	orgs = append(orgs, "")
 	for i := range orgs {
 		orgimages, err := xClient.ListRepos(orgs[i])
 		if err != nil {
@@ -118,8 +122,6 @@ func (c *PolicyApp) ImagesRemote(server string, showEmpty bool) error {
 		}
 		images = append(images, orgimages...)
 	}
-	p := c.UI.Progress("Fetching tags for images")
-	p.Start()
 
 	imageData := [][]string{}
 	for _, image := range images {

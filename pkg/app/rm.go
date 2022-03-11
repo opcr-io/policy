@@ -115,6 +115,7 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 			WithStringValue("ref", refToRemove.String()).
 			Msg("Removing tag.")
 
+			//TODO:this will fail on ghcr
 		err = remote.Delete(refToRemove,
 			remote.WithAuth(&authn.Basic{
 				Username: creds.Username,

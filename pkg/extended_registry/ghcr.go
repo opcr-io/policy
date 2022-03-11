@@ -139,6 +139,7 @@ func (g *GHCRClient) GetTags(image string, org string) ([]string, error) {
 	return response, nil
 }
 
+//TODO: If tag is empty remove repo
 func (g *GHCRClient) RemoveImage(image, tag string) error {
 	deleteid := 0 //TODO: add getVersionid
 
@@ -156,7 +157,7 @@ func (g *GHCRClient) validImage(repoName, username, password string) bool {
 		g.base.logger.Err(err)
 		return false
 	}
-	descriptor, err := remote.Head(repo,
+	descriptor, err := remote.Get(repo,
 		remote.WithAuth(&authn.Basic{
 			Username: username,
 			Password: password,
@@ -165,7 +166,7 @@ func (g *GHCRClient) validImage(repoName, username, password string) bool {
 		g.base.logger.Err(err)
 		return false
 	}
-	return strings.Contains(string(descriptor.MediaType), "vnd.oci.image.manifest")
+	return strings.Contains(string(descriptor.Manifest), "org.openpolicyregistry.type")
 }
 func (g *GHCRClient) skipImage(tags []string, server string, image *PolicyImage, username, password string) bool {
 	skipImage := false

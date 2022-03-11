@@ -69,6 +69,7 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 		return newExtendedClient(logger, cfg, &httpClient), errors.Errorf("server does not support extended registry [%s]", server)
 	}
 }
+
 func (c *xClient) ListOrgs() ([]string, error) {
 	return nil, errors.New("not implemented")
 }
