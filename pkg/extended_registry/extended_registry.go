@@ -32,9 +32,10 @@ type ExtendedClient interface {
 }
 
 type xClient struct {
-	cfg    *Config
-	logger *zerolog.Logger
-	client *http.Client
+	cfg        *Config
+	logger     *zerolog.Logger
+	client     *http.Client
+	authHeader *http.Header
 }
 
 func newExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client) *xClient {
@@ -93,9 +94,7 @@ func (c *xClient) get(urlStr string) (string, error) {
 	req := &http.Request{
 		URL:    parsedURL,
 		Method: "GET",
-		Header: http.Header{
-			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
-		},
+		Header: c.getAuthHeader(),
 	}
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -135,9 +134,7 @@ func (c *xClient) delete(urlStr string) (string, error) {
 	req := &http.Request{
 		URL:    parsedURL,
 		Method: "DELETE",
-		Header: http.Header{
-			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
-		},
+		Header: c.getAuthHeader(),
 	}
 
 	response, err := c.client.Do(req)
@@ -179,10 +176,8 @@ func (c *xClient) post(urlStr, payload string) (string, error) {
 	req := &http.Request{
 		URL:    parsedURL,
 		Method: "POST",
-		Header: http.Header{
-			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
-		},
-		Body: ioutil.NopCloser(strings.NewReader(payload)),
+		Header: c.getAuthHeader(),
+		Body:   ioutil.NopCloser(strings.NewReader(payload)),
 	}
 
 	response, err := c.client.Do(req)
@@ -212,4 +207,13 @@ func (c *xClient) post(urlStr, payload string) (string, error) {
 	}
 
 	return strBody.String(), nil
+}
+
+func (c *xClient) getAuthHeader() http.Header {
+	if c.authHeader == nil {
+		return http.Header{
+			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
+		}
+	}
+	return *c.authHeader
 }

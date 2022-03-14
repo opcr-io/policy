@@ -27,7 +27,9 @@ var images []struct {
 
 func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
 	baseClient := newExtendedClient(logger, cfg, client)
-
+	if cfg.Username == "" {
+		baseClient.authHeader = &http.Header{"Authorization": []string{"token " + cfg.Password}}
+	}
 	return &GHCRClient{
 		base: baseClient,
 	}
