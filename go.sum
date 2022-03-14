@@ -131,11 +131,17 @@ github.com/aserto-dev/clui v0.8.0 h1:6naBp7djFHl0frhdU1aO1SxQ1+onE/pPCYr04Xo4kT4
 github.com/aserto-dev/clui v0.8.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
 github.com/aserto-dev/go-utils v0.8.0 h1:6fo1HHy7cDlRzltMWqZ+rb5Mhr+7yai5pl/8Kl7Xbzc=
 github.com/aserto-dev/go-utils v0.8.0/go.mod h1:BLa3UCkVmD2DgPQ5mgUD3ISjjPmSVDpTbivUky8I7Ac=
+github.com/aserto-dev/go-utils v0.8.1 h1:kszsBTJGuucyF3sSkjKW+nSGenfsEnHv/+/yBMH5vr4=
+github.com/aserto-dev/go-utils v0.8.1/go.mod h1:8tzJEW5QlCi0tANoqSaYgB4gOgk6qoREOPERr3takq0=
 github.com/aserto-dev/mage-loot v0.7.0/go.mod h1:MFtnaY7g3ghhVU4okmIDQ1P6GVECib0gp6nC29NBQ2U=
 github.com/aserto-dev/mage-loot v0.8.0 h1:JYb9c5gn+MTK0rM2bwhW46A1daXyCkItvnSHwBkmWc0=
 github.com/aserto-dev/mage-loot v0.8.0/go.mod h1:ncBJ4+uX3F7+oJi0bJnu3mLEIA0DyuOQ/kZDKmacgWg=
 github.com/aserto-dev/runtime v0.37.0 h1:6KW14Qaa+1Av1Ztboh51yyETe8dY4Bny5qaS4MxSgyI=
 github.com/aserto-dev/runtime v0.37.0/go.mod h1:bSGBFDR48CXGAjUDM6vB30f3SQdKPhM7XqYp5gAujlA=
+github.com/aserto-dev/runtime v0.37.3 h1:kPfTamct3UduWjgOUgtyYOQOaOlRn8Heg47winaTKKI=
+github.com/aserto-dev/runtime v0.37.3/go.mod h1:mymJhcniYRLHG3G+QwDwud4KiioBYGU/MPW3atsC0qA=
+github.com/aserto-dev/runtime v0.37.4 h1:s0ACvIDs5It+10H48B7RQgzUl+gThENhwtW7+R7ZjRQ=
+github.com/aserto-dev/runtime v0.37.4/go.mod h1:mymJhcniYRLHG3G+QwDwud4KiioBYGU/MPW3atsC0qA=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -586,6 +592,7 @@ github.com/hashicorp/consul/api v1.11.0/go.mod h1:XjsvQN+RJGWI2TWy1/kqaE16HrR2J/
 github.com/hashicorp/consul/sdk v0.1.1/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
 github.com/hashicorp/consul/sdk v0.8.0/go.mod h1:GBvyrGALthsZObzUGsfgHZQDXjg4lOjagTIwIR1vPms=
 github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+github.com/hashicorp/errwrap v1.0.0 h1:hLrqtEDnRye3+sgx6z4qVLNuviH3MR5aQ0ykNJa/UYA=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
 github.com/hashicorp/go-cleanhttp v0.5.0/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
 github.com/hashicorp/go-cleanhttp v0.5.1/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
@@ -599,6 +606,7 @@ github.com/hashicorp/go-immutable-radix v1.3.1/go.mod h1:0y9vanUI8NX6FsYoO3zeMjh
 github.com/hashicorp/go-msgpack v0.5.3/go.mod h1:ahLV/dePpqEmjfWmKiqvPkv/twdG7iPBM1vqhUKIvfM=
 github.com/hashicorp/go-multierror v0.0.0-20161216184304-ed905158d874/go.mod h1:JMRHfdO9jKNzS/+BTlxCjKNQHg/jZAft8U7LloJvN7I=
 github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHhCYQXV3UM06sGGrk=
+github.com/hashicorp/go-multierror v1.1.0 h1:B9UzwGQJehnUY1yNrnwREHc3fGbC2xefo8g4TbElacI=
 github.com/hashicorp/go-multierror v1.1.0/go.mod h1:spPvp8C1qA32ftKqdAHm4hHTbPw+vmowP0z+KUhOZdA=
 github.com/hashicorp/go-retryablehttp v0.5.3/go.mod h1:9B5zBasrRhHXnJnui7y6sL7es7NDiJgTc6Er0maI1Xs=
 github.com/hashicorp/go-rootcerts v1.0.0/go.mod h1:K6zTfqpRlCUIjkwsN4Z+hiSfzSTQa6eBIzfwKfwNnHU=

@@ -4,6 +4,8 @@ go 1.17
 
 // replace github.com/aserto-dev/clui => ../clui
 
+// replace github.com/aserto-dev/runtime => ../runtime
+
 // replace github.com/aserto-dev/mage-loot => ../mage-loot
 
 replace oras.land/oras-go => oras.land/oras-go v0.4.0
@@ -12,9 +14,9 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0
 	github.com/aserto-dev/clui v0.8.0
-	github.com/aserto-dev/go-utils v0.8.0
+	github.com/aserto-dev/go-utils v0.8.1
 	github.com/aserto-dev/mage-loot v0.8.0
-	github.com/aserto-dev/runtime v0.37.0
+	github.com/aserto-dev/runtime v0.37.4
 	github.com/containerd/containerd v1.5.10
 	github.com/dustin/go-humanize v1.0.0
 	github.com/google/go-containerregistry v0.7.0
@@ -58,7 +60,9 @@ require (
 	github.com/google/subcommands v1.2.0 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect

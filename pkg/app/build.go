@@ -56,8 +56,8 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 
 	outfile := filepath.Join(workdir, "bundle.tgz")
 
-	err = opaRuntime.Build(runtime.BuildParams{
-		CapabilitiesJsonFile: capabilities,
+	err = opaRuntime.Build(&runtime.BuildParams{
+		CapabilitiesJSONFile: capabilities,
 		Target:               runtime.Rego,
 		OptimizationLevel:    optimizationLevel,
 		Entrypoints:          entrypoints,
