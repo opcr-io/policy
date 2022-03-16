@@ -31,12 +31,12 @@ func (c *PolicyApp) Pull(userRef string) error {
 		Msg("Pulling.")
 
 	resolver := docker.NewResolver(docker.ResolverOptions{
-		Hosts: func(s string) ([]docker.RegistryHost, error) {
+		Hosts: func(server string) ([]docker.RegistryHost, error) {
 			client := &http.Client{Transport: c.TransportWithTrustedCAs()}
 
 			return []docker.RegistryHost{
 				{
-					Host:         s,
+					Host:         server,
 					Scheme:       "https",
 					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
 					Client:       client,

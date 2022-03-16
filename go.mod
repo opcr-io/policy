@@ -6,6 +6,10 @@ go 1.17
 
 // replace github.com/aserto-dev/mage-loot => ../mage-loot
 
+replace github.com/nlepage/go-tarfs => github.com/mihaibuzgau/go-tarfs v1.0.7-0.20220316124411-aad3047fe9b5
+
+//replace github.com/nlepage/go-tarfs => ../go-tarfs
+
 replace oras.land/oras-go => oras.land/oras-go v0.4.0
 
 require (
@@ -22,6 +26,7 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/magefile/mage v1.12.1
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/nlepage/go-tarfs v1.0.6
 	github.com/open-policy-agent/opa v0.37.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2
