@@ -73,6 +73,37 @@ func (c *ExtendedClient) ListImages() ([]PolicyImage, error) {
 	return response.Images, nil
 }
 
+type PaginationResponse struct {
+	NextToken  string `json:"next_token"`
+	ResultSize int    `json:"result_size"`
+	TotalSize  int    `json:"total_size"`
+}
+
+func (c *ExtendedClient) ListPublicRepos(org string, pageSize int, pageToken string) ([]PolicyImage, *PaginationResponse, error) {
+	address, err := c.extendedAPIAddress()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	jsonBody, err := c.get(fmt.Sprintf("%s/api/v1/registry/images/%s/public?size=%d&token=%s", address, org, pageSize, pageToken))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to list public images")
+	}
+
+	response := struct {
+		Page   PaginationResponse `json:"page"`
+		Images []PolicyImage      `json:"images"`
+	}{}
+
+	err = json.Unmarshal([]byte(jsonBody), &response)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to unmarshal policy list response")
+	}
+	fmt.Println(jsonBody)
+
+	return response.Images, &response.Page, nil
+}
+
 func (c *ExtendedClient) RemoveImage(image, tag string) error {
 	address, err := c.extendedAPIAddress()
 	if err != nil {

@@ -9,9 +9,9 @@ import (
 	"oras.land/oras-go/pkg/content"
 )
 
-func (c *PolicyApp) Save(userRef, outputFile string) error {
+func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	defer c.Cancel()
-	var o *os.File
+	var outputFile *os.File
 
 	ref, err := c.calculatePolicyRef(userRef)
 	if err != nil {
@@ -35,27 +35,27 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 		return errors.Errorf("policy [%s] not found in the local store", ref)
 	}
 
-	if outputFile == "-" {
-		o = os.Stdout
+	if outputFilePath == "-" {
+		outputFile = os.Stdout
 	} else {
 		c.UI.Normal().
 			WithStringValue("digest", refDescriptor.Digest.String()).
 			Msgf("Resolved ref [%s].", ref)
-		o, err = os.Create(outputFile)
+		outputFile, err = os.Create(outputFilePath)
 
 		if err != nil {
-			return errors.Wrapf(err, "failed to create output file [%s]", outputFile)
+			return errors.Wrapf(err, "failed to create output file [%s]", outputFilePath)
 		}
 
 		defer func() {
-			err := o.Close()
+			err := outputFile.Close()
 			if err != nil {
 				c.UI.Problem().WithErr(err).Msg("Failed to close policy bundle tarball.")
 			}
 		}()
 	}
 
-	err = c.writePolicy(ociStore, &refDescriptor, o)
+	err = c.writePolicy(ociStore, &refDescriptor, outputFile)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (c *PolicyApp) Save(userRef, outputFile string) error {
 	return nil
 }
 
-func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.Descriptor, o *os.File) error {
+func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
 	reader, err := ociStore.ReaderAt(c.Context, *refDescriptor)
 	if err != nil {
 		return errors.Wrap(err, "failed to open store reader")
@@ -89,7 +89,7 @@ func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.De
 			return errors.Wrap(err, "failed to read OCI policy content")
 		}
 
-		_, err = o.Write(buf[:n])
+		_, err = outputFile.Write(buf[:n])
 		if err != nil {
 			return errors.Wrap(err, "failed to write policy bundle tarball to file")
 		}
