@@ -8,10 +8,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	tarfs "github.com/nlepage/go-tarfs"
 
 	"github.com/containerd/containerd/remotes/docker"
-	extendedclient "github.com/opcr-io/policy/pkg/extended_client"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
@@ -27,7 +28,7 @@ type Config struct {
 
 type oci struct {
 	logger    *zerolog.Logger
-	extClient *extendedclient.ExtendedClient
+	extClient extendedregistry.ExtendedClient
 	transport *http.Transport
 	ctx       context.Context
 	cfg       Config
@@ -35,12 +36,16 @@ type oci struct {
 
 // NewOCI returns a new policy template provider for OCI
 func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport, cfg Config) PolicyTemplates {
-	extClient := extendedclient.NewExtendedClient(log, &extendedclient.Config{
-		Address:  "https://" + cfg.Server,
-		Username: " ",
-		Password: " ",
-	},
+	extClient, err := extendedregistry.GetExtendedClient(cfg.Server,
+		log, &extendedregistry.Config{
+			Address:  "https://" + cfg.Server,
+			Username: " ",
+			Password: " ",
+		},
 		transport)
+	if err != nil {
+		log.Err(err)
+	}
 
 	return &oci{
 		logger:    log,
@@ -55,11 +60,11 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 func (o *oci) ListRepos() ([]string, error) {
 	var templateRepos []string
 
-	policyRepo, _, err := o.extClient.ListPublicRepos(o.cfg.Org, -1, "")
+	policyRepo, _, err := o.extClient.ListPublicRepos(o.cfg.Org, &api.PaginationRequest{Token: "", Size: -1})
 	if err != nil {
 		return nil, err
 	}
-	for _, repo := range policyRepo {
+	for _, repo := range policyRepo.Images {
 		templateRepos = append(templateRepos, repo.Name)
 	}
 
