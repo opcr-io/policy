@@ -1,100 +1,94 @@
 package extendedregistry
 
 import (
-	"net/http"
-	"os"
 	"testing"
 
-	"github.com/rs/zerolog"
+	registryClient "github.com/aserto-dev/aserto-go/client/registry"
+	"github.com/aserto-dev/go-grpc/aserto/api/v1"
+	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
+	"github.com/golang/mock/gomock"
+	mocksources "github.com/opcr-io/policy/pkg/extended_registry/mocks"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/h2non/gock.v1"
 )
 
-var opcrInfo = `
-{"info":{"Version":"v0.1.2","Date":"2022-02-11T11:55:20Z","Commit":"8005fd3"},"extended_api":"api.opcr.io","grpc_extended_api":"api.opcr.io:8443"}
-`
-
-var listOrgs = `
-{
-	"orgs":[
-{
-	"Name":"test1"
-},
-{
-	"Name":"test2"
-}
-	]
-}
-`
-
-var listRepos = `
-{
-	"images":[
-		{
-			"Name":"test1",
-			"Public":false
-		},
-		{
-			"Name":"test2",
-			"Public":true
-		}
-	]
-}
-`
-
 func TestAsertoListOrgs(t *testing.T) {
-	testlog := zerolog.New(os.Stdout)
-	defer gock.Off() // Flush pending mocks after test execution
-	gock.New("https://opcr.io").
-		Get("/info").
-		Reply(200).BodyString(opcrInfo)
-	gock.New("https://opcr.io").
-		Get("/api/v1/registry/organizations").
-		Reply(200).BodyString(listOrgs)
-	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
-	orgs, _, err := client.ListOrgs(nil)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	regTestClient := mocksources.NewMockRegistryClient(ctrl)
+	regTestClient.EXPECT().ListOrgs(gomock.Any(), gomock.Any()).Return(
+		&registry.ListOrgsResponse{
+			Orgs: []*api.RegistryOrg{
+				{
+					Name: "test",
+				},
+				{
+					Name: "test2",
+				},
+			},
+		}, nil,
+	)
+	client := &AsertoClient{extension: &registryClient.Client{}}
+	client.extension.Registry = regTestClient
+
+	orgs, err := client.ListOrgs(&api.PaginationRequest{Size: -1, Token: ""})
 	assert.NoError(t, err)
-	assert.Equal(t, len(orgs.Orgs), 2)
+	assert.Equal(t, 2, len(orgs.Orgs))
 }
 
 func TestAsertoList(t *testing.T) {
-	testlog := zerolog.New(os.Stdout)
-	defer gock.Off() // Flush pending mocks after test execution
-	gock.New("https://opcr.io").
-		Get("/info").
-		Reply(200).BodyString(opcrInfo)
-	gock.New("https://opcr.io").
-		Get("/api/v1/registry/images").
-		Reply(200).BodyString(listRepos)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	regTestClient := mocksources.NewMockRegistryClient(ctrl)
+	regTestClient.EXPECT().ListImages(gomock.Any(), gomock.Any()).Return(
+		&registry.ListImagesResponse{
+			Images: []*api.PolicyImage{
+				{
+					Name:   "Test",
+					Public: true,
+				},
+				{
+					Name:   "test2",
+					Public: false,
+				},
+			},
+		}, nil,
+	)
+	client := &AsertoClient{extension: &registryClient.Client{}}
+	client.extension.Registry = regTestClient
 
-	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
-	images, _, err := client.ListRepos("someorg", nil)
+	images, _, err := client.ListRepos("", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(images.Images), 2)
 }
 
 func TestAsertoSetVisibility(t *testing.T) {
-	testlog := zerolog.New(os.Stdout)
-	defer gock.Off() // Flush pending mocks after test execution
-	gock.New("https://opcr.io").
-		Get("/info").
-		Reply(200).BodyString(opcrInfo)
-	gock.New("https://api.opcr.io/api/v1/registry/images/dani/testpol/visibility").
-		Post("").Reply(200)
-	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
-	err := client.SetVisibility("dani", "testpol", true)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	regTestClient := mocksources.NewMockRegistryClient(ctrl)
+	regTestClient.EXPECT().SetImageVisibility(gomock.Any(), &registry.SetImageVisibilityRequest{
+		Image:        "image",
+		Organization: "org",
+		Public:       true,
+	}).Return(nil, nil)
+	client := &AsertoClient{extension: &registryClient.Client{}}
+	client.extension.Registry = regTestClient
+
+	err := client.SetVisibility("org", "image", true)
 	assert.NoError(t, err)
 }
 
 func TestAsertoRemoveImage(t *testing.T) {
-	testlog := zerolog.New(os.Stdout)
-	defer gock.Off() // Flush pending mocks after test execution
-	gock.New("https://opcr.io").
-		Get("/info").
-		Reply(200).BodyString(opcrInfo)
-	gock.New("https://api.opcr.io/api/v1/registry/images/dani/testpol?tag=latest").
-		Delete("").Reply(200)
-	client := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password}, http.DefaultClient)
-	err := client.RemoveImage("dani", "testpol", "latest")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	regTestClient := mocksources.NewMockRegistryClient(ctrl)
+	regTestClient.EXPECT().RemoveImage(gomock.Any(), &registry.RemoveImageRequest{
+		Image:        "testpol",
+		Tag:          "latest",
+		Organization: "org",
+	}).Return(nil, nil)
+	client := &AsertoClient{extension: &registryClient.Client{}}
+	client.extension.Registry = regTestClient
+
+	err := client.RemoveImage("org", "testpol", "latest")
 	assert.NoError(t, err)
 }

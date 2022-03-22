@@ -3,7 +3,6 @@ package extendedregistry
 import (
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,9 +21,9 @@ type Config struct {
 }
 
 type ExtendedClient interface {
-	ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, *api.PaginationResponse, error)
+	ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error)
 	ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
-	ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
+	ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error)
 	ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
 	GetTag(org, repo, tag string) (*api.RegistryRepoTag, error)
 	SetVisibility(org, repo string, public bool) error
@@ -61,33 +60,32 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 			&httpClient), nil
 	}
 	client := newExtendedClient(logger, cfg, &httpClient)
-	isExtendedInfo, err := client.HasExtendedAddress()
+	extendedGRPCAddress, err := client.HasGRPCExtendedAddress()
 	if err != nil {
 		return client, errors.Wrapf(err, "server does not support extended registry [%s]", server)
 	}
-	if isExtendedInfo {
+	if extendedGRPCAddress != "" {
 		return NewAsertoClient(logger,
 			&Config{
-				Address:  cfg.Address,
+				Address:  extendedGRPCAddress,
 				Username: cfg.Username,
 				Password: cfg.Password,
-			},
-			&httpClient), nil
+			})
 	}
 	return client, errors.Errorf("server does not support extended registry [%s]", server)
 }
 
 //TODO: Implement as OCI specific client
-func (c *xClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, *api.PaginationResponse, error) {
-	return nil, nil, errors.New("not implemented")
+func (c *xClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *xClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
 	return nil, nil, errors.New("not implemented")
 }
 
-func (c *xClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
-	return nil, nil, errors.New("not implemented")
+func (c *xClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *xClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
@@ -109,17 +107,17 @@ func (c *xClient) RemoveImage(org, repo, tag string) error {
 func (c *xClient) IsValidTag(org, repo, tag string) (bool, error) {
 	return false, errors.New("not implemented")
 }
-func (c *xClient) HasExtendedAddress() (bool, error) {
+func (c *xClient) HasGRPCExtendedAddress() (string, error) {
 	strURL := c.cfg.Address + "/info"
 	resp, err := c.get(strURL)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get /info")
+		return "", errors.Wrap(err, "failed to get /info")
 	}
-	extendedAPIaddress := gjson.Get(resp, "extended_api").String()
+	extendedAPIaddress := gjson.Get(resp, "grpc_extended_api").String()
 	if extendedAPIaddress == "" {
-		return false, errors.New("no exteneded api endpoint defined in info call")
+		return "", errors.New("no exteneded api endpoint defined in info call")
 	}
-	return true, nil
+	return extendedAPIaddress, nil
 }
 
 func (c *xClient) get(urlStr string) (string, error) {
@@ -150,94 +148,6 @@ func (c *xClient) get(urlStr string) (string, error) {
 		}
 
 		c.logger.Trace().Str("url", urlStr).Str("body", strBody.String()).Msg("extended api get end")
-	}()
-
-	_, err = io.Copy(strBody, response.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read response body")
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return "", errors.Errorf("get failed with status code [%d]", response.StatusCode)
-	}
-
-	return strBody.String(), nil
-}
-
-func (c *xClient) delete(urlStr string) (string, error) {
-	c.logger.Trace().Str("url", urlStr).Msg("extended api delete start")
-
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to parse url")
-	}
-	req := &http.Request{
-		URL:    parsedURL,
-		Method: "DELETE",
-		Header: http.Header{
-			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
-		},
-	}
-
-	response, err := c.client.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "delete failed")
-	}
-
-	strBody := &strings.Builder{}
-
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			c.logger.Trace().Err(err).Msg("failed to close response body")
-		}
-
-		c.logger.Trace().Str("url", urlStr).Str("body", strBody.String()).Msg("extended api delete end")
-	}()
-
-	_, err = io.Copy(strBody, response.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read response body")
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return "", errors.Errorf("delete failed with status code [%d]", response.StatusCode)
-	}
-
-	return strBody.String(), nil
-}
-
-func (c *xClient) post(urlStr, payload string) (string, error) {
-	c.logger.Trace().Str("url", urlStr).Msg("extended api post start")
-
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to parse url")
-	}
-
-	req := &http.Request{
-		URL:    parsedURL,
-		Method: "POST",
-		Header: http.Header{
-			"Authorization": []string{"basic " + base64.URLEncoding.EncodeToString([]byte(c.cfg.Username+":"+c.cfg.Password))},
-		},
-		Body: ioutil.NopCloser(strings.NewReader(payload)),
-	}
-
-	response, err := c.client.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "get failed")
-	}
-
-	strBody := &strings.Builder{}
-
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			c.logger.Trace().Err(err).Msg("failed to close response body")
-		}
-
-		c.logger.Trace().Str("url", urlStr).Str("body", strBody.String()).Msg("extended api post end")
 	}()
 
 	_, err = io.Copy(strBody, response.Body)

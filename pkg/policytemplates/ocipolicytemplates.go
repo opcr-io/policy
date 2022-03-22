@@ -60,7 +60,7 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 func (o *oci) ListRepos() ([]string, error) {
 	var templateRepos []string
 
-	policyRepo, _, err := o.extClient.ListPublicRepos(o.cfg.Org, &api.PaginationRequest{Token: "", Size: -1})
+	policyRepo, err := o.extClient.ListPublicRepos(o.cfg.Org, &api.PaginationRequest{Token: "", Size: -1})
 	if err != nil {
 		return nil, err
 	}

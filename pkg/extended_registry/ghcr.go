@@ -44,18 +44,18 @@ func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) Ext
 	}
 }
 
-func (g *GHCRClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
 	orgs, pageInfo, err := g.sccClient.ListOrgs(context.Background(),
 		&sources.AccessToken{Token: g.base.cfg.Password, Type: "Bearer"},
 		page)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not list organizations")
+		return nil, errors.Wrap(err, "could not list organizations")
 	}
 	var response []*api.RegistryOrg
 	for i := range orgs {
 		response = append(response, &api.RegistryOrg{Name: orgs[i]})
 	}
-	return &registry.ListOrgsResponse{Orgs: response}, pageInfo, nil
+	return &registry.ListOrgsResponse{Orgs: response, Page: pageInfo}, nil
 }
 
 func (g *GHCRClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
@@ -64,7 +64,7 @@ func (g *GHCRClient) ListRepos(org string, page *api.PaginationRequest) (*regist
 	if err != nil {
 		return nil, nil, err
 	}
-	resp, _, err := g.listRepos(org, nil, github.ListOptions{
+	resp, pageInfo, err := g.listRepos(org, nil, github.ListOptions{
 		Page:    pageNumber,
 		PerPage: pageSize,
 	})
@@ -85,21 +85,26 @@ func (g *GHCRClient) ListRepos(org string, page *api.PaginationRequest) (*regist
 		response = append(response, &policy)
 	}
 
-	return &registry.ListImagesResponse{Images: response}, nil, nil
+	return &registry.ListImagesResponse{Images: response},
+		&api.PaginationResponse{
+			NextToken:  pageInfo.NextPageToken,
+			ResultSize: int32(pageInfo.ContentLength),
+			TotalSize:  int32(pageInfo.LastPage),
+		}, nil
 }
 
-func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
 	visibility := public
 	pageNumber, pageSize, err := parsePaginationRequest(page)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	resp, _, err := g.listRepos(org, &visibility, github.ListOptions{
+	resp, pageInfo, err := g.listRepos(org, &visibility, github.ListOptions{
 		Page:    pageNumber,
 		PerPage: pageSize,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var response []*api.PolicyImage
@@ -110,7 +115,14 @@ func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*
 
 		response = append(response, &policy)
 	}
-	return &registry.ListImagesResponse{Images: response}, nil, nil
+	return &registry.ListPublicImagesResponse{
+		Images: response,
+		Page: &api.PaginationResponse{
+			NextToken:  pageInfo.NextPageToken,
+			ResultSize: int32(pageInfo.ContentLength),
+			TotalSize:  int32(pageInfo.LastPage),
+		},
+	}, nil
 }
 
 func (g *GHCRClient) SetVisibility(org, repo string, public bool) error {

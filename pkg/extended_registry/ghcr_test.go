@@ -138,13 +138,13 @@ func TestGHCRListOrgs(t *testing.T) {
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
 	var results *registry.ListOrgsResponse
-	orgs, pageInfo, err := client.ListOrgs(&api.PaginationRequest{Size: 1, Token: ""})
+	orgs, err := client.ListOrgs(&api.PaginationRequest{Size: 1, Token: ""})
 	results = orgs
 	for {
-		if pageInfo != nil {
-			if pageInfo.NextToken != "" {
+		if orgs.Page != nil {
+			if orgs.Page.NextToken != "" {
 				// Test pagination by taking 1 org at a time
-				orgs, pageInfo, err = client.ListOrgs(&api.PaginationRequest{Size: 1, Token: pageInfo.NextToken})
+				orgs, err = client.ListOrgs(&api.PaginationRequest{Size: 1, Token: orgs.Page.NextToken})
 				results.Orgs = append(results.Orgs, orgs.Orgs...)
 			} else {
 				break
@@ -215,7 +215,7 @@ func TestGHCRList(t *testing.T) {
 
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
-	orgs, _, err := client.ListOrgs(nil)
+	orgs, err := client.ListOrgs(nil)
 	assert.NilError(t, err)
 	orgs.Orgs = append(orgs.Orgs, &api.RegistryOrg{Name: username}) // allow to get user packages
 	response := &registry.ListImagesResponse{}
