@@ -66,12 +66,15 @@ func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest) (
 	resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
 		Page:         page,
 		Organization: org,
-		Repo:         strings.TrimPrefix(repo, org),
+		Repo:         strings.TrimPrefix(repo, org+"/"),
 	})
-	if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
-		if resp != nil {
-			return resp.Tag, resp.Page, err
+	if err != nil {
+		if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
+			return nil, nil, err
 		}
+	}
+	if resp != nil {
+		return resp.Tag, resp.Page, err
 	}
 	// Fallback to use remote call if ListTagsWithDetails is unknown
 	// Repo name contains the org as org/repo as a response from list repos
