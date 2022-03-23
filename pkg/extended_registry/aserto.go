@@ -29,7 +29,7 @@ type AsertoClient struct {
 // TODO Use aserto-go SDK registry client
 func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
 	var options []client.ConnectionOption
-	options = append(options, client.WithAddr(cfg.Address),
+	options = append(options, client.WithAddr(cfg.GRPCAddress),
 		client.WithAPIKeyAuth(base64.URLEncoding.EncodeToString([]byte(cfg.Username+":"+cfg.Password))),
 		client.WithInsecure(true))
 	extensionClient, err := registryClient.New(
@@ -61,9 +61,37 @@ func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest) (
 	resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
 		Page:         page,
 		Organization: org,
-		Repo:         repo,
+		Repo:         strings.TrimPrefix(repo, org),
 	})
-	return resp.Tag, resp.Page, err
+	if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
+		if resp != nil {
+			return resp.Tag, resp.Page, err
+		}
+	}
+	// Fallback to use remote call if ListTagsWithDetails is unknown
+	// Repo name contains the org as org/repo as a response from list repos
+	server := strings.TrimPrefix(c.cfg.Address, "https://")
+	repoInfo, err := name.NewRepository(fmt.Sprintf("%s/%s", server, repo))
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repoInfo)
+	}
+
+	// TODO: add paging options
+	tags, err := remote.List(repoInfo,
+		remote.WithAuth(&authn.Basic{
+			Username: c.cfg.Username,
+			Password: c.cfg.Password,
+		}),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	var response []*api.RegistryRepoTag
+	for i := range tags {
+		response = append(response, &api.RegistryRepoTag{Name: tags[i]})
+	}
+
+	return response, nil, nil
 }
 
 func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {

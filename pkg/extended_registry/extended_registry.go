@@ -15,9 +15,10 @@ import (
 )
 
 type Config struct {
-	Address  string `json:"address"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Address     string `json:"address"`
+	GRPCAddress string `json:"extended"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
 }
 
 type ExtendedClient interface {
@@ -67,9 +68,10 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 	if extendedGRPCAddress != "" {
 		return NewAsertoClient(logger,
 			&Config{
-				Address:  extendedGRPCAddress,
-				Username: cfg.Username,
-				Password: cfg.Password,
+				Address:     cfg.Address,
+				GRPCAddress: extendedGRPCAddress,
+				Username:    cfg.Username,
+				Password:    cfg.Password,
 			})
 	}
 	return client, errors.Errorf("server does not support extended registry [%s]", server)
