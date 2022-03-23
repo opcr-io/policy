@@ -21,11 +21,10 @@ func TestOCIListRepos(t *testing.T) {
 
 	ociTemplate := NewOCI(ctx, &log, transport, Config{
 		Server:     "opcr.io",
-		Org:        "aserto-templates",
 		PolicyRoot: "",
 	})
 
-	repos, err := ociTemplate.ListRepos()
+	repos, err := ociTemplate.ListRepos("aserto-templates", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,11 +68,10 @@ func TestOCILoadRepo(t *testing.T) {
 
 	ociTemplate := NewOCI(ctx, &log, transport, Config{
 		Server:     "opcr.io",
-		Org:        "aserto-templates",
 		PolicyRoot: tmpDir,
 	})
 
-	bundleFS, err := ociTemplate.Load("peoplefinder-rbac:0.0.1")
+	bundleFS, err := ociTemplate.Load("aserto-templates/peoplefinder-rbac:0.0.1")
 	if err != nil {
 		t.Fatal(err)
 	}

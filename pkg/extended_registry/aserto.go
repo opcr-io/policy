@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -156,6 +158,14 @@ func (c *AsertoClient) RemoveImage(org, repo, tag string) error {
 
 func (c *AsertoClient) IsValidTag(org, repo, tag string) (bool, error) {
 	_, err := c.GetTag(org, repo, tag)
+
+	tErr, ok := errors.Cause(err).(*transport.Error)
+	if ok {
+		if tErr.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+	}
+
 	if err != nil {
 		return false, err
 	}
