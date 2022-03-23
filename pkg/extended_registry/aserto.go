@@ -31,9 +31,12 @@ type AsertoClient struct {
 // TODO Use aserto-go SDK registry client
 func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
 	var options []client.ConnectionOption
-	options = append(options, client.WithAddr(cfg.GRPCAddress),
-		client.WithAPIKeyAuth(base64.URLEncoding.EncodeToString([]byte(cfg.Username+":"+cfg.Password))),
-		client.WithInsecure(true))
+	options = append(options, client.WithAddr(cfg.GRPCAddress))
+	if cfg.Username != "" && cfg.Password != "" {
+		options = append(options, client.WithAPIKeyAuth(base64.URLEncoding.EncodeToString([]byte(cfg.Username+":"+cfg.Password))))
+	} else if cfg.Password != "" {
+		options = append(options, client.WithAPIKeyAuth(cfg.Password))
+	}
 	extensionClient, err := registryClient.New(
 		context.Background(),
 		options...,
