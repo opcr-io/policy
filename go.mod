@@ -17,7 +17,7 @@ replace oras.land/oras-go => oras.land/oras-go v0.4.0
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0
-	github.com/aserto-dev/aserto-go v0.8.4
+	github.com/aserto-dev/aserto-go v0.8.5
 	github.com/aserto-dev/clui v0.8.0
 	github.com/aserto-dev/go-grpc v0.8.6
 	github.com/aserto-dev/go-utils v0.8.3

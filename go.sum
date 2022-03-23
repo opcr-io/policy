@@ -126,8 +126,8 @@ github.com/armon/go-metrics v0.3.10/go.mod h1:4O98XIr/9W0sxpJ8UaYkvjk10Iff7SnFrb
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/aserto-dev/aserto-go v0.8.4 h1:7GpAOJEM0/pfoRgVX17I42Kaa/rtuXzvZtBg9xqktxU=
-github.com/aserto-dev/aserto-go v0.8.4/go.mod h1:NvtgGGStsQZdJiYV6rCCBCdfmoiOk7tjuVZy8EanANM=
+github.com/aserto-dev/aserto-go v0.8.5 h1:h5zLAlb8dkPu9NNTuou3gV83qdwgFff24EhBOse9Ffw=
+github.com/aserto-dev/aserto-go v0.8.5/go.mod h1:NvtgGGStsQZdJiYV6rCCBCdfmoiOk7tjuVZy8EanANM=
 github.com/aserto-dev/clui v0.7.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
 github.com/aserto-dev/clui v0.8.0 h1:6naBp7djFHl0frhdU1aO1SxQ1+onE/pPCYr04Xo4kT4=
 github.com/aserto-dev/clui v0.8.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
