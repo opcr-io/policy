@@ -176,3 +176,19 @@ func (c *AsertoClient) IsValidTag(org, repo, tag string) (bool, error) {
 	}
 	return true, nil
 }
+
+func (c *AsertoClient) RepoAvailable(org, repo string) (bool, error) {
+	repoAvailableResponse, err := c.extension.Registry.RepoAvailable(context.Background(), &registry.RepoAvailableRequest{
+		Organization: org,
+		Repo:         repo,
+	})
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to check if repo [%s] exists", repo)
+	}
+
+	if repoAvailableResponse.Availability == api.NameAvailability_NAME_AVAILABILITY_UNAVAILABLE {
+		return true, nil
+	}
+
+	return false, nil
+}

@@ -30,6 +30,7 @@ type ExtendedClient interface {
 	SetVisibility(org, repo string, public bool) error
 	RemoveImage(org, repo, tag string) error
 	IsValidTag(org, repo, tag string) (bool, error)
+	RepoAvailable(org, repo string) (bool, error)
 }
 
 type xClient struct {
@@ -109,6 +110,11 @@ func (c *xClient) RemoveImage(org, repo, tag string) error {
 func (c *xClient) IsValidTag(org, repo, tag string) (bool, error) {
 	return false, errors.New("not implemented")
 }
+
+func (c *xClient) RepoAvailable(org, repo string) (bool, error) {
+	return false, errors.New("not implemented")
+}
+
 func (c *xClient) HasGRPCExtendedAddress() (string, error) {
 	strURL := c.cfg.Address + "/info"
 	resp, err := c.get(strURL)

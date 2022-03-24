@@ -357,3 +357,25 @@ func parsePaginationRequest(page *api.PaginationRequest) (int, int, error) {
 
 	return pageNumber, pageSize, nil
 }
+
+func (g *GHCRClient) RepoAvailable(org, repo string) (bool, error) {
+	var resp *github.Response
+	var err error
+	if org == "" || org == g.base.cfg.Username {
+		_, resp, err = g.githubClient.Users.GetPackage(context.Background(), "", packageType, repo)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get package %s for user %s", repo, org)
+		}
+	} else {
+		_, resp, err = g.githubClient.Organizations.GetPackage(context.Background(), org, packageType, repo)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get package %s for org %s", repo, org)
+		}
+	}
+
+	if resp.StatusCode == 404 {
+		return true, nil
+	}
+
+	return false, nil
+}
