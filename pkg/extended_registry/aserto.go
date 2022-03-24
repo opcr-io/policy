@@ -63,11 +63,6 @@ func (c *AsertoClient) ListPublicRepos(org string, page *api.PaginationRequest) 
 }
 func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	repo = strings.TrimPrefix(repo, org+"/")
-	if page != nil {
-		if page.Size == -1 {
-			page.Size = 100 // TODO: Fix aserto-registry to allow receiving page size -1 for all tags
-		}
-	}
 	resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
 		Page:         page,
 		Organization: org,
