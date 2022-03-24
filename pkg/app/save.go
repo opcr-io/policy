@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/opcr-io/policy/pkg/parser"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
@@ -13,7 +14,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	defer c.Cancel()
 	var outputFile *os.File
 
-	ref, err := c.calculatePolicyRef(userRef)
+	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}

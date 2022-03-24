@@ -13,6 +13,7 @@ import (
 
 	"github.com/containerd/containerd/remotes/docker"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
@@ -84,7 +85,10 @@ func (o *oci) ListRepos(org, tag string) ([]string, error) {
 
 // Loads a policy template into a fs.FS
 func (o *oci) Load(userRef string) (fs.FS, error) {
-	ref := o.cfg.Server + "/" + userRef
+	ref, err := parser.CalculatePolicyRef(userRef, o.cfg.Server)
+	if err != nil {
+		return nil, err
+	}
 
 	descriptorDigest, err := o.pullRef(ref)
 	if err != nil {

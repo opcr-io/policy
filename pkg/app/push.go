@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/containerd/containerd/remotes/docker"
+	"github.com/opcr-io/policy/pkg/parser"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
@@ -13,7 +14,7 @@ import (
 func (c *PolicyApp) Push(userRef string) error {
 	defer c.Cancel()
 
-	ref, err := c.calculatePolicyRef(userRef)
+	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}

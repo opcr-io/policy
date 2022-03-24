@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +30,7 @@ func TestRefCalculation(t *testing.T) {
 			assert.NoError(err)
 			defer cleanup()
 
-			calculatedRef, err := p.calculatePolicyRef(userRef)
+			calculatedRef, err := parser.CalculatePolicyRef(userRef, p.Configuration.DefaultDomain)
 			assert.NoError(err)
 
 			assert.Equal(expectedInternalRef, calculatedRef)
