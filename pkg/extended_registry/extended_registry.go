@@ -25,7 +25,7 @@ type ExtendedClient interface {
 	ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error)
 	ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
 	ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error)
-	ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
+	ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
 	GetTag(org, repo, tag string) (*api.RegistryRepoTag, error)
 	SetVisibility(org, repo string, public bool) error
 	RemoveImage(org, repo, tag string) error
@@ -91,7 +91,7 @@ func (c *xClient) ListPublicRepos(org string, page *api.PaginationRequest) (*reg
 	return nil, errors.New("not implemented")
 }
 
-func (c *xClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *xClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	return nil, nil, errors.New("not implemented")
 }
 

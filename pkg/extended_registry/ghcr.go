@@ -139,7 +139,7 @@ func (g *GHCRClient) SetVisibility(org, repo string, public bool) error {
 }
 
 // ListTags returns tags on the image - if org is empty it returns the tags of the user's image
-func (g *GHCRClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	pageNumber, pageSize, err := parsePaginationRequest(page)
 	if err != nil {
 		return nil, nil, err

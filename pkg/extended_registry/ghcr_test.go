@@ -165,7 +165,7 @@ func TestGHCRListTags(t *testing.T) {
 
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
-	resp, _, err := client.ListTags("", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""})
+	resp, _, err := client.ListTags("", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""}, false)
 	assert.NilError(t, err)
 	assert.Equal(t, len(resp), 2)
 }

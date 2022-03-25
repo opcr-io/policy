@@ -1,12 +1,15 @@
 package extendedregistry
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aserto-dev/aserto-go/client"
@@ -18,6 +21,8 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/hashicorp/go-multierror"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -61,44 +66,26 @@ func (c *AsertoClient) ListPublicRepos(org string, page *api.PaginationRequest) 
 	resp, err := c.extension.Registry.ListPublicImages(context.Background(), &registry.ListPublicImagesRequest{Page: page, Organization: org})
 	return resp, err
 }
-func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	repo = strings.TrimPrefix(repo, org+"/")
-	resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
-		Page:         page,
-		Organization: org,
-		Repo:         repo,
-	})
-	if err != nil {
-		if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
-			return nil, nil, err
+	if !deep {
+		resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
+			Page:         page,
+			Organization: org,
+			Repo:         repo,
+		})
+		if err != nil {
+			if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
+				return nil, nil, err
+			}
+		}
+		if resp != nil {
+			return resp.Tag, resp.Page, err
 		}
 	}
-	if resp != nil {
-		return resp.Tag, resp.Page, err
-	}
-	// Fallback to use remote call if ListTagsWithDetails is unknown
+	// Fallback to use remote call if ListTagsWithDetails is unknown or deep is true
 	// Repo name contains the org as org/repo as a response from list repos
-	server := strings.TrimPrefix(c.cfg.Address, "https://")
-	repoInfo, err := name.NewRepository(fmt.Sprintf("%s/%s/%s", server, org, repo))
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repoInfo)
-	}
-
-	tags, err := remote.List(repoInfo,
-		remote.WithAuth(&authn.Basic{
-			Username: c.cfg.Username,
-			Password: c.cfg.Password,
-		}),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	var response []*api.RegistryRepoTag
-	for i := range tags {
-		response = append(response, &api.RegistryRepoTag{Name: tags[i]})
-	}
-
-	return response, nil, nil
+	return c.listTagsRemote(org, repo, page, deep)
 }
 
 func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {
@@ -191,4 +178,152 @@ func (c *AsertoClient) RepoAvailable(org, repo string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+	server := strings.TrimPrefix(c.cfg.Address, "https://")
+	repoName, err := name.NewRepository(server + "/" + org + "/" + repo)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repo)
+	}
+
+	count := 30
+	if page != nil {
+		count = int(page.Size)
+	}
+
+	tags, err := remote.List(repoName,
+		remote.WithPageSize(count),
+		remote.WithAuth(&authn.Basic{
+			Username: c.cfg.Username,
+			Password: c.cfg.Password,
+		}))
+
+	if err != nil {
+		if tErr, ok := err.(*transport.Error); ok {
+			switch tErr.StatusCode {
+			case http.StatusUnauthorized:
+				return nil, nil, errors.Wrap(err, "authentication to registry failed")
+			case http.StatusNotFound:
+				return []*api.RegistryRepoTag{}, nil, nil
+			}
+		}
+
+		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+	}
+
+	p := 0
+	if page != nil && page.Token != "" {
+		p, err = strconv.Atoi(page.Token)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to parse token as a page number")
+		}
+	}
+
+	start := p * count
+	end := start + count
+	if start >= end {
+		return []*api.RegistryRepoTag{}, nil, nil
+	}
+
+	if end > len(tags) {
+		end = len(tags)
+	}
+
+	ref := server + "/" + org + "/" + repo
+	result, err := c.processTags(tags, ref, start, end, deep)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+	}
+
+	nextPage := &api.PaginationResponse{}
+	if end+1 < len(tags) {
+		nextPage.NextToken = strconv.Itoa(p + 1)
+	}
+
+	return result, nextPage, nil
+}
+
+func (c *AsertoClient) processTags(tags []string, repo string, start, end int, deep bool) ([]*api.RegistryRepoTag, error) {
+
+	wg := &sync.WaitGroup{}
+	wg.Add(end - start)
+
+	me := multierror.Error{}
+	result := make([]*api.RegistryRepoTag, end-start)
+
+	for i, tag := range tags[start:end] {
+		if !deep {
+			result[i] = &api.RegistryRepoTag{
+				Name: tag,
+			}
+			wg.Done()
+			continue
+		}
+
+		go func(i int, tag string) {
+			defer wg.Done()
+
+			ref := repo + ":" + tag
+
+			parsedRef, err := name.ParseReference(ref)
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to parse reference [%s]", ref))
+			}
+
+			desc, err := remote.Get(parsedRef,
+				remote.WithAuth(&authn.Basic{
+					Username: c.cfg.Username,
+					Password: c.cfg.Password,
+				}))
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to get image [%s]", ref))
+				return
+			}
+
+			manifestReader := bytes.NewReader(desc.Manifest)
+			m, err := v1.ParseManifest(manifestReader)
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to parse manifest [%s]", ref))
+				return
+			}
+			if len(m.Layers) == 0 {
+				me.Errors = append(me.Errors, errors.Errorf("no layers found in manifest [%s]", ref))
+				return
+			}
+
+			createdAt := time.Unix(0, 0)
+			createdAtStr := m.Layers[0].Annotations[ocispec.AnnotationCreated]
+			if createdAtStr != "" {
+				createdAt, err = time.Parse(time.RFC3339, createdAtStr)
+				if err != nil {
+					me.Errors = append(me.Errors, errors.Errorf("failed to parse createdAt timestamp annotation [%s]", ref))
+				}
+			}
+
+			var annotations []*api.RegistryRepoAnnotation
+			for i := range m.Layers {
+				for k, v := range m.Layers[i].Annotations {
+					annotations = append(annotations, &api.RegistryRepoAnnotation{Key: k, Value: v})
+				}
+			}
+
+			result[i] = &api.RegistryRepoTag{
+				Name:        tag,
+				Digest:      desc.Digest.String(),
+				Annotations: annotations,
+				Size:        m.Layers[0].Size,
+				CreatedAt:   timestamppb.New(createdAt),
+			}
+
+		}(i, tag)
+	}
+
+	wg.Wait()
+
+	err := me.ErrorOrNil()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
