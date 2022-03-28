@@ -17,6 +17,7 @@ replace oras.land/oras-go => oras.land/oras-go v0.4.0
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0
+	github.com/aserto-dev/aserto-go v0.8.5
 	github.com/aserto-dev/clui v0.8.0
 	github.com/aserto-dev/go-grpc v0.8.6
 	github.com/aserto-dev/go-utils v0.8.3
@@ -30,6 +31,7 @@ require (
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/magefile/mage v1.12.1
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/nlepage/go-tarfs v1.0.6
@@ -43,6 +45,7 @@ require (
 	github.com/tidwall/gjson v1.13.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/h2non/gock.v1 v1.1.2
 	gopkg.in/yaml.v2 v2.4.0
@@ -78,10 +81,9 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.1 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
-	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -130,7 +132,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
-	google.golang.org/grpc v1.44.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect

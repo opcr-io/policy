@@ -1,143 +1,95 @@
 package extendedregistry
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/aserto-dev/aserto-go/client"
+	registryClient "github.com/aserto-dev/aserto-go/client/registry"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/hashicorp/go-multierror"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"github.com/tidwall/gjson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AsertoClient struct {
-	base *xClient
+	cfg       *Config
+	extension *registryClient.Client
 }
 
-// TODO Use aserto-go SDK registry client
-func NewAsertoClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
-	baseClient := newExtendedClient(logger, cfg, client)
-
+func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
+	var options []client.ConnectionOption
+	options = append(options, client.WithAddr(cfg.GRPCAddress))
+	if cfg.Username != "" && cfg.Password != "" {
+		options = append(options, client.WithAPIKeyAuth(base64.URLEncoding.EncodeToString([]byte(cfg.Username+":"+cfg.Password))))
+	} else if cfg.Password != "" {
+		options = append(options, client.WithAPIKeyAuth(cfg.Password))
+	}
+	extensionClient, err := registryClient.New(
+		context.Background(),
+		options...,
+	)
 	return &AsertoClient{
-		base: baseClient,
-	}
+		cfg:       cfg,
+		extension: extensionClient,
+	}, err
 }
 
-func (c *AsertoClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, *api.PaginationResponse, error) {
-	address, err := c.extendedAPIAddress()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	jsonBody, err := c.base.get(address + "/api/v1/registry/organizations")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to list organizations")
-	}
-	type Org struct {
-		Name string `json:"name"`
-	}
-	// TODO Add paginated information to read all orgs
-	var parseStruct struct {
-		Orgs []Org `json:"orgs"`
-	}
-
-	err = json.Unmarshal([]byte(jsonBody), &parseStruct)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to unmarshal orgs")
-	}
-	var response []*api.RegistryOrg
-	for i := range parseStruct.Orgs {
-		response = append(response, &api.RegistryOrg{Name: parseStruct.Orgs[i].Name})
-	}
-	return &registry.ListOrgsResponse{Orgs: response}, nil, nil
+func (c *AsertoClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
+	orgs, err := c.extension.Registry.ListOrgs(context.Background(), &registry.ListOrgsRequest{Page: page})
+	return orgs, err
 }
 
 func (c *AsertoClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
-	if org == "" {
-		return nil, nil, nil
-	}
-	address, err := c.extendedAPIAddress()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	jsonBody, err := c.base.get(address + "/api/v1/registry/images")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to list images")
-	}
-
-	response := struct {
-		Images []*api.PolicyImage `json:"images"`
-	}{}
-
-	err = json.Unmarshal([]byte(jsonBody), &response)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to unmarshal policy list response")
-	}
-
-	return &registry.ListImagesResponse{Images: response.Images}, nil, nil
+	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
+	resp, err := c.extension.Registry.ListImages(context.Background(), &registry.ListImagesRequest{})
+	return resp, nil, err
 }
 
-func (c *AsertoClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
-	address, err := c.extendedAPIAddress()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	jsonBody, err := c.base.get(fmt.Sprintf("%s/api/v1/registry/images/%s/public?size=%d&token=%s", address, org, page.Size, page.Token))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to list public images")
-	}
-
-	response := struct {
-		Page   api.PaginationResponse `json:"page"`
-		Images []*api.PolicyImage     `json:"images"`
-	}{}
-
-	err = json.Unmarshal([]byte(jsonBody), &response)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to unmarshal policy list response")
-	}
-	fmt.Println(jsonBody)
-
-	return &registry.ListImagesResponse{Images: response.Images}, &response.Page, nil
+func (c *AsertoClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
+	resp, err := c.extension.Registry.ListPublicImages(context.Background(), &registry.ListPublicImagesRequest{Page: page, Organization: org})
+	return resp, err
 }
-func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+	repo = strings.TrimPrefix(repo, org+"/")
+	if !deep {
+		resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
+			Page:         page,
+			Organization: org,
+			Repo:         repo,
+		})
+		if err != nil {
+			if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
+				return nil, nil, err
+			}
+		}
+		if resp != nil {
+			return resp.Tag, resp.Page, err
+		}
+	}
+	// Fallback to use remote call if ListTagsWithDetails is unknown or deep is true
 	// Repo name contains the org as org/repo as a response from list repos
-	repoInfo, err := name.NewRepository(fmt.Sprintf("%s/%s", strings.TrimPrefix(c.base.cfg.Address, "https://"), repo))
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repoInfo)
-	}
-
-	// TODO: add paging options
-	tags, err := remote.List(repoInfo,
-		remote.WithAuth(&authn.Basic{
-			Username: c.base.cfg.Username,
-			Password: c.base.cfg.Password,
-		}))
-	if err != nil {
-		return nil, nil, err
-	}
-	var response []*api.RegistryRepoTag
-	for i := range tags {
-		response = append(response, &api.RegistryRepoTag{Name: tags[i]})
-	}
-
-	return response, nil, nil
+	return c.listTagsRemote(org, repo, page, deep)
 }
 
 func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {
-	image := fmt.Sprintf("%s/%s/%s:%s", strings.TrimPrefix(c.base.cfg.Address, "https://"), org, repo, tag)
+	image := fmt.Sprintf("%s/%s/%s:%s", strings.TrimPrefix(c.cfg.Address, "https://"), org, repo, tag)
 	repoInfo, err := name.ParseReference(image)
 	if err != nil {
 		return nil, err
@@ -145,8 +97,8 @@ func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, erro
 
 	descriptor, err := remote.Get(repoInfo,
 		remote.WithAuth(&authn.Basic{
-			Username: c.base.cfg.Username,
-			Password: c.base.cfg.Password,
+			Username: c.cfg.Username,
+			Password: c.cfg.Password,
 		}))
 
 	if err != nil {
@@ -180,57 +132,198 @@ func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, erro
 }
 
 func (c *AsertoClient) SetVisibility(org, repo string, public bool) error {
-	image := fmt.Sprintf("%s/%s", org, repo)
-	address, err := c.extendedAPIAddress()
-	if err != nil {
-		return err
-	}
-
-	toUpdate := address + "/api/v1/registry/images/" + image + "/visibility"
-
-	// TODO: error handling from body/header
-	_, err = c.base.post(toUpdate, fmt.Sprintf(`{"public": %t}`, public))
-	if err != nil {
-		return errors.Wrap(err, "failed to update image visibility")
-	}
-
-	return nil
+	_, err := c.extension.Registry.SetImageVisibility(context.Background(), &registry.SetImageVisibilityRequest{
+		Image:        repo,
+		Organization: org,
+		Public:       public,
+	})
+	return err
 }
 func (c *AsertoClient) RemoveImage(org, repo, tag string) error {
-	image := fmt.Sprintf("%s/%s", org, repo)
-	address, err := c.extendedAPIAddress()
-	if err != nil {
-		return err
-	}
-
-	toDelete := address + "/api/v1/registry/images/" + image
-	if tag != "" {
-		toDelete += "?tag=" + url.QueryEscape(tag)
-	}
-
-	// TODO: error handling from body/header
-	_, err = c.base.delete(toDelete)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove image")
-	}
-
-	return nil
+	_, err := c.extension.Registry.RemoveImage(context.Background(), &registry.RemoveImageRequest{
+		Image:        repo,
+		Tag:          tag,
+		Organization: org,
+	})
+	return err
 }
 
 func (c *AsertoClient) IsValidTag(org, repo, tag string) (bool, error) {
 	_, err := c.GetTag(org, repo, tag)
+
+	tErr, ok := errors.Cause(err).(*transport.Error)
+	if ok {
+		if tErr.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+	}
+
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (c *AsertoClient) extendedAPIAddress() (string, error) {
-	strURL := c.base.cfg.Address + "/info"
-	response, err := c.base.get(strURL)
+func (c *AsertoClient) RepoAvailable(org, repo string) (bool, error) {
+	repoAvailableResponse, err := c.extension.Registry.RepoAvailable(context.Background(), &registry.RepoAvailableRequest{
+		Organization: org,
+		Repo:         repo,
+	})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get /info")
+		return false, errors.Wrapf(err, "failed to check if repo [%s] exists", repo)
 	}
 
-	return "https://" + gjson.Get(response, "extended_api").String(), nil
+	if repoAvailableResponse.Availability == api.NameAvailability_NAME_AVAILABILITY_UNAVAILABLE {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+	server := strings.TrimPrefix(c.cfg.Address, "https://")
+	repoName, err := name.NewRepository(server + "/" + org + "/" + repo)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repo)
+	}
+
+	count := 30
+	if page != nil {
+		count = int(page.Size)
+	}
+
+	tags, err := remote.List(repoName,
+		remote.WithPageSize(count),
+		remote.WithAuth(&authn.Basic{
+			Username: c.cfg.Username,
+			Password: c.cfg.Password,
+		}))
+
+	if err != nil {
+		if tErr, ok := err.(*transport.Error); ok {
+			switch tErr.StatusCode {
+			case http.StatusUnauthorized:
+				return nil, nil, errors.Wrap(err, "authentication to registry failed")
+			case http.StatusNotFound:
+				return []*api.RegistryRepoTag{}, nil, nil
+			}
+		}
+
+		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+	}
+
+	p := 0
+	if page != nil && page.Token != "" {
+		p, err = strconv.Atoi(page.Token)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to parse token as a page number")
+		}
+	}
+
+	start := p * count
+	end := start + count
+	if start >= end {
+		return []*api.RegistryRepoTag{}, nil, nil
+	}
+
+	if end > len(tags) {
+		end = len(tags)
+	}
+
+	ref := server + "/" + org + "/" + repo
+	result, err := c.processTags(tags, ref, start, end, deep)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+	}
+
+	nextPage := &api.PaginationResponse{}
+	if end+1 < len(tags) {
+		nextPage.NextToken = strconv.Itoa(p + 1)
+	}
+
+	return result, nextPage, nil
+}
+
+func (c *AsertoClient) processTags(tags []string, repo string, start, end int, deep bool) ([]*api.RegistryRepoTag, error) {
+
+	wg := &sync.WaitGroup{}
+	wg.Add(end - start)
+
+	me := multierror.Error{}
+	result := make([]*api.RegistryRepoTag, end-start)
+
+	for i, tag := range tags[start:end] {
+		if !deep {
+			result[i] = &api.RegistryRepoTag{
+				Name: tag,
+			}
+			wg.Done()
+			continue
+		}
+
+		go func(i int, tag string) {
+			defer wg.Done()
+
+			ref := repo + ":" + tag
+
+			parsedRef, err := name.ParseReference(ref)
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to parse reference [%s]", ref))
+			}
+
+			desc, err := remote.Get(parsedRef,
+				remote.WithAuth(&authn.Basic{
+					Username: c.cfg.Username,
+					Password: c.cfg.Password,
+				}))
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to get image [%s]", ref))
+				return
+			}
+
+			manifestReader := bytes.NewReader(desc.Manifest)
+			m, err := v1.ParseManifest(manifestReader)
+			if err != nil {
+				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to parse manifest [%s]", ref))
+				return
+			}
+			if len(m.Layers) == 0 {
+				me.Errors = append(me.Errors, errors.Errorf("no layers found in manifest [%s]", ref))
+				return
+			}
+
+			createdAt := time.Unix(0, 0)
+			createdAtStr := m.Layers[0].Annotations[ocispec.AnnotationCreated]
+			if createdAtStr != "" {
+				createdAt, err = time.Parse(time.RFC3339, createdAtStr)
+				if err != nil {
+					me.Errors = append(me.Errors, errors.Errorf("failed to parse createdAt timestamp annotation [%s]", ref))
+				}
+			}
+
+			var annotations []*api.RegistryRepoAnnotation
+			for i := range m.Layers {
+				for k, v := range m.Layers[i].Annotations {
+					annotations = append(annotations, &api.RegistryRepoAnnotation{Key: k, Value: v})
+				}
+			}
+
+			result[i] = &api.RegistryRepoTag{
+				Name:        tag,
+				Digest:      desc.Digest.String(),
+				Annotations: annotations,
+				Size:        m.Layers[0].Size,
+				CreatedAt:   timestamppb.New(createdAt),
+			}
+
+		}(i, tag)
+	}
+
+	wg.Wait()
+
+	err := me.ErrorOrNil()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

@@ -113,7 +113,7 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	imageData := [][]string{}
 	for _, image := range response.Images {
 		repo := fmt.Sprintf("%s/%s", server, image.Name)
-		tags, _, err := xClient.ListTags(org, image.Name, &api.PaginationRequest{Size: -1, Token: ""})
+		tags, _, err := xClient.ListTags(org, image.Name, &api.PaginationRequest{Size: -1, Token: ""}, true)
 		if err != nil {
 			return err
 		}

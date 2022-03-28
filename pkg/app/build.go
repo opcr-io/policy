@@ -9,8 +9,8 @@ import (
 	"github.com/aserto-dev/runtime"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
-	"github.com/containerd/containerd/reference/docker"
 	"github.com/google/uuid"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -98,7 +98,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	parsed, err := c.calculatePolicyRef(ref)
+	parsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
@@ -113,28 +113,6 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	}
 
 	return nil
-}
-
-func (c *PolicyApp) calculatePolicyRef(userRef string) (string, error) {
-	parsed, err := docker.ParseDockerRef(userRef)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse reference [%s]", userRef)
-	}
-
-	familiarized := docker.FamiliarString(parsed)
-
-	domain := docker.Domain(parsed)
-
-	if (familiarized == userRef || familiarized == userRef+":latest") && domain == DefaultCanonicalDomain {
-		parsedWithDomain, err := docker.ParseDockerRef(c.Configuration.DefaultDomain + "/" + userRef)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to parse normalized reference [%s]", c.Configuration.DefaultDomain+"/"+userRef)
-		}
-
-		return parsedWithDomain.String(), nil
-	}
-
-	return userRef, nil
 }
 
 func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {

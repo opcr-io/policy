@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/open-policy-agent/opa/repl"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
@@ -25,7 +26,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	}
 
 	existingRefs := ociStore.ListReferences()
-	existingRefParsed, err := c.calculatePolicyRef(ref)
+	existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
@@ -43,7 +44,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		}
 
 		existingRefs = ociStore.ListReferences()
-		existingRefParsed, err := c.calculatePolicyRef(ref)
+		existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
 		}

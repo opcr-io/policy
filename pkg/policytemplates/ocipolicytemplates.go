@@ -13,6 +13,7 @@ import (
 
 	"github.com/containerd/containerd/remotes/docker"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
@@ -22,7 +23,6 @@ import (
 
 type Config struct {
 	Server     string
-	Org        string
 	PolicyRoot string
 }
 
@@ -57,15 +57,27 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 }
 
 // Lists the policy templates
-func (o *oci) ListRepos() ([]string, error) {
+func (o *oci) ListRepos(org, tag string) ([]string, error) {
 	var templateRepos []string
 
-	policyRepo, _, err := o.extClient.ListPublicRepos(o.cfg.Org, &api.PaginationRequest{Token: "", Size: -1})
+	policyRepo, err := o.extClient.ListPublicRepos(org, &api.PaginationRequest{Token: "", Size: -1})
 	if err != nil {
 		return nil, err
 	}
+
 	for _, repo := range policyRepo.Images {
-		templateRepos = append(templateRepos, repo.Name)
+		valid, err := o.extClient.IsValidTag(org, repo.Name, tag)
+		if err != nil {
+			return nil, err
+		}
+
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get tags for '%s'", repo.Name)
+		}
+
+		if valid {
+			templateRepos = append(templateRepos, repo.Name)
+		}
 	}
 
 	return templateRepos, nil
@@ -73,7 +85,10 @@ func (o *oci) ListRepos() ([]string, error) {
 
 // Loads a policy template into a fs.FS
 func (o *oci) Load(userRef string) (fs.FS, error) {
-	ref := o.cfg.Server + "/" + o.cfg.Org + "/" + userRef
+	ref, err := parser.CalculatePolicyRef(userRef, o.cfg.Server)
+	if err != nil {
+		return nil, err
+	}
 
 	descriptorDigest, err := o.pullRef(ref)
 	if err != nil {

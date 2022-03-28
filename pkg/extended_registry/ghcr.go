@@ -29,6 +29,7 @@ const public = "public"
 
 var packageType = "container"
 
+// when page size is -1 grab loop through all pages
 func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
 	baseClient := newExtendedClient(logger, cfg, client)
 	tp := github.BasicAuthTransport{
@@ -44,18 +45,18 @@ func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) Ext
 	}
 }
 
-func (g *GHCRClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
 	orgs, pageInfo, err := g.sccClient.ListOrgs(context.Background(),
 		&sources.AccessToken{Token: g.base.cfg.Password, Type: "Bearer"},
 		page)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not list organizations")
+		return nil, errors.Wrap(err, "could not list organizations")
 	}
 	var response []*api.RegistryOrg
 	for i := range orgs {
 		response = append(response, &api.RegistryOrg{Name: orgs[i]})
 	}
-	return &registry.ListOrgsResponse{Orgs: response}, pageInfo, nil
+	return &registry.ListOrgsResponse{Orgs: response, Page: pageInfo}, nil
 }
 
 func (g *GHCRClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
@@ -64,42 +65,55 @@ func (g *GHCRClient) ListRepos(org string, page *api.PaginationRequest) (*regist
 	if err != nil {
 		return nil, nil, err
 	}
-	resp, _, err := g.listRepos(org, nil, github.ListOptions{
-		Page:    pageNumber,
-		PerPage: pageSize,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
 	var response []*api.PolicyImage
-	for i := range resp {
-		policy := api.PolicyImage{}
-		policy.Name = *resp[i].Name
-		if *resp[i].Visibility == public {
-			policy.Public = true
-		} else {
-			policy.Public = false
+	for {
+		resp, pageInfo, err := g.listRepos(org, nil, github.ListOptions{
+			Page:    pageNumber,
+			PerPage: pageSize,
+		})
+		if err != nil {
+			return nil, nil, err
 		}
 
-		response = append(response, &policy)
+		for i := range resp {
+			policy := api.PolicyImage{}
+			policy.Name = *resp[i].Name
+			if *resp[i].Visibility == public {
+				policy.Public = true
+			} else {
+				policy.Public = false
+			}
+
+			response = append(response, &policy)
+		}
+		if pageSize != -1 {
+			return &registry.ListImagesResponse{Images: response}, &api.PaginationResponse{
+				NextToken:  pageInfo.NextPageToken,
+				ResultSize: int32(pageInfo.ContentLength),
+				TotalSize:  int32(pageInfo.LastPage),
+			}, nil
+		}
+		if pageInfo.NextPage < 1 {
+			break
+		}
+		pageNumber = pageInfo.NextPage
 	}
 
 	return &registry.ListImagesResponse{Images: response}, nil, nil
 }
 
-func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
 	visibility := public
 	pageNumber, pageSize, err := parsePaginationRequest(page)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	resp, _, err := g.listRepos(org, &visibility, github.ListOptions{
+	resp, pageInfo, err := g.listRepos(org, &visibility, github.ListOptions{
 		Page:    pageNumber,
 		PerPage: pageSize,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var response []*api.PolicyImage
@@ -110,7 +124,14 @@ func (g *GHCRClient) ListPublicRepos(org string, page *api.PaginationRequest) (*
 
 		response = append(response, &policy)
 	}
-	return &registry.ListImagesResponse{Images: response}, nil, nil
+	return &registry.ListPublicImagesResponse{
+		Images: response,
+		Page: &api.PaginationResponse{
+			NextToken:  pageInfo.NextPageToken,
+			ResultSize: int32(pageInfo.ContentLength),
+			TotalSize:  int32(pageInfo.LastPage),
+		},
+	}, nil
 }
 
 func (g *GHCRClient) SetVisibility(org, repo string, public bool) error {
@@ -118,12 +139,12 @@ func (g *GHCRClient) SetVisibility(org, repo string, public bool) error {
 }
 
 // ListTags returns tags on the image - if org is empty it returns the tags of the user's image
-func (g *GHCRClient) ListTags(org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (g *GHCRClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	pageNumber, pageSize, err := parsePaginationRequest(page)
 	if err != nil {
 		return nil, nil, err
 	}
-	tagDetails, err := g.listTagInformation(org, repo, pageNumber, pageSize)
+	tagDetails, pageInfo, err := g.listTagInformation(org, repo, pageNumber, pageSize)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -138,11 +159,18 @@ func (g *GHCRClient) ListTags(org, repo string, page *api.PaginationRequest) ([]
 			Annotations: nil,
 		})
 	}
+	if pageInfo != nil {
+		return response, &api.PaginationResponse{
+			NextToken:  fmt.Sprintf("%d", pageInfo.NextPage),
+			TotalSize:  int32(pageInfo.LastPage),
+			ResultSize: int32(pageInfo.ContentLength),
+		}, nil
+	}
 	return response, nil, nil
 }
 
 func (g *GHCRClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {
-	tagDetails, err := g.listTagInformation(org, repo, 1, 100) // check the latest 100 tags
+	tagDetails, _, err := g.listTagInformation(org, repo, 1, -1) // check all tags
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +196,7 @@ func (g *GHCRClient) RemoveImage(org, repo, tag string) error {
 	if tag == "" {
 		return g.deletePackage(org, repo)
 	}
-	tagDetails, err := g.listTagInformation(org, repo, 1, 100) // check the latest 100 tags
+	tagDetails, _, err := g.listTagInformation(org, repo, 1, -1) // check all tags
 	if err != nil {
 		return err
 	}
@@ -244,35 +272,53 @@ func (g *GHCRClient) listRepos(org string, visibility *string, listOptions githu
 	return resp, pageInfo, nil
 }
 
-func (g *GHCRClient) listTagInformation(org, repo string, page, size int) ([]*github.PackageVersion, error) {
+func (g *GHCRClient) listTagInformation(org, repo string, page, size int) ([]*github.PackageVersion, *github.Response, error) {
 	var response []*github.PackageVersion
 	var err error
-	if org == "" || org == g.base.cfg.Username {
-		response, _, err = g.githubClient.Users.PackageGetAllVersions(context.Background(), "", packageType, repo,
-			&github.PackageListOptions{
-				PackageType: &packageType,
-				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: size,
-				},
-			})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to list container versions")
+	perPage := size
+	for {
+		// Grab all package versions
+		if size == -1 {
+			perPage = 100 // max allowed by github api
 		}
-	} else {
-		response, _, err = g.githubClient.Organizations.PackageGetAllVersions(context.Background(), org, packageType, repo,
-			&github.PackageListOptions{
-				PackageType: &packageType,
-				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: size,
-				},
-			})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to list container versions")
+		var versions []*github.PackageVersion
+		var pageInfo *github.Response
+		if org == "" || org == g.base.cfg.Username {
+			versions, pageInfo, err = g.githubClient.Users.PackageGetAllVersions(context.Background(), "", packageType, repo,
+				&github.PackageListOptions{
+					PackageType: &packageType,
+					ListOptions: github.ListOptions{
+						Page:    page,
+						PerPage: perPage,
+					},
+				})
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "failed to list container versions")
+			}
+
+		} else {
+			versions, pageInfo, err = g.githubClient.Organizations.PackageGetAllVersions(context.Background(), org, packageType, repo,
+				&github.PackageListOptions{
+					PackageType: &packageType,
+					ListOptions: github.ListOptions{
+						Page:    page,
+						PerPage: size,
+					},
+				})
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "failed to list container versions")
+			}
 		}
+		response = append(response, versions...)
+		if size != -1 {
+			return response, pageInfo, nil
+		}
+		if pageInfo.NextPage < 1 {
+			break
+		}
+		page = pageInfo.NextPage
 	}
-	return response, nil
+	return response, nil, nil
 }
 
 func (g *GHCRClient) validImage(repoName, username, password string) (bool, error) {
@@ -307,9 +353,29 @@ func parsePaginationRequest(page *api.PaginationRequest) (int, int, error) {
 		}
 		pageNumber = int(number)
 	}
-	if page.Size > 0 {
-		pageSize = int(page.Size)
-	}
+	pageSize = int(page.Size)
 
 	return pageNumber, pageSize, nil
+}
+
+func (g *GHCRClient) RepoAvailable(org, repo string) (bool, error) {
+	var resp *github.Response
+	var err error
+	if org == "" || org == g.base.cfg.Username {
+		_, resp, err = g.githubClient.Users.GetPackage(context.Background(), "", packageType, repo)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get package %s for user %s", repo, org)
+		}
+	} else {
+		_, resp, err = g.githubClient.Organizations.GetPackage(context.Background(), org, packageType, repo)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get package %s for org %s", repo, org)
+		}
+	}
+
+	if resp.StatusCode == 404 {
+		return true, nil
+	}
+
+	return false, nil
 }

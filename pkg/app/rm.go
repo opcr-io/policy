@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
@@ -12,7 +13,7 @@ import (
 func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	defer c.Cancel()
 
-	existingRefParsed, err := c.calculatePolicyRef(existingRef)
+	existingRefParsed, err := parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 	defer c.Cancel()
 
-	ref, err := c.calculatePolicyRef(existingRef)
+	ref, err := parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}

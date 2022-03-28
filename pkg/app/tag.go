@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
@@ -18,7 +19,7 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 	}
 
 	existingRefs := ociStore.ListReferences()
-	existingRefParsed, err := c.calculatePolicyRef(existingRef)
+	existingRefParsed, err := parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
@@ -28,7 +29,7 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 		return errors.Errorf("ref [%s] not found in the local store", existingRef)
 	}
 
-	parsed, err := c.calculatePolicyRef(newRef)
+	parsed, err := parser.CalculatePolicyRef(newRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}

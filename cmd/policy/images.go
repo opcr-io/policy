@@ -1,6 +1,10 @@
 package main
 
-import "github.com/pkg/errors"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 type ImagesCmd struct {
 	Remote    bool   `name:"remote" short:"r" help:"List policies from a remote registry."`
@@ -14,7 +18,7 @@ func (c *ImagesCmd) Run(g *Globals) error {
 		if c.Org == "" {
 			return errors.New("Organization parameter is required, please provide it using -o/--organization")
 		}
-		err := g.App.ImagesRemote(c.Server, c.Org, c.ShowEmpty)
+		err := g.App.ImagesRemote(c.Server, strings.TrimSpace(c.Org), c.ShowEmpty)
 		if err != nil {
 			return errors.Wrap(err, "Failed to list remote policies.")
 		}

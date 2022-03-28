@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/containerd/containerd/remotes/docker"
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
@@ -12,7 +13,7 @@ import (
 func (c *PolicyApp) Pull(userRef string) error {
 	defer c.Cancel()
 
-	ref, err := c.calculatePolicyRef(userRef)
+	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
