@@ -182,6 +182,21 @@ func (c *AsertoClient) RepoAvailable(ctx context.Context, org, repo string) (boo
 	return false, nil
 }
 
+func (c *AsertoClient) CreateRepo(ctx context.Context, org, repo string) error {
+	_, err := c.extension.Registry.CreateImage(ctx, &registry.CreateImageRequest{
+		Organization: org,
+		Image: &api.PolicyImage{
+			Name: repo,
+		},
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create repo")
+	}
+
+	return nil
+}
+
 func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	server := strings.TrimPrefix(c.cfg.Address, "https://")
 	repoName, err := name.NewRepository(server + "/" + org + "/" + repo)

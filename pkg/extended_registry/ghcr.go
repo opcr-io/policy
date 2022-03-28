@@ -220,6 +220,10 @@ func (g *GHCRClient) IsValidTag(ctx context.Context, org, repo, tag string) (boo
 	return valid, nil
 }
 
+func (g *GHCRClient) CreateRepo(ctx context.Context, org, repo string) error {
+	return errors.New("not implemented")
+}
+
 func (g GHCRClient) deletePackageVersion(ctx context.Context, org, repo string, version int64) error {
 	if org == "" || org == g.base.cfg.Username {
 		_, err := g.githubClient.Users.PackageDeleteVersion(ctx, "", packageType, repo, version)
