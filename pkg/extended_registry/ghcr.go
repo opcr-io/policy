@@ -88,7 +88,7 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 		}
 		if pageSize != -1 {
 			return &registry.ListImagesResponse{Images: response}, &api.PaginationResponse{
-				NextToken:  pageInfo.NextPageToken,
+				NextToken:  fmt.Sprint(pageInfo.NextPage),
 				ResultSize: int32(pageInfo.ContentLength),
 				TotalSize:  int32(pageInfo.LastPage),
 			}, nil
@@ -127,7 +127,7 @@ func (g *GHCRClient) ListPublicRepos(ctx context.Context, org string, page *api.
 	return &registry.ListPublicImagesResponse{
 		Images: response,
 		Page: &api.PaginationResponse{
-			NextToken:  pageInfo.NextPageToken,
+			NextToken:  fmt.Sprint(pageInfo.NextPage),
 			ResultSize: int32(pageInfo.ContentLength),
 			TotalSize:  int32(pageInfo.LastPage),
 		},
