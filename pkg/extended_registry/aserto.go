@@ -57,7 +57,7 @@ func (c *AsertoClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgs
 }
 
 func (c *AsertoClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
-	// TODO: Asero ListImages does not include pagination and does not allow paginated requests
+	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
 	resp, err := c.extension.Registry.ListImages(context.Background(), &registry.ListImagesRequest{})
 	return resp, nil, err
 }
