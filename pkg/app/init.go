@@ -12,8 +12,18 @@ import (
 
 // Init
 // path is rootpath of project
-func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
+func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite bool) error {
 	defer c.Cancel()
+
+	c.Logger.Log().Msgf("path: %s", path)
+	c.Logger.Log().Msgf("user: %s", user)
+	c.Logger.Log().Msgf("server: %s", server)
+	c.Logger.Log().Msgf("repo: %s", repo)
+	c.Logger.Log().Msgf("scc: %s", scc)
+	c.Logger.Log().Msgf("token: %s", token)
+	c.Logger.Log().Msgf("overwrite: %v", overwrite)
+
+	os.Exit(0)
 
 	if !strings.EqualFold(scc, "github") && !strings.EqualFold(scc, "gitlab") {
 		return errors.Errorf("not supported source code provider '%s'", scc)
@@ -49,19 +59,19 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		return err
 	}
 
-	if noSrc {
-		return nil
-	}
+	// if noSrc {
+	// 	return nil
+	// }
 
-	opa := generators.NewOpa(path, c.UI)
-	if err := opa.Generate(overwrite); err != nil {
-		return err
-	}
+	// opa := generators.NewOpa(path, c.UI)
+	// if err := opa.Generate(overwrite); err != nil {
+	// 	return err
+	// }
 
-	general := generators.NewGeneral(path, names[1], c.UI)
-	if err := general.Generate(overwrite); err != nil {
-		return err
-	}
+	// general := generators.NewGeneral(path, names[1], c.UI)
+	// if err := general.Generate(overwrite); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
