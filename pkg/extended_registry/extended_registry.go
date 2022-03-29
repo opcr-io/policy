@@ -1,6 +1,7 @@
 package extendedregistry
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"net/http"
@@ -22,15 +23,15 @@ type Config struct {
 }
 
 type ExtendedClient interface {
-	ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error)
-	ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
-	ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error)
-	ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
-	GetTag(org, repo, tag string) (*api.RegistryRepoTag, error)
-	SetVisibility(org, repo string, public bool) error
-	RemoveImage(org, repo, tag string) error
-	IsValidTag(org, repo, tag string) (bool, error)
-	RepoAvailable(org, repo string) (bool, error)
+	ListOrgs(ctx context.Context, page *api.PaginationRequest) (*registry.ListOrgsResponse, error)
+	ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
+	ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error)
+	ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
+	GetTag(ctx context.Context, org, repo, tag string) (*api.RegistryRepoTag, error)
+	SetVisibility(ctx context.Context, org, repo string, public bool) error
+	RemoveImage(ctx context.Context, org, repo, tag string) error
+	IsValidTag(ctx context.Context, org, repo, tag string) (bool, error)
+	RepoAvailable(ctx context.Context, org, repo string) (bool, error)
 }
 
 type xClient struct {
@@ -48,7 +49,7 @@ func newExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client)
 }
 
 //TODO: This needs to be smarted - rework in progress
-func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
+func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
 	httpClient := http.Client{}
 	httpClient.Transport = transport
 
@@ -67,7 +68,9 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 		return client, errors.Wrapf(err, "server does not support extended registry [%s]", server)
 	}
 	if extendedGRPCAddress != "" {
-		return NewAsertoClient(logger,
+		return NewAsertoClient(
+			ctx,
+			logger,
 			&Config{
 				Address:     cfg.Address,
 				GRPCAddress: extendedGRPCAddress,
@@ -79,39 +82,39 @@ func GetExtendedClient(server string, logger *zerolog.Logger, cfg *Config, trans
 }
 
 //TODO: Implement as OCI specific client
-func (c *xClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
+func (c *xClient) ListOrgs(ctx context.Context, page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (c *xClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
+func (c *xClient) ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
 	return nil, nil, errors.New("not implemented")
 }
 
-func (c *xClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
+func (c *xClient) ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (c *xClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *xClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	return nil, nil, errors.New("not implemented")
 }
 
-func (c *xClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {
+func (c *xClient) GetTag(ctx context.Context, org, repo, tag string) (*api.RegistryRepoTag, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (c *xClient) SetVisibility(org, repo string, public bool) error {
+func (c *xClient) SetVisibility(ctx context.Context, org, repo string, public bool) error {
 	return errors.New("not implemented")
 }
 
-func (c *xClient) RemoveImage(org, repo, tag string) error {
+func (c *xClient) RemoveImage(ctx context.Context, org, repo, tag string) error {
 	return errors.New("not implemented")
 }
 
-func (c *xClient) IsValidTag(org, repo, tag string) (bool, error) {
+func (c *xClient) IsValidTag(ctx context.Context, org, repo, tag string) (bool, error) {
 	return false, errors.New("not implemented")
 }
 
-func (c *xClient) RepoAvailable(org, repo string) (bool, error) {
+func (c *xClient) RepoAvailable(ctx context.Context, org, repo string) (bool, error) {
 	return false, errors.New("not implemented")
 }
 

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/aserto-dev/mage-loot/common"
 	"github.com/aserto-dev/mage-loot/deps"
@@ -22,7 +23,10 @@ func init() {
 
 // Generate generates all code.
 func Generate() error {
-	return common.Generate()
+	return common.GenerateWith([]string{
+		filepath.Dir(deps.GoBinPath("mockgen")),
+		filepath.Dir(deps.GoBinPath("wire")),
+	})
 }
 
 // Build builds all binaries in ./cmd.

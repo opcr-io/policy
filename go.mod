@@ -10,6 +10,10 @@ go 1.17
 
 replace github.com/nlepage/go-tarfs => github.com/mihaibuzgau/go-tarfs v1.0.7-0.20220316124411-aad3047fe9b5
 
+// replace github.com/aserto-dev/scc-lib => ../scc-lib
+
+// replace github.com/aserto-dev/go-grpc => ../go-grpc
+
 //replace github.com/nlepage/go-tarfs => ../go-tarfs
 
 replace oras.land/oras-go => oras.land/oras-go v0.4.0
@@ -19,11 +23,11 @@ require (
 	github.com/alecthomas/kong v0.4.0
 	github.com/aserto-dev/aserto-go v0.8.5
 	github.com/aserto-dev/clui v0.8.0
-	github.com/aserto-dev/go-grpc v0.8.6
+	github.com/aserto-dev/go-grpc v0.8.8
 	github.com/aserto-dev/go-utils v0.8.3
-	github.com/aserto-dev/mage-loot v0.8.0
+	github.com/aserto-dev/mage-loot v0.8.1
 	github.com/aserto-dev/runtime v0.37.4
-	github.com/aserto-dev/scc-lib v0.0.1
+	github.com/aserto-dev/scc-lib v0.0.3
 	github.com/containerd/containerd v1.5.10
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
@@ -42,7 +46,7 @@ require (
 	github.com/rs/zerolog v1.26.1
 	github.com/spf13/viper v1.10.0
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.13.0
+	github.com/tidwall/gjson v1.14.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	google.golang.org/grpc v1.44.0

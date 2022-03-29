@@ -36,7 +36,9 @@ type oci struct {
 
 // NewOCI returns a new policy template provider for OCI
 func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport, cfg Config) PolicyTemplates {
-	extClient, err := extendedregistry.GetExtendedClient(cfg.Server,
+	extClient, err := extendedregistry.GetExtendedClient(
+		ctx,
+		cfg.Server,
 		log, &extendedregistry.Config{
 			Address:  "https://" + cfg.Server,
 			Username: " ",
@@ -60,13 +62,13 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 func (o *oci) ListRepos(org, tag string) ([]string, error) {
 	var templateRepos []string
 
-	policyRepo, err := o.extClient.ListPublicRepos(org, &api.PaginationRequest{Token: "", Size: -1})
+	policyRepo, err := o.extClient.ListPublicRepos(o.ctx, org, &api.PaginationRequest{Token: "", Size: -1})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, repo := range policyRepo.Images {
-		valid, err := o.extClient.IsValidTag(org, repo.Name, tag)
+		valid, err := o.extClient.IsValidTag(o.ctx, org, repo.Name, tag)
 		if err != nil {
 			return nil, err
 		}
