@@ -10,6 +10,9 @@ bin:
       darwin-amd64: "f87221e4f56b3da41f0a029bf2b48896ec3be84dd7075bdb9466def1e056f809"
       darwin-arm64: "571985c34990a2a7b913cee8c50be42b34c8d8cb751a2aed2c80121ad4b4e44b"
 go:
+  mockgen:
+    importPath: github.com/golang/mock/mockgen
+    version: "v1.6.0"
   goreleaser:
     importPath: github.com/goreleaser/goreleaser
     version: "v1.0.0"

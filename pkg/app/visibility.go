@@ -13,7 +13,9 @@ func (c *PolicyApp) SetVisibility(server, policy string, public bool) error {
 
 	creds := c.Configuration.Servers[server]
 
-	xClient, err := extendedregistry.GetExtendedClient(server,
+	xClient, err := extendedregistry.GetExtendedClient(
+		c.Context,
+		server,
 		c.Logger,
 		&extendedregistry.Config{
 			Address:  "https://" + server,
@@ -28,7 +30,7 @@ func (c *PolicyApp) SetVisibility(server, policy string, public bool) error {
 	}
 	org := strings.Split(policy, "/")[0]
 	repo := strings.Replace(policy, fmt.Sprintf("%s/", org), "", -1)
-	err = xClient.SetVisibility(org, repo, public)
+	err = xClient.SetVisibility(c.Context, org, repo, public)
 	if err != nil {
 		return err
 	}

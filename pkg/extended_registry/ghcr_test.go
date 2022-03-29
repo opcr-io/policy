@@ -1,6 +1,7 @@
 package extendedregistry
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"testing"
@@ -8,7 +9,7 @@ import (
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
 	"github.com/golang/mock/gomock"
-	mocksources "github.com/opcr-io/policy/pkg/extended_registry/mocks"
+	mocksources "github.com/opcr-io/policy/pkg/mocks"
 	"github.com/rs/zerolog"
 	"gopkg.in/h2non/gock.v1"
 	"gotest.tools/assert"
@@ -131,20 +132,35 @@ func TestGHCRListOrgs(t *testing.T) {
 	m := mocksources.NewMockSource(ctrl)
 	// mock return two orgs
 	m.EXPECT().ListOrgs(gomock.Any(), gomock.Any(), &api.PaginationRequest{Size: 1, Token: ""}).
-		Return([]string{"one"}, &api.PaginationResponse{NextToken: "test"}, nil)
+		Return(
+			[]*api.SccOrg{
+				{
+					Name: "one",
+					Id:   "one",
+				},
+			},
+			&api.PaginationResponse{NextToken: "test"},
+			nil)
 	m.EXPECT().ListOrgs(gomock.Any(), gomock.Any(), &api.PaginationRequest{Size: 1, Token: "test"}).
-		Return([]string{"two"}, &api.PaginationResponse{NextToken: ""}, nil)
+		Return(
+			[]*api.SccOrg{
+				{
+					Name: "two",
+					Id:   "two",
+				},
+			}, &api.PaginationResponse{NextToken: ""},
+			nil)
 
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
 	var results *registry.ListOrgsResponse
-	orgs, err := client.ListOrgs(&api.PaginationRequest{Size: 1, Token: ""})
+	orgs, err := client.ListOrgs(context.Background(), &api.PaginationRequest{Size: 1, Token: ""})
 	results = orgs
 	for {
 		if orgs.Page != nil {
 			if orgs.Page.NextToken != "" {
 				// Test pagination by taking 1 org at a time
-				orgs, err = client.ListOrgs(&api.PaginationRequest{Size: 1, Token: orgs.Page.NextToken})
+				orgs, err = client.ListOrgs(context.Background(), &api.PaginationRequest{Size: 1, Token: orgs.Page.NextToken})
 				results.Orgs = append(results.Orgs, orgs.Orgs...)
 			} else {
 				break
@@ -165,7 +181,7 @@ func TestGHCRListTags(t *testing.T) {
 
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
-	resp, _, err := client.ListTags("", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""}, false)
+	resp, _, err := client.ListTags(context.Background(), "", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""}, false)
 	assert.NilError(t, err)
 	assert.Equal(t, len(resp), 2)
 }
@@ -193,7 +209,7 @@ func TestGHCRGetTag(t *testing.T) {
 		}
 	  }`)
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
-	tag, err := client.GetTag("", "hello_docker", "0.0.1")
+	tag, err := client.GetTag(context.Background(), "", "hello_docker", "0.0.1")
 	assert.NilError(t, err)
 	assert.Equal(t, tag.Name, "0.0.1")
 }
@@ -211,16 +227,24 @@ func TestGHCRList(t *testing.T) {
 	m := mocksources.NewMockSource(ctrl)
 	// mock return two orgs
 	m.EXPECT().ListOrgs(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return([]string{"one"}, nil, nil)
+		Return(
+			[]*api.SccOrg{
+				{
+					Name: "one",
+					Id:   "one",
+				},
+			},
+			nil,
+			nil)
 
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
-	orgs, err := client.ListOrgs(&api.PaginationRequest{Size: -1, Token: ""})
+	orgs, err := client.ListOrgs(context.Background(), &api.PaginationRequest{Size: -1, Token: ""})
 	assert.NilError(t, err)
 	orgs.Orgs = append(orgs.Orgs, &api.RegistryOrg{Name: username}) // allow to get user packages
 	response := &registry.ListImagesResponse{}
 	for i := range orgs.Orgs {
-		orgimages, _, err := client.ListRepos(orgs.Orgs[i].Name, &api.PaginationRequest{Size: -1, Token: ""})
+		orgimages, _, err := client.ListRepos(context.Background(), orgs.Orgs[i].Name, &api.PaginationRequest{Size: -1, Token: ""})
 		assert.NilError(t, err)
 		response.Images = append(response.Images, orgimages.Images...)
 	}
@@ -241,6 +265,6 @@ func TestGHCRRemoveImage(t *testing.T) {
 		Reply(204)
 	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
-	err := client.RemoveImage("", "test2", "0.0.1")
+	err := client.RemoveImage(context.Background(), "", "test2", "0.0.1")
 	assert.NilError(t, err)
 }

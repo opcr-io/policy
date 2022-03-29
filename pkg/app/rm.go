@@ -100,7 +100,9 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 		c.UI.Exclamation().Msg("Operation canceled by user.")
 		return nil
 	}
-	xClient, err := extendedregistry.GetExtendedClient(server.Name(),
+	xClient, err := extendedregistry.GetExtendedClient(
+		c.Context,
+		server.Name(),
 		c.Logger,
 		&extendedregistry.Config{
 			Address:  "https://" + server.Name(),
@@ -118,7 +120,7 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 			WithStringValue("definition", policyDef).
 			Msg("Removing policy definition.")
 		policyInfo := strings.Split(policyDef, "/")
-		err = xClient.RemoveImage(policyInfo[0], policyInfo[1], "")
+		err = xClient.RemoveImage(c.Context, policyInfo[0], policyInfo[1], "")
 		if err != nil {
 			return err
 		}
@@ -133,7 +135,7 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 			Msg("Removing tag.")
 		policyDef := refParsed.Context().RepositoryStr()
 		policyInfo := strings.Split(policyDef, "/")
-		err = xClient.RemoveImage(policyInfo[0], policyInfo[1], tag)
+		err = xClient.RemoveImage(c.Context, policyInfo[0], policyInfo[1], tag)
 		if err != nil {
 			return err
 		}

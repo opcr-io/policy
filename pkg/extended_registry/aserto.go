@@ -33,7 +33,7 @@ type AsertoClient struct {
 	extension *registryClient.Client
 }
 
-func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
+func NewAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
 	var options []client.ConnectionOption
 	options = append(options, client.WithAddr(cfg.GRPCAddress))
 	if cfg.Username != "" && cfg.Password != "" {
@@ -42,7 +42,7 @@ func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error
 		options = append(options, client.WithAPIKeyAuth(cfg.Password))
 	}
 	extensionClient, err := registryClient.New(
-		context.Background(),
+		ctx,
 		options...,
 	)
 	return &AsertoClient{
@@ -51,25 +51,25 @@ func NewAsertoClient(logger *zerolog.Logger, cfg *Config) (ExtendedClient, error
 	}, err
 }
 
-func (c *AsertoClient) ListOrgs(page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
-	orgs, err := c.extension.Registry.ListOrgs(context.Background(), &registry.ListOrgsRequest{Page: page})
+func (c *AsertoClient) ListOrgs(ctx context.Context, page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
+	orgs, err := c.extension.Registry.ListOrgs(ctx, &registry.ListOrgsRequest{Page: page})
 	return orgs, err
 }
 
-func (c *AsertoClient) ListRepos(org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
+func (c *AsertoClient) ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
 	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
-	resp, err := c.extension.Registry.ListImages(context.Background(), &registry.ListImagesRequest{})
+	resp, err := c.extension.Registry.ListImages(ctx, &registry.ListImagesRequest{})
 	return resp, nil, err
 }
 
-func (c *AsertoClient) ListPublicRepos(org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
-	resp, err := c.extension.Registry.ListPublicImages(context.Background(), &registry.ListPublicImagesRequest{Page: page, Organization: org})
+func (c *AsertoClient) ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
+	resp, err := c.extension.Registry.ListPublicImages(ctx, &registry.ListPublicImagesRequest{Page: page, Organization: org})
 	return resp, err
 }
-func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *AsertoClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	repo = strings.TrimPrefix(repo, org+"/")
 	if !deep {
-		resp, err := c.extension.Registry.ListTagsWithDetails(context.Background(), &registry.ListTagsWithDetailsRequest{
+		resp, err := c.extension.Registry.ListTagsWithDetails(ctx, &registry.ListTagsWithDetailsRequest{
 			Page:         page,
 			Organization: org,
 			Repo:         repo,
@@ -85,10 +85,10 @@ func (c *AsertoClient) ListTags(org, repo string, page *api.PaginationRequest, d
 	}
 	// Fallback to use remote call if ListTagsWithDetails is unknown or deep is true
 	// Repo name contains the org as org/repo as a response from list repos
-	return c.listTagsRemote(org, repo, page, deep)
+	return c.listTagsRemote(ctx, org, repo, page, deep)
 }
 
-func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, error) {
+func (c *AsertoClient) GetTag(ctx context.Context, org, repo, tag string) (*api.RegistryRepoTag, error) {
 	image := fmt.Sprintf("%s/%s/%s:%s", strings.TrimPrefix(c.cfg.Address, "https://"), org, repo, tag)
 	repoInfo, err := name.ParseReference(image)
 	if err != nil {
@@ -99,7 +99,9 @@ func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, erro
 		remote.WithAuth(&authn.Basic{
 			Username: c.cfg.Username,
 			Password: c.cfg.Password,
-		}))
+		}),
+		remote.WithContext(ctx),
+	)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get descriptor")
@@ -131,16 +133,16 @@ func (c *AsertoClient) GetTag(org, repo, tag string) (*api.RegistryRepoTag, erro
 	}, nil
 }
 
-func (c *AsertoClient) SetVisibility(org, repo string, public bool) error {
-	_, err := c.extension.Registry.SetImageVisibility(context.Background(), &registry.SetImageVisibilityRequest{
+func (c *AsertoClient) SetVisibility(ctx context.Context, org, repo string, public bool) error {
+	_, err := c.extension.Registry.SetImageVisibility(ctx, &registry.SetImageVisibilityRequest{
 		Image:        repo,
 		Organization: org,
 		Public:       public,
 	})
 	return err
 }
-func (c *AsertoClient) RemoveImage(org, repo, tag string) error {
-	_, err := c.extension.Registry.RemoveImage(context.Background(), &registry.RemoveImageRequest{
+func (c *AsertoClient) RemoveImage(ctx context.Context, org, repo, tag string) error {
+	_, err := c.extension.Registry.RemoveImage(ctx, &registry.RemoveImageRequest{
 		Image:        repo,
 		Tag:          tag,
 		Organization: org,
@@ -148,8 +150,8 @@ func (c *AsertoClient) RemoveImage(org, repo, tag string) error {
 	return err
 }
 
-func (c *AsertoClient) IsValidTag(org, repo, tag string) (bool, error) {
-	_, err := c.GetTag(org, repo, tag)
+func (c *AsertoClient) IsValidTag(ctx context.Context, org, repo, tag string) (bool, error) {
+	_, err := c.GetTag(ctx, org, repo, tag)
 
 	tErr, ok := errors.Cause(err).(*transport.Error)
 	if ok {
@@ -164,8 +166,8 @@ func (c *AsertoClient) IsValidTag(org, repo, tag string) (bool, error) {
 	return true, nil
 }
 
-func (c *AsertoClient) RepoAvailable(org, repo string) (bool, error) {
-	repoAvailableResponse, err := c.extension.Registry.RepoAvailable(context.Background(), &registry.RepoAvailableRequest{
+func (c *AsertoClient) RepoAvailable(ctx context.Context, org, repo string) (bool, error) {
+	repoAvailableResponse, err := c.extension.Registry.RepoAvailable(ctx, &registry.RepoAvailableRequest{
 		Organization: org,
 		Repo:         repo,
 	})
@@ -180,7 +182,7 @@ func (c *AsertoClient) RepoAvailable(org, repo string) (bool, error) {
 	return false, nil
 }
 
-func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	server := strings.TrimPrefix(c.cfg.Address, "https://")
 	repoName, err := name.NewRepository(server + "/" + org + "/" + repo)
 	if err != nil {
@@ -197,7 +199,8 @@ func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequ
 		remote.WithAuth(&authn.Basic{
 			Username: c.cfg.Username,
 			Password: c.cfg.Password,
-		}))
+		}),
+		remote.WithContext(ctx))
 
 	if err != nil {
 		if tErr, ok := err.(*transport.Error); ok {
@@ -231,7 +234,7 @@ func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequ
 	}
 
 	ref := server + "/" + org + "/" + repo
-	result, err := c.processTags(tags, ref, start, end, deep)
+	result, err := c.processTags(ctx, tags, ref, start, end, deep)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
 	}
@@ -244,7 +247,7 @@ func (c *AsertoClient) listTagsRemote(org, repo string, page *api.PaginationRequ
 	return result, nextPage, nil
 }
 
-func (c *AsertoClient) processTags(tags []string, repo string, start, end int, deep bool) ([]*api.RegistryRepoTag, error) {
+func (c *AsertoClient) processTags(ctx context.Context, tags []string, repo string, start, end int, deep bool) ([]*api.RegistryRepoTag, error) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(end - start)
@@ -275,7 +278,9 @@ func (c *AsertoClient) processTags(tags []string, repo string, start, end int, d
 				remote.WithAuth(&authn.Basic{
 					Username: c.cfg.Username,
 					Password: c.cfg.Password,
-				}))
+				}),
+				remote.WithContext(ctx),
+			)
 			if err != nil {
 				me.Errors = append(me.Errors, errors.Wrapf(err, "failed to get image [%s]", ref))
 				return

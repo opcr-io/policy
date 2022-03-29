@@ -86,7 +86,9 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 
 	creds := c.Configuration.Servers[server]
 
-	xClient, err := extendedregistry.GetExtendedClient(server,
+	xClient, err := extendedregistry.GetExtendedClient(
+		c.Context,
+		server,
 		c.Logger,
 		&extendedregistry.Config{
 			Address:  "https://" + server,
@@ -105,7 +107,7 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	p.Start()
 
 	//TODO: Expose pagination options
-	response, _, err := xClient.ListRepos(org, &api.PaginationRequest{Size: -1, Token: ""})
+	response, _, err := xClient.ListRepos(c.Context, org, &api.PaginationRequest{Size: -1, Token: ""})
 	if err != nil {
 		return err
 	}
@@ -113,7 +115,7 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	imageData := [][]string{}
 	for _, image := range response.Images {
 		repo := fmt.Sprintf("%s/%s", server, image.Name)
-		tags, _, err := xClient.ListTags(org, image.Name, &api.PaginationRequest{Size: -1, Token: ""}, true)
+		tags, _, err := xClient.ListTags(c.Context, org, image.Name, &api.PaginationRequest{Size: -1, Token: ""}, true)
 		if err != nil {
 			return err
 		}
