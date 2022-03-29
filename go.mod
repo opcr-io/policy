@@ -27,7 +27,7 @@ require (
 	github.com/aserto-dev/go-utils v0.8.3
 	github.com/aserto-dev/mage-loot v0.8.1
 	github.com/aserto-dev/runtime v0.37.4
-	github.com/aserto-dev/scc-lib v0.0.3
+	github.com/aserto-dev/scc-lib v0.0.4
 	github.com/containerd/containerd v1.5.10
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0

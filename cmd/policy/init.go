@@ -19,12 +19,6 @@ type InitCmd struct {
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
 }
 
-const (
-	templateServer = "opcr.io"
-	ciTemplateOrg  = "ci-templates"
-	ciTemplateTag  = "latest"
-)
-
 func (c *InitCmd) Run(g *Globals) error {
 	if c.Server == "" {
 		respServer := ""
@@ -107,13 +101,14 @@ func getDefaultServer(g *Globals) string {
 }
 
 func getSupportedCIs(g *Globals) (string, error) {
+
 	ociTemplates := policytemplates.NewOCI(g.App.Context,
 		g.App.Logger,
 		g.App.TransportWithTrustedCAs(), policytemplates.Config{
-			Server:     templateServer,
+			Server:     g.App.Configuration.CITemplates.Server,
 			PolicyRoot: g.App.Configuration.PoliciesRoot(),
 		})
-	repos, err := ociTemplates.ListRepos(ciTemplateOrg, ciTemplateTag)
+	repos, err := ociTemplates.ListRepos(g.App.Configuration.CITemplates.Organization, g.App.Configuration.CITemplates.Tag)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list ci-templates")
 	}
