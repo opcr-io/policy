@@ -218,16 +218,7 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		remote.WithContext(ctx))
 
 	if err != nil {
-		if tErr, ok := err.(*transport.Error); ok {
-			switch tErr.StatusCode {
-			case http.StatusUnauthorized:
-				return nil, nil, errors.Wrap(err, "authentication to registry failed")
-			case http.StatusNotFound:
-				return []*api.RegistryRepoTag{}, nil, nil
-			}
-		}
-
-		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+		return c.handleTransportError(err)
 	}
 
 	p := 0
@@ -244,7 +235,7 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		return []*api.RegistryRepoTag{}, nil, nil
 	}
 
-	if end > len(tags) {
+	if end > len(tags) || count == -1 {
 		end = len(tags)
 	}
 
@@ -346,4 +337,17 @@ func (c *AsertoClient) processTags(ctx context.Context, tags []string, repo stri
 		return nil, err
 	}
 	return result, nil
+}
+
+func (c *AsertoClient) handleTransportError(err error) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+	if tErr, ok := err.(*transport.Error); ok {
+		switch tErr.StatusCode {
+		case http.StatusUnauthorized:
+			return nil, nil, errors.Wrap(err, "authentication to registry failed")
+		case http.StatusNotFound:
+			return []*api.RegistryRepoTag{}, nil, nil
+		}
+	}
+
+	return nil, nil, errors.Wrap(err, "failed to list tags from registry")
 }
