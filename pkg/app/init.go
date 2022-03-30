@@ -1,18 +1,20 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
+	"github.com/aserto-dev/scc-lib/generators"
 	"github.com/magefile/mage/sh"
+	"github.com/opcr-io/policy/pkg/policytemplates"
 
-	"github.com/opcr-io/policy/pkg/generators"
 	"github.com/pkg/errors"
 )
 
 // Init
 // path is rootpath of project
-func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
+func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite bool) error {
 	defer c.Cancel()
 
 	if !strings.EqualFold(scc, "github") && !strings.EqualFold(scc, "gitlab") {
@@ -29,41 +31,34 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		return err
 	}
 
-	var sccGenerator generators.Generator
-	sccStruct := &generators.SCC{
-		Path:   path,
-		Server: server,
-		User:   user,
-		Repo:   repo,
-		Token:  token,
-		UI:     c.UI,
-	}
-	switch scc {
-	case "github":
-		sccGenerator = generators.NewGithub(sccStruct)
-	case "gitlab":
-		sccGenerator = generators.NewGitlab(sccStruct)
+	policyTemplatesCfg := policytemplates.Config{
+		Server:     c.Configuration.CITemplates.Server,
+		PolicyRoot: c.Configuration.PoliciesRoot(),
 	}
 
-	if err := sccGenerator.Generate(overwrite); err != nil {
-		return err
+	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
+
+	templateFs, err := ciTemplates.Load(fmt.Sprintf("%s/%s:%s", c.Configuration.CITemplates.Organization, scc, c.Configuration.CITemplates.Tag))
+	if err != nil {
+		return errors.Wrapf(err, "failed to load '%s' ci template", scc)
 	}
 
-	if noSrc {
-		return nil
+	generator, err := generators.NewGenerator(
+		&generators.Config{
+			Server: server,
+			Repo:   repo,
+			Token:  token,
+			User:   user,
+		},
+		c.Logger,
+		templateFs,
+	)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize generator")
 	}
 
-	opa := generators.NewOpa(path, c.UI)
-	if err := opa.Generate(overwrite); err != nil {
-		return err
-	}
-
-	general := generators.NewGeneral(path, names[1], c.UI)
-	if err := general.Generate(overwrite); err != nil {
-		return err
-	}
-
-	return nil
+	return generator.Generate(path, overwrite)
 }
 
 func (c *PolicyApp) validatePath(path string) error {

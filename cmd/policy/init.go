@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/opcr-io/policy/pkg/policytemplates"
 	"github.com/pkg/errors"
 )
 
@@ -14,9 +15,8 @@ type InitCmd struct {
 	Server    string `name:"server" short:"s" help:"registry service name"`
 	Repo      string `name:"repo" short:"r" help:"repository (org/repo)"`
 	TokenName string `name:"token" short:"t" help:"Github Actions secret token name"`
-	SCC       string `name:"scc" help:"source code provider" required:"" enum:"github, gitlab" default:"github"`
+	SCC       string `name:"scc" help:"source code provider"`
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
-	NoSrc     bool   `name:"no-src" help:"do not write src directory" default:"false"`
 }
 
 func (c *InitCmd) Run(g *Globals) error {
@@ -28,6 +28,14 @@ func (c *InitCmd) Run(g *Globals) error {
 			fmt.Sprintf("server: (%s)", defServer), &respServer,
 		).Do()
 		c.Server = iff(respServer != "", respServer, defServer)
+	}
+
+	if c.SCC == "" {
+		scc, err := getSupportedCIs(g)
+		if err != nil {
+			return err
+		}
+		c.SCC = scc
 	}
 
 	if c.User == "" {
@@ -59,7 +67,7 @@ func (c *InitCmd) Run(g *Globals) error {
 		c.Repo = iff(respRepo != "", respRepo, defRepo)
 	}
 
-	err := g.App.Init(c.RootPath, c.User, c.Server, c.Repo, c.SCC, c.TokenName, c.Overwrite, c.NoSrc)
+	err := g.App.Init(c.RootPath, c.User, c.Server, c.Repo, c.SCC, c.TokenName, c.Overwrite)
 	if err != nil {
 		return errors.Wrap(err, "Init failed.")
 	}
@@ -89,21 +97,40 @@ func getDefaultServer(g *Globals) string {
 		servers = append(servers, name)
 	}
 
-	sort.Strings(servers)
+	return buildTable("server", servers)
+}
 
-	allowedValues := make([]int, len(servers))
-	table := g.App.UI.Normal().WithTable("#", "Server")
-	for i, server := range servers {
-		table.WithTableRow(strconv.Itoa(i+1), server)
+func getSupportedCIs(g *Globals) (string, error) {
+
+	ociTemplates := policytemplates.NewOCI(g.App.Context,
+		g.App.Logger,
+		g.App.TransportWithTrustedCAs(), policytemplates.Config{
+			Server:     g.App.Configuration.CITemplates.Server,
+			PolicyRoot: g.App.Configuration.PoliciesRoot(),
+		})
+	repos, err := ociTemplates.ListRepos(g.App.Configuration.CITemplates.Organization, g.App.Configuration.CITemplates.Tag)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list ci-templates")
+	}
+
+	return buildTable("source control provider", repos), nil
+}
+
+func buildTable(name string, items []string) string {
+	sort.Strings(items)
+
+	allowedValues := make([]int, len(items))
+	table := g.App.UI.Normal().WithTable("#", name)
+	for i, item := range items {
+		table.WithTableRow(strconv.Itoa(i+1), item)
 		allowedValues[i] = i + 1
 	}
 
 	table.Do()
-
 	var response int64
-	g.App.UI.Normal().Compact().WithAskInt("Select server#", &response, allowedValues...).Do()
+	g.App.UI.Normal().Compact().WithAskInt(fmt.Sprintf("Select %s#", name), &response, allowedValues...).Do()
 
-	return servers[response-1]
+	return items[response-1]
 }
 
 func getDefaultUser(g *Globals, server string) string {

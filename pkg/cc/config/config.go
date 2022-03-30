@@ -26,8 +26,16 @@ type Config struct {
 	CA            []string          `json:"ca" yaml:"ca"`
 	Insecure      bool              `json:"insecure" yaml:"insecure"`
 	TokenDefaults map[string]string `json:"token_defaults" yaml:"token_defaults"`
+	CITemplates   CITemplatesConfig `json:"ci_templates" yaml:"ci_templates"`
 
 	Servers map[string]ServerCredentials `json:"-" yaml:"-"`
+}
+
+type CITemplatesConfig struct {
+	Server            string `json:"server" yaml:"server"`
+	Organization      string `json:"organization" yaml:"organization"`
+	Tag               string `json:"tag" yaml:"tag"`
+	CreateRepoTimeout int    `json:"create_repo_timeout" yaml:"create_repo_timeout"`
 }
 
 type ServerCredentials struct {
@@ -77,6 +85,10 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
 	v.SetDefault("token_defaults", map[string]string{"opcr.io": "GITHUB_TOKEN"})
+	v.SetDefault("ci_templates.server", "opcr.io")
+	v.SetDefault("ci_templates.organization", "ci-templates")
+	v.SetDefault("ci_templates.tag", "latest")
+	v.SetDefault("ci_templates.create_repo_timeout", 90)
 
 	configExists, err := fileExists(file)
 	if err != nil {
