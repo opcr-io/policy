@@ -240,7 +240,7 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 
 	start := p * count
 	end := start + count
-	if start >= end {
+	if start >= end && count != -1 {
 		return []*api.RegistryRepoTag{}, nil, nil
 	}
 
