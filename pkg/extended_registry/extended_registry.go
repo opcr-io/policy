@@ -32,6 +32,7 @@ type ExtendedClient interface {
 	RemoveImage(ctx context.Context, org, repo, tag string) error
 	IsValidTag(ctx context.Context, org, repo, tag string) (bool, error)
 	RepoAvailable(ctx context.Context, org, repo string) (bool, error)
+	CreateRepo(ctx context.Context, org, repo string) error
 }
 
 type xClient struct {
@@ -116,6 +117,10 @@ func (c *xClient) IsValidTag(ctx context.Context, org, repo, tag string) (bool, 
 
 func (c *xClient) RepoAvailable(ctx context.Context, org, repo string) (bool, error) {
 	return false, errors.New("not implemented")
+}
+
+func (c *xClient) CreateRepo(ctx context.Context, org, repo string) error {
+	return errors.New("not implemented")
 }
 
 func (c *xClient) HasGRPCExtendedAddress() (string, error) {
