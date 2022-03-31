@@ -9,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type InitCmd struct {
+type GenerateCmd struct {
+	CI CICmd `cmd:"" name:"ci" help:"Generate CI stubbs."`
+}
+
+type CICmd struct {
 	RootPath  string `arg:"" name:"path" required:"" help:"project root path (defaults to current directory)" default:"."`
 	User      string `name:"user" short:"u" help:"user name"`
 	Server    string `name:"server" short:"s" help:"registry service name"`
@@ -20,7 +24,11 @@ type InitCmd struct {
 	NoSrc     bool   `name:"no-src" help:"do not write src directory" default:"false"`
 }
 
-func (c *InitCmd) Run(g *Globals) error {
+func (c *GenerateCmd) Run(g *Globals) error {
+	return nil
+}
+
+func (c *CICmd) Run(g *Globals) error {
 	if c.Server == "" {
 		respServer := ""
 		defServer := getDefaultServer(g)
@@ -109,9 +117,14 @@ func getSupportedCIs(g *Globals) (string, error) {
 			Server:     g.App.Configuration.CITemplates.Server,
 			PolicyRoot: g.App.Configuration.PoliciesRoot(),
 		})
-	repos, err := ociTemplates.ListRepos(g.App.Configuration.CITemplates.Organization, g.App.Configuration.CITemplates.Tag)
+	templateRepos, err := ociTemplates.ListRepos(g.App.Configuration.CITemplates.Organization, g.App.Configuration.CITemplates.Tag)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list ci-templates")
+	}
+
+	var repos []string
+	for repo := range templateRepos {
+		repos = append(repos, repo)
 	}
 
 	return buildTable("source control provider", repos), nil

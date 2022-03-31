@@ -20,13 +20,14 @@ type Overrider func(*Config)
 
 // Config holds the configuration for the app.
 type Config struct {
-	FileStoreRoot string            `json:"file_store_root" yaml:"file_store_root"`
-	DefaultDomain string            `json:"default_domain" yaml:"default_domain"`
-	Logging       logger.Config     `json:"logging" yaml:"logging"`
-	CA            []string          `json:"ca" yaml:"ca"`
-	Insecure      bool              `json:"insecure" yaml:"insecure"`
-	TokenDefaults map[string]string `json:"token_defaults" yaml:"token_defaults"`
-	CITemplates   CITemplatesConfig `json:"ci_templates" yaml:"ci_templates"`
+	FileStoreRoot    string                 `json:"file_store_root" yaml:"file_store_root"`
+	DefaultDomain    string                 `json:"default_domain" yaml:"default_domain"`
+	Logging          logger.Config          `json:"logging" yaml:"logging"`
+	CA               []string               `json:"ca" yaml:"ca"`
+	Insecure         bool                   `json:"insecure" yaml:"insecure"`
+	TokenDefaults    map[string]string      `json:"token_defaults" yaml:"token_defaults"`
+	CITemplates      CITemplatesConfig      `json:"ci_templates" yaml:"ci_templates"`
+	ContentTemplates ContentTemplatesConfig `json:"content_templates" yaml:"content_templates"`
 
 	Servers map[string]ServerCredentials `json:"-" yaml:"-"`
 }
@@ -36,6 +37,12 @@ type CITemplatesConfig struct {
 	Organization      string `json:"organization" yaml:"organization"`
 	Tag               string `json:"tag" yaml:"tag"`
 	CreateRepoTimeout int    `json:"create_repo_timeout" yaml:"create_repo_timeout"`
+}
+
+type ContentTemplatesConfig struct {
+	Server       string `json:"server" yaml:"server"`
+	Organization string `json:"organization" yaml:"organization"`
+	Tag          string `json:"tag" yaml:"tag"`
 }
 
 type ServerCredentials struct {
@@ -89,6 +96,10 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetDefault("ci_templates.organization", "ci-templates")
 	v.SetDefault("ci_templates.tag", "latest")
 	v.SetDefault("ci_templates.create_repo_timeout", 90)
+
+	v.SetDefault("content_templates.server", "opcr.io")
+	v.SetDefault("content_templates.organization", "test") // TODO: Change this
+	v.SetDefault("content_templates.tag", "latest")
 
 	configExists, err := fileExists(file)
 	if err != nil {

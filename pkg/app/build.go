@@ -10,6 +10,7 @@ import (
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/google/uuid"
+	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -90,7 +91,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		annotations = map[string]string{}
 	}
 	annotations[ocispec.AnnotationTitle] = ref
-	annotations["org.openpolicyregistry.type"] = "policy"
+	annotations[extendedregistry.AnnotationPolicyRegistry] = "policy"
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	descriptor, err := c.createImage(ociStore, outfile, annotations)

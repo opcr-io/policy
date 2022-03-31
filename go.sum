@@ -129,8 +129,9 @@ github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:l
 github.com/aserto-dev/aserto-go v0.8.5 h1:h5zLAlb8dkPu9NNTuou3gV83qdwgFff24EhBOse9Ffw=
 github.com/aserto-dev/aserto-go v0.8.5/go.mod h1:NvtgGGStsQZdJiYV6rCCBCdfmoiOk7tjuVZy8EanANM=
 github.com/aserto-dev/clui v0.7.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
-github.com/aserto-dev/clui v0.8.0 h1:6naBp7djFHl0frhdU1aO1SxQ1+onE/pPCYr04Xo4kT4=
 github.com/aserto-dev/clui v0.8.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
+github.com/aserto-dev/clui v0.8.1 h1:5IW9OnFZoIWjvnmTE4FNTXrjP1wnMzd39qKAcRnRHt8=
+github.com/aserto-dev/clui v0.8.1/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
 github.com/aserto-dev/go-grpc v0.8.0/go.mod h1:hog+zu5jE3+Y6t7m5PIBlavosmbd2qdF0BGZ9ueWK74=
 github.com/aserto-dev/go-grpc v0.8.8 h1:cP6pijo3q7NU9KzIptl7zXHRDT2lvGjObQ+E1JNPaqI=
 github.com/aserto-dev/go-grpc v0.8.8/go.mod h1:hog+zu5jE3+Y6t7m5PIBlavosmbd2qdF0BGZ9ueWK74=
@@ -144,8 +145,8 @@ github.com/aserto-dev/mage-loot v0.8.1 h1:dBXReBOf8T3Yupp5PFgeSs0//jMPPPFWMDQyWv
 github.com/aserto-dev/mage-loot v0.8.1/go.mod h1:HIdbGTB/JdyEjV9d2dmPMQeqQ1CU21XN3iTOLPBAmeg=
 github.com/aserto-dev/runtime v0.37.4 h1:s0ACvIDs5It+10H48B7RQgzUl+gThENhwtW7+R7ZjRQ=
 github.com/aserto-dev/runtime v0.37.4/go.mod h1:mymJhcniYRLHG3G+QwDwud4KiioBYGU/MPW3atsC0qA=
-github.com/aserto-dev/scc-lib v0.0.4 h1:hYLWu1X0c5b39gCV61AhZlmyMDbmfZhComZnS93nsiI=
-github.com/aserto-dev/scc-lib v0.0.4/go.mod h1:2ID/mosogTvs8uGcCbMNT2VHs5BEJ+f0RWSBZvVgF7E=
+github.com/aserto-dev/scc-lib v0.0.6 h1:lPO/qhjEQmaAeoGu01q7pe5JPNsyM7StV3+GgAqbooc=
+github.com/aserto-dev/scc-lib v0.0.6/go.mod h1:2ID/mosogTvs8uGcCbMNT2VHs5BEJ+f0RWSBZvVgF7E=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
