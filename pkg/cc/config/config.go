@@ -98,7 +98,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetDefault("ci_templates.create_repo_timeout", 90)
 
 	v.SetDefault("content_templates.server", "opcr.io")
-	v.SetDefault("content_templates.organization", "test") // TODO: Change this
+	v.SetDefault("content_templates.organization", "aserto-content")
 	v.SetDefault("content_templates.tag", "latest")
 
 	configExists, err := fileExists(file)
