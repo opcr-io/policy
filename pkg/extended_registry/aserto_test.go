@@ -47,11 +47,11 @@ func TestAsertoList(t *testing.T) {
 		&registry.ListImagesResponse{
 			Images: []*api.PolicyImage{
 				{
-					Name:   "Test",
+					Name:   "some/test",
 					Public: true,
 				},
 				{
-					Name:   "test2",
+					Name:   "some/test2",
 					Public: false,
 				},
 			},
@@ -59,9 +59,9 @@ func TestAsertoList(t *testing.T) {
 	)
 	client := &AsertoClient{extension: &registryClient.Client{}}
 	client.extension.Registry = regTestClient
-	images, _, err := client.ListRepos(context.Background(), "", nil)
+	images, _, err := client.ListRepos(context.Background(), "some", nil)
 	assert.NoError(t, err)
-	assert.Equal(t, len(images.Images), 2)
+	assert.Equal(t, 2, len(images.Images))
 }
 
 func TestAsertoSetVisibility(t *testing.T) {
