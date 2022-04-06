@@ -59,7 +59,27 @@ func (c *AsertoClient) ListOrgs(ctx context.Context, page *api.PaginationRequest
 func (c *AsertoClient) ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
 	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
 	resp, err := c.extension.Registry.ListImages(ctx, &registry.ListImagesRequest{})
-	return resp, nil, err
+
+	var policyImages []*api.PolicyImage
+
+	for _, repo := range resp.Images {
+		pieces := strings.Split(repo.Name, "/")
+		if len(pieces) != 2 {
+			return nil, nil, errors.Errorf("invalid repo name [%s]", repo.Name)
+		}
+
+		if pieces[0] != org {
+			continue
+		}
+
+		policyImages = append(policyImages, repo)
+	}
+
+	result := registry.ListImagesResponse{
+		Images: policyImages,
+	}
+
+	return &result, nil, err
 }
 
 func (c *AsertoClient) ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
