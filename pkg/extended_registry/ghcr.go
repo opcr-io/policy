@@ -151,13 +151,20 @@ func (g *GHCRClient) ListTags(ctx context.Context, org, repo string, page *api.P
 
 	var response []*api.RegistryRepoTag
 	for i := range tagDetails {
-		response = append(response, &api.RegistryRepoTag{
-			CreatedAt:   timestamppb.New(tagDetails[i].GetCreatedAt().Time),
-			Digest:      tagDetails[i].GetName(),
-			Name:        strings.Join(tagDetails[i].GetMetadata().Container.Tags, ","),
-			Size:        0,
-			Annotations: nil,
-		})
+		tagMetadata := tagDetails[i].GetMetadata()
+		if tagMetadata == nil || tagMetadata.Container == nil {
+			continue
+		}
+		for _, tag := range tagMetadata.Container.Tags {
+			response = append(response, &api.RegistryRepoTag{
+				CreatedAt:   timestamppb.New(tagDetails[i].GetCreatedAt().Time),
+				Digest:      tagDetails[i].GetName(),
+				Name:        tag,
+				Size:        0,
+				Annotations: nil,
+			})
+		}
+
 	}
 	if pageInfo != nil {
 		return response, &api.PaginationResponse{
@@ -176,15 +183,20 @@ func (g *GHCRClient) GetTag(ctx context.Context, org, repo, tag string) (*api.Re
 	}
 
 	for i := range tagDetails {
-		containerTags := strings.Join(tagDetails[i].GetMetadata().Container.Tags, ",")
-		if strings.Contains(containerTags, tag) {
-			return &api.RegistryRepoTag{
-				CreatedAt:   timestamppb.New(tagDetails[i].GetCreatedAt().Time),
-				Digest:      tagDetails[i].GetName(),
-				Name:        containerTags,
-				Size:        0,
-				Annotations: nil,
-			}, nil
+		tagMetadata := tagDetails[i].GetMetadata()
+		if tagMetadata == nil || tagMetadata.Container == nil {
+			continue
+		}
+		for _, containerTag := range tagMetadata.Container.Tags {
+			if tag == containerTag {
+				return &api.RegistryRepoTag{
+					CreatedAt:   timestamppb.New(tagDetails[i].GetCreatedAt().Time),
+					Digest:      tagDetails[i].GetName(),
+					Name:        tag,
+					Size:        0,
+					Annotations: nil,
+				}, nil
+			}
 		}
 	}
 
