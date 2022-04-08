@@ -27,6 +27,7 @@ type ExtendedClient interface {
 	ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error)
 	ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error)
 	ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error)
+	ListDigests(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error)
 	GetTag(ctx context.Context, org, repo, tag string) (*api.RegistryRepoTag, error)
 	SetVisibility(ctx context.Context, org, repo string, public bool) error
 	RemoveImage(ctx context.Context, org, repo, tag string) error
@@ -55,7 +56,7 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 	httpClient.Transport = transport
 
 	if server == "ghcr.io" {
-		return NewGHCRClient(logger,
+		return newGHCRClient(logger,
 			&Config{
 				Address:  cfg.Address,
 				Username: cfg.Username,
@@ -69,7 +70,7 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 		return client, errors.Wrapf(err, "server does not support extended registry [%s]", server)
 	}
 	if extendedGRPCAddress != "" {
-		return NewAsertoClient(
+		return newAsertoClient(
 			ctx,
 			logger,
 			&Config{
@@ -96,6 +97,10 @@ func (c *xClient) ListPublicRepos(ctx context.Context, org string, page *api.Pag
 }
 
 func (c *xClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
+	return nil, nil, errors.New("not implemented")
+}
+
+func (c *xClient) ListDigests(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error) {
 	return nil, nil, errors.New("not implemented")
 }
 

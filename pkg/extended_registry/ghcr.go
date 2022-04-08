@@ -30,7 +30,7 @@ const public = "public"
 var packageType = "container"
 
 // when page size is -1 grab loop through all pages
-func NewGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
+func newGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
 	baseClient := newExtendedClient(logger, cfg, client)
 	tp := github.BasicAuthTransport{
 		Username:  strings.TrimSpace(cfg.Username),
@@ -234,6 +234,10 @@ func (g *GHCRClient) IsValidTag(ctx context.Context, org, repo, tag string) (boo
 
 func (g *GHCRClient) CreateRepo(ctx context.Context, org, repo string) error {
 	return errors.New("not implemented")
+}
+
+func (g *GHCRClient) ListDigests(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error) {
+	return nil, nil, errors.New("not implemented")
 }
 
 func (g GHCRClient) deletePackageVersion(ctx context.Context, org, repo string, version int64) error {

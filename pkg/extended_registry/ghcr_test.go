@@ -151,7 +151,7 @@ func TestGHCRListOrgs(t *testing.T) {
 			}, &api.PaginationResponse{NextToken: ""},
 			nil)
 
-	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
 	var results *registry.ListOrgsResponse
 	orgs, err := client.ListOrgs(context.Background(), &api.PaginationRequest{Size: 1, Token: ""})
@@ -179,7 +179,7 @@ func TestGHCRListTags(t *testing.T) {
 	defer gock.Off() // Flush pending mocks after test execution
 	gock.New("https://api.github.com/user/packages/container/hello_docker/versions").Get("").Reply(200).BodyString(listVersions)
 
-	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
 	resp, _, err := client.ListTags(context.Background(), "", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""}, false)
 	assert.NilError(t, err)
@@ -208,7 +208,7 @@ func TestGHCRGetTag(t *testing.T) {
 		  }
 		}
 	  }`)
-	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	tag, err := client.GetTag(context.Background(), "", "hello_docker", "0.0.1")
 	assert.NilError(t, err)
 	assert.Equal(t, tag.Name, "0.0.1")
@@ -237,7 +237,7 @@ func TestGHCRList(t *testing.T) {
 			nil,
 			nil)
 
-	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 	client.(*GHCRClient).sccClient = m
 	orgs, err := client.ListOrgs(context.Background(), &api.PaginationRequest{Size: -1, Token: ""})
 	assert.NilError(t, err)
@@ -263,7 +263,7 @@ func TestGHCRRemoveImage(t *testing.T) {
 	gock.New("https://api.github.com/user/packages/container/test2/versions/4576").
 		Delete("").
 		Reply(204)
-	client := NewGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
 
 	err := client.RemoveImage(context.Background(), "", "test2", "0.0.1")
 	assert.NilError(t, err)
