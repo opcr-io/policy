@@ -12,9 +12,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	ciTemplateOrganization = "aserto-content"
+	ctTemplateRepo         = "policy-template"
+	ciTemplateTag          = "latest"
+)
+
 // Init
 // path is rootpath of project
-func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite bool) error {
+func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
 	defer c.Cancel()
 
 	if !strings.EqualFold(scc, "github") && !strings.EqualFold(scc, "gitlab") {
@@ -31,6 +37,35 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite 
 		return err
 	}
 
+	generatorConfig := &generators.Config{
+		Server: server,
+		Repo:   repo,
+		Token:  token,
+		User:   user,
+	}
+
+	err = c.generateContent(
+		generatorConfig,
+		path,
+		fmt.Sprintf("%s/%s:%s", c.Configuration.CITemplates.Organization, scc, c.Configuration.CITemplates.Tag),
+		overwrite)
+
+	if err != nil {
+		return err
+	}
+
+	if !noSrc {
+		return c.generateContent(
+			generatorConfig,
+			path,
+			fmt.Sprintf("%s/%s:%s", ciTemplateOrganization, ctTemplateRepo, ciTemplateTag),
+			overwrite)
+	}
+
+	return nil
+}
+
+func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, imageRef string, overwrite bool) error {
 	policyTemplatesCfg := policytemplates.Config{
 		Server:     c.Configuration.CITemplates.Server,
 		PolicyRoot: c.Configuration.PoliciesRoot(),
@@ -38,18 +73,13 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite 
 
 	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
 
-	templateFs, err := ciTemplates.Load(fmt.Sprintf("%s/%s:%s", c.Configuration.CITemplates.Organization, scc, c.Configuration.CITemplates.Tag))
+	templateFs, err := ciTemplates.Load(imageRef)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load '%s' ci template", scc)
+		return errors.Wrapf(err, "failed to load '%s' ci template", imageRef)
 	}
 
 	generator, err := generators.NewGenerator(
-		&generators.Config{
-			Server: server,
-			Repo:   repo,
-			Token:  token,
-			User:   user,
-		},
+		generatorConf,
 		c.Logger,
 		templateFs,
 	)
@@ -58,7 +88,7 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite 
 		return errors.Wrap(err, "failed to initialize generator")
 	}
 
-	return generator.Generate(path, overwrite)
+	return generator.Generate(outPath, overwrite)
 }
 
 func (c *PolicyApp) validatePath(path string) error {
