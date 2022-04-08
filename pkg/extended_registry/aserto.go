@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,10 +22,16 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/hashicorp/go-multierror"
+	"github.com/jhump/protoreflect/grpcreflect"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	AsertoRegistryServiceName = "aserto.registry.v1.Registry"
 )
 
 type AsertoClient struct {
@@ -33,7 +39,7 @@ type AsertoClient struct {
 	extension *registryClient.Client
 }
 
-func NewAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
+func newAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
 	var options []client.ConnectionOption
 	options = append(options, client.WithAddr(cfg.GRPCAddress))
 	if cfg.Username != "" && cfg.Password != "" {
@@ -88,23 +94,25 @@ func (c *AsertoClient) ListPublicRepos(ctx context.Context, org string, page *ap
 }
 func (c *AsertoClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	repo = strings.TrimPrefix(repo, org+"/")
-	if !deep {
-		resp, err := c.extension.Registry.ListTagsWithDetails(ctx, &registry.ListTagsWithDetailsRequest{
+
+	listTagsExists, err := c.grpcMethodExists(ctx, "ListTagsWithDetails")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if listTagsExists {
+		listTagsWithDetailsResponse, err := c.extension.Registry.ListTagsWithDetails(ctx, &registry.ListTagsWithDetailsRequest{
 			Page:         page,
 			Organization: org,
 			Repo:         repo,
 		})
 		if err != nil {
-			if !strings.Contains(err.Error(), "unknown method ListTagsWithDetails") {
-				return nil, nil, err
-			}
+			return nil, nil, err
 		}
-		if resp != nil {
-			return resp.Tag, resp.Page, err
-		}
+
+		return listTagsWithDetailsResponse.Tag, listTagsWithDetailsResponse.Page, nil
 	}
-	// Fallback to use remote call if ListTagsWithDetails is unknown or deep is true
-	// Repo name contains the org as org/repo as a response from list repos
+
 	return c.listTagsRemote(ctx, org, repo, page, deep)
 }
 
@@ -217,6 +225,84 @@ func (c *AsertoClient) CreateRepo(ctx context.Context, org, repo string) error {
 	return nil
 }
 
+func (c *AsertoClient) ListDigests(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error) {
+	listDigestExists, err := c.grpcMethodExists(ctx, "ListDigests")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if listDigestExists {
+		listDigestResponse, err := c.extension.Registry.ListDigests(ctx, &registry.ListDigestsRequest{
+			Page:         page,
+			Organization: org,
+			Repo:         repo,
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return listDigestResponse.Digests, listDigestResponse.Page, nil
+	}
+
+	return c.listDigestsRemote(ctx, org, repo, page)
+}
+
+func (c *AsertoClient) listDigestsRemote(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error) {
+	var paginationResponse *api.PaginationResponse
+
+	digestGroups := make(map[string][]*api.RegistryRepoTag)
+
+	listTagsPage := &api.PaginationRequest{
+		Size: -1,
+	}
+
+	tags, _, err := c.ListTags(ctx, org, repo, listTagsPage, true)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to list tags")
+	}
+
+	groupByDigest(digestGroups, tags)
+
+	var result []*api.RegistryRepoDigest
+
+	var digestNames []string
+
+	for digest := range digestGroups {
+		digestNames = append(digestNames, digest)
+	}
+
+	_, _, digestNamePaged, paginationResponse, err := paginate(digestNames, page)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, digestName := range digestNamePaged {
+		var tagNames []string
+
+		for _, tag := range digestGroups[digestName] {
+			tagNames = append(tagNames, tag.Name)
+		}
+
+		result = append(result, &api.RegistryRepoDigest{
+			Digest:    digestName,
+			Tags:      tagNames,
+			CreatedAt: digestGroups[digestName][0].CreatedAt,
+		})
+	}
+
+	return result, paginationResponse, nil
+}
+
+func groupByDigest(tagsByDigest map[string][]*api.RegistryRepoTag, tags []*api.RegistryRepoTag) {
+	for _, tag := range tags {
+		digest := tag.Digest
+		if _, ok := tagsByDigest[digest]; !ok {
+			tagsByDigest[digest] = []*api.RegistryRepoTag{}
+		}
+		tagsByDigest[digest] = append(tagsByDigest[digest], tag)
+	}
+}
+
 func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	server := strings.TrimPrefix(c.cfg.Address, "https://")
 	repoName, err := name.NewRepository(server + "/" + org + "/" + repo)
@@ -224,13 +310,7 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		return nil, nil, errors.Wrapf(err, "invalid repo name [%s]", repo)
 	}
 
-	count := 30
-	if page != nil {
-		count = int(page.Size)
-	}
-
 	tags, err := remote.List(repoName,
-		remote.WithPageSize(count),
 		remote.WithAuth(&authn.Basic{
 			Username: c.cfg.Username,
 			Password: c.cfg.Password,
@@ -241,22 +321,13 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		return c.handleTransportError(err)
 	}
 
-	p := 0
-	if page != nil && page.Token != "" {
-		p, err = strconv.Atoi(page.Token)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to parse token as a page number")
-		}
-	}
-
-	start := p * count
-	end := start + count
-	if start >= end && count != -1 {
+	if len(tags) == 0 {
 		return []*api.RegistryRepoTag{}, nil, nil
 	}
 
-	if end > len(tags) || count == -1 {
-		end = len(tags)
+	start, end, _, nextPage, err := paginate(tags, page)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	ref := server + "/" + org + "/" + repo
@@ -265,12 +336,44 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		return nil, nil, errors.Wrap(err, "failed to list tags from registry")
 	}
 
-	nextPage := &api.PaginationResponse{}
-	if end+1 < len(tags) {
-		nextPage.NextToken = strconv.Itoa(p + 1)
+	return result, nextPage, nil
+}
+
+func paginate(collection []string, page *api.PaginationRequest) (int, int, []string, *api.PaginationResponse, error) {
+	sort.Strings(collection)
+
+	start := 0
+	end := len(collection)
+
+	if page != nil {
+
+		if page.Token != "" {
+			pageTokenExists := false
+			for i, tag := range collection {
+				if tag == page.Token {
+					start = i
+					pageTokenExists = true
+					break
+				}
+			}
+			if !pageTokenExists {
+				return 0, 0, nil, nil, errors.Errorf("invalid page token: '%s'", page.Token)
+			}
+		}
+
+		count := int(page.Size)
+		if count > 0 && (start+count) < len(collection) {
+			end = start + count
+		}
 	}
 
-	return result, nextPage, nil
+	paginationResponse := &api.PaginationResponse{}
+	if end < len(collection) {
+		paginationResponse.NextToken = collection[end]
+	}
+	paginationResponse.ResultSize = int32(end - start)
+
+	return start, end, collection[start:end], paginationResponse, nil
 }
 
 func (c *AsertoClient) processTags(ctx context.Context, tags []string, repo string, start, end int, deep bool) ([]*api.RegistryRepoTag, error) {
@@ -370,4 +473,22 @@ func (c *AsertoClient) handleTransportError(err error) ([]*api.RegistryRepoTag, 
 	}
 
 	return nil, nil, errors.Wrap(err, "failed to list tags from registry")
+}
+
+func (c *AsertoClient) grpcMethodExists(ctx context.Context, method string) (bool, error) {
+	grpcReflectClient := grpcreflect.NewClient(ctx, grpc_reflection_v1alpha.NewServerReflectionClient(c.extension.Connection()))
+	defer grpcReflectClient.Reset()
+
+	descriptor, err := grpcReflectClient.ResolveService(AsertoRegistryServiceName)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to resolve registry service")
+	}
+
+	methodDescriptor := descriptor.FindMethodByName(method)
+
+	if methodDescriptor != nil {
+		return true, nil
+	}
+
+	return false, nil
 }

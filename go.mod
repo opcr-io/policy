@@ -36,6 +36,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/jhump/protoreflect v1.12.0
 	github.com/magefile/mage v1.12.1
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/nlepage/go-tarfs v1.0.6
