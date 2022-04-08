@@ -17,6 +17,7 @@ type InitCmd struct {
 	TokenName string `name:"token" short:"t" help:"Github Actions secret token name"`
 	SCC       string `name:"scc" help:"source code provider"`
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
+	NoSrc     bool   `name:"no-src" help:"do not write src directory" default:"false"`
 }
 
 func (c *InitCmd) Run(g *Globals) error {
@@ -67,7 +68,7 @@ func (c *InitCmd) Run(g *Globals) error {
 		c.Repo = iff(respRepo != "", respRepo, defRepo)
 	}
 
-	err := g.App.Init(c.RootPath, c.User, c.Server, c.Repo, c.SCC, c.TokenName, c.Overwrite)
+	err := g.App.Init(c.RootPath, c.User, c.Server, c.Repo, c.SCC, c.TokenName, c.Overwrite, c.NoSrc)
 	if err != nil {
 		return errors.Wrap(err, "Init failed.")
 	}
