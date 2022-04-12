@@ -54,7 +54,7 @@ func (g *GHCRClient) ListOrgs(ctx context.Context, page *api.PaginationRequest) 
 	}
 	var response []*api.RegistryOrg
 	for i := range organizations {
-		response = append(response, &api.RegistryOrg{Name: organizations[i].Id})
+		response = append(response, &api.RegistryOrg{Name: strings.ToLower(organizations[i].Id)})
 	}
 	return &registry.ListOrgsResponse{Orgs: response, Page: pageInfo}, nil
 }
@@ -77,7 +77,7 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 
 		for i := range resp {
 			policy := api.PolicyImage{}
-			policy.Name = *resp[i].Name
+			policy.Name = strings.ToLower(*resp[i].Name)
 			if *resp[i].Visibility == public {
 				policy.Public = true
 			} else {
