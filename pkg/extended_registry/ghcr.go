@@ -241,7 +241,7 @@ func (g *GHCRClient) ListDigests(ctx context.Context, org, repo string, page *ap
 }
 
 func (g GHCRClient) deletePackageVersion(ctx context.Context, org, repo string, version int64) error {
-	if org == "" || org == g.base.cfg.Username {
+	if org == "" || strings.EqualFold(org, g.base.cfg.Username) {
 		_, err := g.githubClient.Users.PackageDeleteVersion(ctx, "", packageType, repo, version)
 		if err != nil {
 			return errors.Wrapf(err, "failed to remove package version %d", version)
@@ -256,7 +256,7 @@ func (g GHCRClient) deletePackageVersion(ctx context.Context, org, repo string, 
 }
 
 func (g GHCRClient) deletePackage(ctx context.Context, org, repo string) error {
-	if org == "" || org == g.base.cfg.Username {
+	if org == "" || strings.EqualFold(org, g.base.cfg.Username) {
 		_, err := g.githubClient.Users.DeletePackage(ctx, "", packageType, repo)
 		if err != nil {
 			return errors.Wrap(err, "failed to remove package")
@@ -276,7 +276,7 @@ func (g *GHCRClient) listRepos(ctx context.Context, org string, visibility *stri
 	var pageInfo *github.Response
 	var err error
 
-	if org == "" || org == g.base.cfg.Username {
+	if org == "" || strings.EqualFold(org, g.base.cfg.Username) {
 		resp, pageInfo, err = g.githubClient.Users.ListPackages(ctx, "",
 			&github.PackageListOptions{PackageType: &packageType, Visibility: visibility, ListOptions: listOptions})
 		if err != nil {
@@ -303,7 +303,7 @@ func (g *GHCRClient) listTagInformation(ctx context.Context, org, repo string, p
 		}
 		var versions []*github.PackageVersion
 		var pageInfo *github.Response
-		if org == "" || org == g.base.cfg.Username {
+		if org == "" || strings.EqualFold(org, g.base.cfg.Username) {
 			versions, pageInfo, err = g.githubClient.Users.PackageGetAllVersions(ctx, "", packageType, repo,
 				&github.PackageListOptions{
 					PackageType: &packageType,
@@ -382,7 +382,7 @@ func parsePaginationRequest(page *api.PaginationRequest) (int, int, error) {
 func (g *GHCRClient) RepoAvailable(ctx context.Context, org, repo string) (bool, error) {
 	var resp *github.Response
 	var err error
-	if org == "" || org == g.base.cfg.Username {
+	if org == "" || strings.EqualFold(org, g.base.cfg.Username) {
 		_, resp, err = g.githubClient.Users.GetPackage(ctx, "", packageType, repo)
 		if err != nil {
 			return false, errors.Wrapf(err, "failed to get package %s for user %s", repo, org)
