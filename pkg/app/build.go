@@ -91,7 +91,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		annotations = map[string]string{}
 	}
 	annotations[ocispec.AnnotationTitle] = ref
-	annotations[extendedregistry.AnnotationPolicyRegistry] = "policy"
+	annotations[extendedregistry.AnnotationPolicyRegistryType] = "policy"
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	descriptor, err := c.createImage(ociStore, outfile, annotations)

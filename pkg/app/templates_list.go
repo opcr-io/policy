@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"strings"
+	"sort"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/scc-lib/generators"
@@ -11,10 +11,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *PolicyApp) New(name, output string, list, overwrite bool) error {
-	if list {
-		return c.listTemplates(name)
-	}
+type templateInfo struct {
+	name        string
+	kind        string
+	description string
+}
+
+func (c *PolicyApp) Templates(name, output string, list, overwrite bool) error {
+
 	if name == "" {
 		return errors.New("template name is required")
 	}
@@ -58,9 +62,48 @@ func (c *PolicyApp) New(name, output string, list, overwrite bool) error {
 	return nil
 }
 
-func (c *PolicyApp) listTemplates(name string) error {
+func (c *PolicyApp) TemplatesList() error {
+
+	templateInfos, err := c.getTemplates(
+		c.Configuration.ContentTemplates.Server,
+		c.Configuration.ContentTemplates.Organization,
+		c.Configuration.ContentTemplates.Tag)
+	if err != nil {
+		return errors.Wrap(err, "failed to list templates")
+	}
+
+	ciTemplates, err := c.getTemplates(
+		c.Configuration.CITemplates.Server,
+		c.Configuration.CITemplates.Organization,
+		c.Configuration.CITemplates.Tag,
+	)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to list templates")
+	}
+
+	templateInfos = append(templateInfos, ciTemplates...)
+
+	sort.Slice(templateInfos, func(i, j int) bool {
+		return templateInfos[i].name < templateInfos[j].name
+	})
+
+	table := c.UI.Normal().WithTable("Name", "Kind", "Description")
+
+	for _, tmplInfo := range templateInfos {
+		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
+	}
+
+	table.WithTableNoAutoWrapText().Do()
+
+	return nil
+}
+
+func (c *PolicyApp) getTemplates(server, org, tag string) ([]templateInfo, error) {
+	var tmplInfo []templateInfo
+
 	policyTemplatesCfg := policytemplates.Config{
-		Server:     c.Configuration.ContentTemplates.Server,
+		Server:     server,
 		PolicyRoot: c.Configuration.PoliciesRoot(),
 	}
 	policyTmpl := policytemplates.NewOCI(
@@ -69,35 +112,30 @@ func (c *PolicyApp) listTemplates(name string) error {
 		c.TransportWithTrustedCAs(),
 		policyTemplatesCfg)
 
-	tmplRepo, err := policyTmpl.ListRepos(
-		c.Configuration.ContentTemplates.Organization,
-		c.Configuration.ContentTemplates.Tag)
+	tmplRepo, err := policyTmpl.ListRepos(org, tag)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to list templates")
+		return nil, errors.Wrap(err, "failed to list templates")
 	}
-	table := c.UI.Normal().WithTable("Name", "Vendor", "Description")
-
 	for repo, tag := range tmplRepo {
-		if !strings.Contains(repo, name) {
-			continue
-		}
-
 		vendor, description := getDetails(tag.Annotations)
-		table.WithTableRow(repo, vendor, description)
+		tmplInfo = append(tmplInfo, templateInfo{
+			name:        repo,
+			kind:        vendor,
+			description: description,
+		})
 	}
-	table.WithTableNoAutoWrapText().Do()
 
-	return nil
+	return tmplInfo, nil
 }
 
-func getDetails(annotations []*api.RegistryRepoAnnotation) (vendor, description string) {
+func getDetails(annotations []*api.RegistryRepoAnnotation) (kind, description string) {
 	for _, annotation := range annotations {
 		if annotation == nil {
 			continue
 		}
-		if annotation.Key == extendedregistry.AnnotationImageVendor {
-			vendor = annotation.Value
+		if annotation.Key == extendedregistry.AnnotationPolicyRegistryTemplateKind {
+			kind = annotation.Value
 		}
 		if annotation.Key == extendedregistry.AnnotationImageDescription {
 			description = annotation.Value
