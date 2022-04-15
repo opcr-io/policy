@@ -109,8 +109,7 @@ var PolicyCLI struct {
 	Inspect   InspectCmd   `cmd:"" help:"Displays information about a policy."`
 	Repl      ReplCmd      `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
 	Remote    RemoteCmd    `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
-	New       NewCmd       `cmd:"" help:"Create a new policy from a template."`
-	Generate  GenerateCmd  `cmd:"" help:"Generates stubs."`
+	Init      InitCmd      `cmd:"" help:"(Deprecated) Initialize policy repo"`
 	Templates TemplatesCmd `cmd:"" help:""`
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }

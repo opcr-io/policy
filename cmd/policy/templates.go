@@ -8,7 +8,8 @@ type TemplatesCmd struct {
 }
 
 type ApplyCmd struct {
-	Output    string `arg:"" name:"path" required:"" help:"output directory (defaults to current directory)" default:"."`
+	Template  string `arg:"" name:"template" required:"true" help:"name of the template to apply"`
+	Output    string `name:"output" short:"o" help:"output directory (defaults to current directory)" default:"."`
 	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
 }
 
@@ -16,6 +17,12 @@ type ListCmd struct {
 }
 
 func (c *ApplyCmd) Run(g *Globals) error {
+	err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite)
+	if err != nil {
+		return errors.Wrapf(err, "failed to apply template '%s'", c.Template)
+	}
+
+	<-g.App.Context.Done()
 	return nil
 }
 
@@ -24,6 +31,8 @@ func (c *ListCmd) Run(g *Globals) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed list templates")
 	}
+
+	<-g.App.Context.Done()
 
 	return nil
 }

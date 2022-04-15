@@ -91,7 +91,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetDefault("default_domain", "opcr.io")
 	v.SetDefault("logging.log_level", "")
 	v.SetDefault("logging.prod", false)
-	v.SetDefault("token_defaults", map[string]string{"opcr.io": "GITHUB_TOKEN"})
+	v.SetDefault("token_defaults", map[string]string{"opcr.io": "TOKEN"})
 	v.SetDefault("ci_templates.server", "opcr.io")
 	v.SetDefault("ci_templates.organization", "ci-templates")
 	v.SetDefault("ci_templates.tag", "latest")

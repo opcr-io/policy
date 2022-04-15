@@ -1,11 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
-	"github.com/aserto-dev/scc-lib/generators"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/pkg/policytemplates"
 	"github.com/pkg/errors"
@@ -17,59 +15,40 @@ type templateInfo struct {
 	description string
 }
 
-func (c *PolicyApp) Templates(name, output string, list, overwrite bool) error {
+func (c *PolicyApp) TemplatesList() error {
+	defer c.Cancel()
 
-	if name == "" {
-		return errors.New("template name is required")
-	}
-
-	prog := c.UI.Progressf("Processing template '%s'", name)
-	prog.Start()
-	policyTemplatesCfg := policytemplates.Config{
-		Server:     c.Configuration.CITemplates.Server,
-		PolicyRoot: c.Configuration.PoliciesRoot(),
-	}
-
-	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
-
-	templateFs, err := ciTemplates.Load(
-		fmt.Sprintf("%s/%s:%s",
-			c.Configuration.ContentTemplates.Organization,
-			name,
-			c.Configuration.ContentTemplates.Tag))
+	templateInfos, err := c.listTemplates()
 	if err != nil {
-		return errors.Wrapf(err, "failed to load '%s' ci template", name)
+		return err
 	}
 
-	generator, err := generators.NewGenerator(
-		&generators.Config{},
-		c.Logger,
-		templateFs,
-	)
+	sort.Slice(templateInfos, func(i, j int) bool {
+		return templateInfos[i].name < templateInfos[j].name
+	})
 
-	if err != nil {
-		return errors.Wrap(err, "failed to initialize generator")
+	table := c.UI.Normal().WithTable("Name", "Kind", "Description")
+
+	for _, tmplInfo := range templateInfos {
+		if tmplInfo.kind == "" {
+			continue
+		}
+		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
 	}
-	err = generator.Generate(output, overwrite)
-	if err != nil {
-		return errors.Wrap(err, "failed to generate policy")
-	}
 
-	prog.Stop()
-
-	c.UI.Normal().Msgf("The template '%s' was created successfully.", name)
+	table.WithTableNoAutoWrapText().Do()
 
 	return nil
 }
 
-func (c *PolicyApp) TemplatesList() error {
+func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 
 	templateInfos, err := c.getTemplates(
 		c.Configuration.ContentTemplates.Server,
 		c.Configuration.ContentTemplates.Organization,
 		c.Configuration.ContentTemplates.Tag)
 	if err != nil {
-		return errors.Wrap(err, "failed to list templates")
+		return nil, errors.Wrap(err, "failed to list templates")
 	}
 
 	ciTemplates, err := c.getTemplates(
@@ -79,24 +58,11 @@ func (c *PolicyApp) TemplatesList() error {
 	)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to list templates")
+		return nil, errors.Wrap(err, "failed to list templates")
 	}
 
-	templateInfos = append(templateInfos, ciTemplates...)
+	return append(templateInfos, ciTemplates...), nil
 
-	sort.Slice(templateInfos, func(i, j int) bool {
-		return templateInfos[i].name < templateInfos[j].name
-	})
-
-	table := c.UI.Normal().WithTable("Name", "Kind", "Description")
-
-	for _, tmplInfo := range templateInfos {
-		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
-	}
-
-	table.WithTableNoAutoWrapText().Do()
-
-	return nil
 }
 
 func (c *PolicyApp) getTemplates(server, org, tag string) ([]templateInfo, error) {
