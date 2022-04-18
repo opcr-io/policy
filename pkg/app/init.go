@@ -71,11 +71,14 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, i
 		PolicyRoot: c.Configuration.PoliciesRoot(),
 	}
 
+	prog := c.UI.Progressf("Generating files")
+	prog.Start()
+
 	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
 
 	templateFs, err := ciTemplates.Load(imageRef)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load '%s' ci template", imageRef)
+		return errors.Wrapf(err, "failed to load '%s' template", imageRef)
 	}
 
 	generator, err := generators.NewGenerator(
@@ -88,7 +91,15 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, i
 		return errors.Wrap(err, "failed to initialize generator")
 	}
 
-	return generator.Generate(outPath, overwrite)
+	err = generator.Generate(outPath, overwrite)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate ci files")
+	}
+	prog.Stop()
+
+	c.UI.Normal().Msg("The template was generated successfully.")
+
+	return nil
 }
 
 func (c *PolicyApp) validatePath(path string) error {

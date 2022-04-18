@@ -24,13 +24,13 @@ func TestOCIListRepos(t *testing.T) {
 		PolicyRoot: "",
 	})
 
-	repos, err := ociTemplate.ListRepos("aserto-templates", "1")
+	templateRepos, err := ociTemplate.ListRepos("aserto-templates", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	exists := false
-	for _, repo := range repos {
+	for repo := range templateRepos {
 		if repo == expectedRepo {
 			exists = true
 			break
