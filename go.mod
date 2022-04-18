@@ -22,12 +22,12 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0
 	github.com/aserto-dev/aserto-go v0.8.5
-	github.com/aserto-dev/clui v0.8.0
+	github.com/aserto-dev/clui v0.8.1
 	github.com/aserto-dev/go-grpc v0.8.8
 	github.com/aserto-dev/go-utils v0.8.3
 	github.com/aserto-dev/mage-loot v0.8.1
 	github.com/aserto-dev/runtime v0.37.4
-	github.com/aserto-dev/scc-lib v0.0.4
+	github.com/aserto-dev/scc-lib v0.0.6
 	github.com/containerd/containerd v1.5.10
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0

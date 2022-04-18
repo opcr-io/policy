@@ -137,28 +137,46 @@ func (c *AsertoClient) GetTag(ctx context.Context, org, repo, tag string) (*api.
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get descriptor")
 	}
-	var annotations []*api.RegistryRepoAnnotation
+	var annotationsMap map[string]string
 	var created time.Time
 	var man *v1.Manifest
 	err = json.Unmarshal(descriptor.Manifest, &man)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal manifest")
 	}
+
+	annotationsMap = man.Annotations
+	if annotationsMap == nil {
+		annotationsMap = make(map[string]string)
+	}
+
 	for i := range man.Layers {
 		for k, v := range man.Layers[i].Annotations {
-			annotations = append(annotations, &api.RegistryRepoAnnotation{Key: k, Value: v})
+			if i == 0 && k == AnnotationImageCreated {
+				created, err = time.Parse(time.RFC3339, v)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to parse created at time")
+				}
+			}
+			annotationsMap[k] = v
 		}
 	}
-	if val, ok := man.Layers[0].Annotations["org.opencontainers.image.created"]; ok {
-		created, err = time.Parse(time.RFC3339, val)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse created at time")
-		}
+
+	var size int64
+	if len(man.Layers) > 0 {
+		size = man.Layers[0].Size
 	}
+
+	var annotations []*api.RegistryRepoAnnotation
+
+	for k, v := range annotationsMap {
+		annotations = append(annotations, &api.RegistryRepoAnnotation{Key: k, Value: v})
+	}
+
 	return &api.RegistryRepoTag{
 		Name:        descriptor.Ref.Name(),
 		Digest:      descriptor.Digest.String(),
-		Size:        man.Layers[0].Size,
+		Size:        size,
 		Annotations: annotations,
 		CreatedAt:   timestamppb.New(created),
 	}, nil

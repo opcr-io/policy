@@ -97,20 +97,21 @@ var PolicyCLI struct {
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 	Insecure  bool   `short:"k" help:"Do not verify TLS connections."`
 
-	Build   BuildCmd   `cmd:"" help:"Build policies."`
-	Images  ImagesCmd  `cmd:"" help:"List policy images."`
-	Push    PushCmd    `cmd:"" help:"Push policies to a registry."`
-	Pull    PullCmd    `cmd:"" help:"Pull policies from a registry."`
-	Login   LoginCmd   `cmd:"" help:"Login to a registry."`
-	Logout  LogoutCmd  `cmd:"" help:"Logout from a registry."`
-	Save    SaveCmd    `cmd:"" help:"Save a policy to a local bundle tarball."`
-	Tag     TagCmd     `cmd:"" help:"Create a new tag for an existing policy."`
-	Rm      RmCmd      `cmd:"" help:"Removes a policy from the local registry."`
-	Inspect InspectCmd `cmd:"" help:"Displays information about a policy."`
-	Repl    ReplCmd    `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
-	Remote  RemoteCmd  `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
-	Init    InitCmd    `cmd:"" help:"Initialize policy repo"`
-	Version VersionCmd `cmd:"" help:"Prints version information."`
+	Build     BuildCmd     `cmd:"" help:"Build policies."`
+	Images    ImagesCmd    `cmd:"" help:"List policy images."`
+	Push      PushCmd      `cmd:"" help:"Push policies to a registry."`
+	Pull      PullCmd      `cmd:"" help:"Pull policies from a registry."`
+	Login     LoginCmd     `cmd:"" help:"Login to a registry."`
+	Logout    LogoutCmd    `cmd:"" help:"Logout from a registry."`
+	Save      SaveCmd      `cmd:"" help:"Save a policy to a local bundle tarball."`
+	Tag       TagCmd       `cmd:"" help:"Create a new tag for an existing policy."`
+	Rm        RmCmd        `cmd:"" help:"Removes a policy from the local registry."`
+	Inspect   InspectCmd   `cmd:"" help:"Displays information about a policy."`
+	Repl      ReplCmd      `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
+	Remote    RemoteCmd    `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
+	Init      InitCmd      `cmd:"" help:"(Deprecated) Initialize policy repo"`
+	Templates TemplatesCmd `cmd:"" help:""`
+	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
 
 func (g *Globals) setup() func() {

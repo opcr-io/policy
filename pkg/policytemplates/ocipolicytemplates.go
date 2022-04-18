@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	tarfs "github.com/nlepage/go-tarfs"
 
 	"github.com/containerd/containerd/remotes/docker"
@@ -35,7 +36,7 @@ type oci struct {
 }
 
 // NewOCI returns a new policy template provider for OCI
-func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport, cfg Config) PolicyTemplates {
+func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transport, cfg Config) PolicyTemplates {
 	extClient, err := extendedregistry.GetExtendedClient(
 		ctx,
 		cfg.Server,
@@ -44,7 +45,7 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 			Username: " ",
 			Password: " ",
 		},
-		transport)
+		httpTransport)
 	if err != nil {
 		log.Err(err)
 	}
@@ -52,15 +53,15 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, transport *http.Transport,
 	return &oci{
 		logger:    log,
 		extClient: extClient,
-		transport: transport,
+		transport: httpTransport,
 		ctx:       ctx,
 		cfg:       cfg,
 	}
 }
 
 // Lists the policy templates
-func (o *oci) ListRepos(org, tag string) ([]string, error) {
-	var templateRepos []string
+func (o *oci) ListRepos(org, tag string) (map[string]*api.RegistryRepoTag, error) {
+	templateRepos := make(map[string]*api.RegistryRepoTag)
 
 	policyRepo, err := o.extClient.ListPublicRepos(o.ctx, org, &api.PaginationRequest{Token: "", Size: -1})
 	if err != nil {
@@ -68,18 +69,20 @@ func (o *oci) ListRepos(org, tag string) ([]string, error) {
 	}
 
 	for _, repo := range policyRepo.Images {
-		valid, err := o.extClient.IsValidTag(o.ctx, org, repo.Name, tag)
-		if err != nil {
-			return nil, err
+		apiTag, err := o.extClient.GetTag(o.ctx, org, repo.Name, tag)
+
+		tErr, ok := errors.Cause(err).(*transport.Error)
+		if ok {
+			if tErr.StatusCode == http.StatusNotFound {
+				continue
+			}
 		}
 
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get tags for '%s'", repo.Name)
 		}
+		templateRepos[repo.Name] = apiTag
 
-		if valid {
-			templateRepos = append(templateRepos, repo.Name)
-		}
 	}
 
 	return templateRepos, nil
