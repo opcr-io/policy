@@ -9,6 +9,7 @@ import (
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
+	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/scc-lib/sources"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -313,6 +314,10 @@ func (g *GHCRClient) listTagInformation(ctx context.Context, org, repo string, p
 					},
 				})
 			if err != nil {
+				ghErr, ok := err.(*github.ErrorResponse)
+				if ok && ghErr.Response.StatusCode == http.StatusNotFound {
+					return nil, nil, cerr.ErrPolicyNotFound
+				}
 				return nil, nil, errors.Wrap(err, "failed to list container versions")
 			}
 
@@ -326,6 +331,10 @@ func (g *GHCRClient) listTagInformation(ctx context.Context, org, repo string, p
 					},
 				})
 			if err != nil {
+				ghErr, ok := err.(*github.ErrorResponse)
+				if ok && ghErr.Response.StatusCode == http.StatusNotFound {
+					return nil, nil, cerr.ErrPolicyNotFound
+				}
 				return nil, nil, errors.Wrap(err, "failed to list container versions")
 			}
 		}
