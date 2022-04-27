@@ -78,7 +78,7 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 
 		for i := range resp {
 			policy := api.PolicyImage{}
-			policy.Name = strings.ToLower(*resp[i].Name)
+			policy.Name = strings.ToLower(*resp[i].Owner.Login) + "/" + strings.ToLower(*resp[i].Name)
 			if *resp[i].Visibility == public {
 				policy.Public = true
 			} else {
@@ -145,6 +145,12 @@ func (g *GHCRClient) ListTags(ctx context.Context, org, repo string, page *api.P
 	if err != nil {
 		return nil, nil, err
 	}
+
+	pieces := strings.Split(repo, "/")
+	if len(pieces) == 2 {
+		repo = pieces[1]
+	}
+
 	tagDetails, pageInfo, err := g.listTagInformation(ctx, org, repo, pageNumber, pageSize)
 	if err != nil {
 		return nil, nil, err
@@ -206,6 +212,12 @@ func (g *GHCRClient) GetTag(ctx context.Context, org, repo, tag string) (*api.Re
 
 // If tag not specified remove repository
 func (g *GHCRClient) RemoveImage(ctx context.Context, org, repo, tag string) error {
+
+	pieces := strings.Split(repo, "/")
+	if len(pieces) == 2 {
+		repo = pieces[1]
+	}
+
 	if tag == "" {
 		return g.deletePackage(ctx, org, repo)
 	}
