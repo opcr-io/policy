@@ -1,14 +1,9 @@
 package app
 
 import (
-	"net/http"
-
-	"github.com/containerd/containerd/remotes/docker"
+	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/oras"
 )
 
 func (c *PolicyApp) Push(userRef string) error {
@@ -19,17 +14,15 @@ func (c *PolicyApp) Push(userRef string) error {
 		return err
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
 
-	err = ociStore.LoadIndex()
+	refs, err := ociClient.ListReferences()
 	if err != nil {
 		return err
 	}
-
-	refs := ociStore.ListReferences()
 
 	refDescriptor, ok := refs[ref]
 	if !ok {
@@ -40,47 +33,14 @@ func (c *PolicyApp) Push(userRef string) error {
 		WithStringValue("digest", refDescriptor.Digest.String()).
 		Msgf("Resolved ref [%s].", ref)
 
-	resolver := docker.NewResolver(docker.ResolverOptions{
-		Hosts: func(s string) ([]docker.RegistryHost, error) {
-			client := &http.Client{Transport: c.TransportWithTrustedCAs()}
-
-			return []docker.RegistryHost{
-				{
-					Host:         s,
-					Scheme:       "https",
-					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
-					Client:       client,
-					Path:         "/v2",
-					Authorizer: docker.NewDockerAuthorizer(
-						docker.WithAuthClient(client),
-						docker.WithAuthCreds(func(s string) (string, string, error) {
-							creds, ok := c.Configuration.Servers[s]
-							if !ok {
-								return "", "", nil
-							}
-
-							return creds.Username, creds.Password, nil
-						})),
-				},
-			}, nil
-		},
-	})
-
-	delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
-
-	pushDescriptor, err := oras.Push(c.Context,
-		resolver,
-		ref,
-		ociStore,
-		[]ocispec.Descriptor{refDescriptor},
-		oras.WithConfigMediaType(MediaTypeConfig))
+	digest, err := ociClient.Push(ref)
 
 	if err != nil {
 		return err
 	}
 
 	c.UI.Normal().
-		WithStringValue("digest", pushDescriptor.Digest.String()).
+		WithStringValue("digest", digest.String()).
 		Msgf("Pushed ref [%s].", ref)
 
 	return nil

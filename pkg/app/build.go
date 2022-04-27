@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/google/uuid"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -153,7 +154,7 @@ func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string, anno
 	}
 
 	descriptor = ocispec.Descriptor{
-		MediaType:   MediaTypeImageLayer,
+		MediaType:   oci.MediaTypeImageLayer,
 		Digest:      fDigest,
 		Size:        fileInfo.Size(),
 		Annotations: annotations,
