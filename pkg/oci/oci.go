@@ -3,7 +3,9 @@ package oci
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 
+	"github.com/aserto-dev/go-utils/httptransport"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -129,6 +131,89 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 	o.ociStore.AddReference(newRef, newDescriptor)
 
 	return o.ociStore.SaveIndex()
+}
+
+func CopyPolicy(ctx context.Context, log *zerolog.Logger,
+	sourceRef, sourceUser, sourcePassword,
+	destinationRef, destinationUser, destinationPassword,
+	ociStore string) error {
+	transportConf := &httptransport.Config{
+		Insecure: false,
+		CA:       []string{},
+	}
+
+	transport, err := httptransport.TransportWithTrustedCAs(log, transportConf)
+	if err != nil {
+		return errors.Wrap(err, "failed to create transport")
+	}
+
+	ociClient, err := NewOCI(ctx,
+		log,
+		func(server string) ([]docker.RegistryHost, error) {
+			client := &http.Client{Transport: transport}
+
+			return []docker.RegistryHost{
+				{
+					Host:         server,
+					Scheme:       "https",
+					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
+					Client:       client,
+					Path:         "/v2",
+					Authorizer: docker.NewDockerAuthorizer(
+						docker.WithAuthClient(client),
+						docker.WithAuthCreds(func(s string) (string, string, error) {
+							return sourceUser, sourcePassword, nil
+						})),
+				},
+			}, nil
+		},
+		ociStore)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create oci client")
+	}
+
+	_, err = ociClient.Pull(sourceRef)
+	if err != nil {
+		return errors.Wrap(err, "failed to pull image")
+	}
+
+	err = ociClient.Tag(sourceRef, destinationRef)
+	if err != nil {
+		return errors.Wrap(err, "failed to tag image")
+	}
+
+	ociClient, err = NewOCI(ctx,
+		log,
+		func(server string) ([]docker.RegistryHost, error) {
+			client := &http.Client{Transport: transport}
+
+			return []docker.RegistryHost{
+				{
+					Host:         server,
+					Scheme:       "https",
+					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
+					Client:       client,
+					Path:         "/v2",
+					Authorizer: docker.NewDockerAuthorizer(
+						docker.WithAuthClient(client),
+						docker.WithAuthCreds(func(s string) (string, string, error) {
+							return destinationUser, destinationPassword, nil
+						})),
+				},
+			}, nil
+		},
+		ociStore)
+	if err != nil {
+		return errors.Wrap(err, "failed to create oci client")
+	}
+
+	_, err = ociClient.Push(destinationRef)
+	if err != nil {
+		return errors.Wrap(err, "failed to push image")
+	}
+
+	return nil
 }
 
 func cloneDescriptor(desc *ocispec.Descriptor) (ocispec.Descriptor, error) {
