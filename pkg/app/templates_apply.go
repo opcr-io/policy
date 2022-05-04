@@ -119,7 +119,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 	respServer := ""
 
 	c.UI.Normal().Compact().WithAskString(
-		fmt.Sprintf("server: (%s)", genConfig.Server), &respServer,
+		fmt.Sprintf("server (%s)", genConfig.Server), &respServer,
 	).Do()
 
 	respServer = strings.TrimSpace(respServer)
@@ -132,7 +132,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 	respUser := ""
 
 	c.UI.Normal().Compact().WithAskString(
-		fmt.Sprintf("user  : (%s)", genConfig.User), &respUser,
+		fmt.Sprintf("user (%s)", genConfig.User), &respUser,
 	).Do()
 
 	respUser = strings.TrimSpace(respUser)
@@ -145,7 +145,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 	genConfig.Token = c.getDefaultTokenName(genConfig.Server)
 
 	c.UI.Normal().Compact().WithAskString(
-		fmt.Sprintf("secret name: (%s)", genConfig.Token), &respTokenName,
+		fmt.Sprintf("secret name (%s)", genConfig.Token), &respTokenName,
 	).Do()
 
 	respTokenName = strings.TrimSpace(respTokenName)
@@ -156,7 +156,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 
 	respRepo := ""
 	c.UI.Normal().Compact().WithAskString(
-		"repo  : ()", &respRepo,
+		"org/repo", &respRepo,
 	).Do()
 
 	if !strings.Contains(respRepo, "/") {
