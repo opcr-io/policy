@@ -46,8 +46,7 @@ Wanna discuss features or show your support for this tool?
 * Via a GO install
 
   ```shell
-  # NOTE: The dev version will be in effect!
-  go get -u github.com/opcr-io/policy
+  go install github.com/opcr-io/policy/cmd/policy@latest
   ```
 
 ---
