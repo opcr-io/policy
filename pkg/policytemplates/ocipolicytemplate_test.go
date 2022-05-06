@@ -43,17 +43,13 @@ func TestOCILoadRepo(t *testing.T) {
 	assert := require.New(t)
 
 	expectedFiles := map[string]bool{
-		".":                         false,
-		"data.json":                 false,
-		"policies":                  false,
-		"policies/__id":             false,
-		"policies/__id/delete.rego": false,
-		"policies/__id/get.rego":    false,
-		"policies/__id/post.rego":   false,
-		"policies/__id/put.rego":    false,
-		"policies/get.rego":         false,
-		"policies/post.rego":        false,
-		".manifest":                 false,
+		".":                       false,
+		".gitignore":              false,
+		"src":                     false,
+		"src/policies":            false,
+		"src/policies/hello.rego": false,
+		"src/.manifest":           false,
+		"README.md":               false,
 	}
 
 	log := zerolog.New(os.Stdout)
@@ -71,7 +67,7 @@ func TestOCILoadRepo(t *testing.T) {
 		PolicyRoot: tmpDir,
 	})
 
-	bundleFS, err := ociTemplate.Load("aserto-templates/peoplefinder-rbac:0.0.1")
+	bundleFS, err := ociTemplate.Load("aserto-content/policy-template:1.0.1")
 	if err != nil {
 		t.Fatal(err)
 	}

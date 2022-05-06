@@ -2,22 +2,6 @@ module github.com/opcr-io/policy
 
 go 1.17
 
-// replace github.com/aserto-dev/clui => ../clui
-
-// replace github.com/aserto-dev/runtime => ../runtime
-
-// replace github.com/aserto-dev/mage-loot => ../mage-loot
-
-replace github.com/nlepage/go-tarfs => github.com/mihaibuzgau/go-tarfs v1.0.7-0.20220316124411-aad3047fe9b5
-
-// replace github.com/aserto-dev/scc-lib => ../scc-lib
-
-// replace github.com/aserto-dev/go-grpc => ../go-grpc
-
-//replace github.com/nlepage/go-tarfs => ../go-tarfs
-
-replace oras.land/oras-go => oras.land/oras-go v0.4.0
-
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0

@@ -1,10 +1,8 @@
 package app
 
 import (
-	"io/ioutil"
 	"testing"
 
-	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/stretchr/testify/require"
 )
@@ -26,11 +24,7 @@ func TestRefCalculation(t *testing.T) {
 		t.Run(tc.userRef, func(t *testing.T) {
 			assert := require.New(t)
 
-			p, cleanup, err := BuildTestPolicyApp(ioutil.Discard, ioutil.Discard, config.Path(""), func(c *config.Config) {})
-			assert.NoError(err)
-			defer cleanup()
-
-			calculatedRef, err := parser.CalculatePolicyRef(userRef, p.Configuration.DefaultDomain)
+			calculatedRef, err := parser.CalculatePolicyRef(userRef, "opcr.io")
 			assert.NoError(err)
 
 			assert.Equal(expectedInternalRef, calculatedRef)
