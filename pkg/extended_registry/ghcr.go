@@ -66,6 +66,7 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 	if err != nil {
 		return nil, nil, err
 	}
+	paginationResponse := &api.PaginationResponse{}
 	var response []*api.PolicyImage
 	for {
 		resp, pageInfo, err := g.listRepos(ctx, org, nil, github.ListOptions{
@@ -88,10 +89,7 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 			response = append(response, &policy)
 		}
 		if pageSize != -1 {
-			paginationResponse := &api.PaginationResponse{
-				ResultSize: int32(pageInfo.ContentLength),
-				TotalSize:  int32(pageInfo.LastPage),
-			}
+			paginationResponse.ResultSize = int32(len(response))
 			if pageInfo.NextPage != 0 {
 				paginationResponse.NextToken = fmt.Sprintf("%d", pageInfo.NextPage)
 			}
@@ -104,7 +102,8 @@ func (g *GHCRClient) ListRepos(ctx context.Context, org string, page *api.Pagina
 		pageNumber = pageInfo.NextPage
 	}
 
-	return &registry.ListImagesResponse{Images: response}, nil, nil
+	paginationResponse.ResultSize = int32(len(response))
+	return &registry.ListImagesResponse{Images: response}, paginationResponse, nil
 }
 
 func (g *GHCRClient) ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
