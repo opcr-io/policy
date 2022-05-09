@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"strings"
 	"syscall"
 
@@ -60,10 +61,18 @@ func (c *LoginCmd) Run(g *Globals) error {
 	if err != nil {
 		return err
 	}
-
-	setDefault, err := checkDefault(g, c)
+	var setDefault bool
+	stat, err := os.Stdin.Stat()
 	if err != nil {
 		return err
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		setDefault = c.DefaultDomain
+	} else {
+		setDefault, err = checkDefault(g, c)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = g.App.SaveServerCreds(c.Server, config.ServerCredentials{
