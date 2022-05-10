@@ -263,7 +263,66 @@ func (g *GHCRClient) CreateRepo(ctx context.Context, org, repo string) error {
 }
 
 func (g *GHCRClient) ListDigests(ctx context.Context, org, repo string, page *api.PaginationRequest) ([]*api.RegistryRepoDigest, *api.PaginationResponse, error) {
-	return nil, nil, errors.New("not implemented")
+	tagDetails, _, err := g.listTagInformation(ctx, org, repo, 0, -1)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pkgVersionsByDigest := make(map[string][]*github.PackageVersion)
+
+	groupPackagesByDigest(pkgVersionsByDigest, tagDetails)
+
+	var result []*api.RegistryRepoDigest
+
+	var digestNames []string
+
+	for digest := range pkgVersionsByDigest {
+		digestNames = append(digestNames, digest)
+	}
+
+	_, _, digestNamePaged, paginationResponse, err := paginate(
+		digestNames,
+		func(i, j int) bool {
+			if len(pkgVersionsByDigest[digestNames[i]]) == 0 || len(pkgVersionsByDigest[digestNames[j]]) == 0 {
+				return false
+			}
+			return pkgVersionsByDigest[digestNames[i]][0].GetCreatedAt().After(pkgVersionsByDigest[digestNames[j]][0].GetCreatedAt().Time)
+		},
+		page)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, digestName := range digestNamePaged {
+		var tagNames []string
+
+		for _, pkg := range pkgVersionsByDigest[digestName] {
+			pkgMetadata := pkg.GetMetadata()
+			if pkgMetadata == nil || pkgMetadata.Container == nil {
+				continue
+			}
+
+			tagNames = append(tagNames, pkgMetadata.Container.Tags...)
+		}
+
+		result = append(result, &api.RegistryRepoDigest{
+			Digest:    digestName,
+			Tags:      tagNames,
+			CreatedAt: timestamppb.New(pkgVersionsByDigest[digestName][0].GetCreatedAt().Time),
+		})
+	}
+
+	return result, paginationResponse, nil
+}
+
+func groupPackagesByDigest(packagesByDigest map[string][]*github.PackageVersion, packageVersion []*github.PackageVersion) {
+	for _, pv := range packageVersion {
+		digest := pv.GetName()
+		if _, ok := packagesByDigest[digest]; !ok {
+			packagesByDigest[digest] = []*github.PackageVersion{}
+		}
+		packagesByDigest[digest] = append(packagesByDigest[digest], pv)
+	}
 }
 
 func (g GHCRClient) deletePackageVersion(ctx context.Context, org, repo string, version int64) error {
