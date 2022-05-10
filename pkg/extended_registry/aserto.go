@@ -292,7 +292,15 @@ func (c *AsertoClient) listDigestsRemote(ctx context.Context, org, repo string, 
 		digestNames = append(digestNames, digest)
 	}
 
-	_, _, digestNamePaged, paginationResponse, err := paginate(digestNames, page)
+	_, _, digestNamePaged, paginationResponse, err := paginate(
+		digestNames,
+		func(i, j int) bool {
+			if len(digestGroups[digestNames[i]]) == 0 || len(digestGroups[digestNames[j]]) == 0 {
+				return false
+			}
+			return digestGroups[digestNames[i]][0].CreatedAt.AsTime().After(digestGroups[digestNames[j]][0].CreatedAt.AsTime())
+		},
+		page)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -346,7 +354,12 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 		return []*api.RegistryRepoTag{}, nil, nil
 	}
 
-	start, end, _, nextPage, err := paginate(tags, page)
+	start, end, _, nextPage, err := paginate(
+		tags,
+		func(i, j int) bool {
+			return tags[i] > tags[j]
+		},
+		page)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -360,8 +373,8 @@ func (c *AsertoClient) listTagsRemote(ctx context.Context, org, repo string, pag
 	return result, nextPage, nil
 }
 
-func paginate(collection []string, page *api.PaginationRequest) (int, int, []string, *api.PaginationResponse, error) {
-	sort.Strings(collection)
+func paginate(collection []string, less func(i, j int) bool, page *api.PaginationRequest) (int, int, []string, *api.PaginationResponse, error) {
+	sort.Slice(collection, less)
 
 	start := 0
 	end := len(collection)
