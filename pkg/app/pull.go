@@ -51,7 +51,7 @@ func (c *PolicyApp) getHosts(server string) ([]docker.RegistryHost, error) {
 				docker.WithAuthClient(client),
 				docker.WithAuthCreds(func(s string) (string, string, error) {
 					creds, ok := c.Configuration.Servers[s]
-					if !ok {
+					if !ok || (creds.Username == "" && creds.Password == "") {
 						return " ", " ", nil
 					}
 
