@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
+	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
 )
 
@@ -106,8 +108,7 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	p := c.UI.Progress("Fetching tags for images")
 	p.Start()
 
-	//TODO: Expose pagination options
-	response, _, err := xClient.ListRepos(c.Context, org, &api.PaginationRequest{Size: -1, Token: ""})
+	response, err := c.listImages(xClient, org)
 	if err != nil {
 		return err
 	}
@@ -154,6 +155,39 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 
 	// Get a list of tags for each image
 	return nil
+}
+
+//TODO: Expose pagination options
+func (c *PolicyApp) listImages(xClient extendedregistry.ExtendedClient, org string) (*registry.ListImagesResponse, error) {
+	var response *registry.ListImagesResponse
+
+	response, _, err := xClient.ListRepos(c.Context, org, &api.PaginationRequest{Size: -1, Token: ""})
+	if err != nil {
+		//TODO: use cerr
+		initialError := errors.Cause(err)
+		if !strings.Contains(initialError.Error(), "authentication failed") {
+			return nil, err
+		}
+	}
+	if response == nil {
+		response = &registry.ListImagesResponse{}
+		response.Images = make([]*api.PolicyImage, 0)
+	}
+
+	if len(response.Images) != 0 {
+		return response, nil
+	}
+
+	responsePublic, err := xClient.ListPublicRepos(c.Context, org, &api.PaginationRequest{Size: -1, Token: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, image := range responsePublic.Images {
+		response.Images = append(response.Images, &api.PolicyImage{Name: fmt.Sprintf("%s/%s", org, image.Name), Public: image.Public})
+	}
+
+	return response, nil
 }
 
 func (c *PolicyApp) familiarPolicyRef(userRef string) (string, error) {
