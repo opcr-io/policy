@@ -224,7 +224,7 @@ func (c *AsertoClient) RepoAvailable(ctx context.Context, org, repo string) (boo
 		return false, errors.Wrapf(err, "failed to check if repo [%s] exists", repo)
 	}
 
-	if repoAvailableResponse.Availability == api.NameAvailability_NAME_AVAILABILITY_UNAVAILABLE {
+	if repoAvailableResponse.Availability == api.NameAvailability_NAME_AVAILABILITY_AVAILABLE {
 		return true, nil
 	}
 
