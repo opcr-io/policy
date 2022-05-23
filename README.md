@@ -86,17 +86,18 @@ Usage: policy <command>
 
 Flags:
   -h, --help             Show context-sensitive help.
-  -c, --config="/home/toaster/.config/policy/config.yaml"
+  -c, --config="/Users/ogazitt/.config/policy/config.yaml"
                          Path to the policy CLI config file.
       --debug            Enable debug mode.
   -v, --verbosity=INT    Use to increase output verbosity.
+  -k, --insecure         Do not verify TLS connections.
 
 Commands:
   build <path> ...
     Build policies.
 
-  list
-    List policies.
+  images
+    List policy images.
 
   push <policy> ...
     Push policies to a registry.
@@ -104,8 +105,11 @@ Commands:
   pull <policy> ...
     Pull policies from a registry.
 
-  login
+  login --username=STRING
     Login to a registry.
+
+  logout
+    Logout from a registry.
 
   save <policy>
     Save a policy to a local bundle tarball.
@@ -116,8 +120,26 @@ Commands:
   rm <policy> ...
     Removes a policy from the local registry.
 
-  run <policy>
+  inspect <policy>
+    Displays information about a policy.
+
+  repl <policy>
     Sets you up with a shell for running queries using an OPA instance with a policy loaded.
+
+  remote set-public <policy> [<public>]
+    Make a policy public or private.
+
+  remote images
+    Synonym for 'policy images --remote'.
+
+  init [<path>]
+    (Deprecated) Initialize policy repo
+
+  templates apply <template>
+    Create or update a policy or related artifacts from a template.
+
+  templates list
+    List all available templates.
 
   version
     Prints version information.
