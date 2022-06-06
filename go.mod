@@ -12,7 +12,7 @@ require (
 	github.com/aserto-dev/mage-loot v0.8.1
 	github.com/aserto-dev/runtime v0.37.4
 	github.com/aserto-dev/scc-lib v0.0.6
-	github.com/containerd/containerd v1.5.10
+	github.com/containerd/containerd v1.5.13
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-containerregistry v0.7.0
@@ -114,7 +114,7 @@ require (
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
 	golang.org/x/tools v0.1.7 // indirect
