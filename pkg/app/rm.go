@@ -34,7 +34,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 		return nil
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}

@@ -20,7 +20,7 @@ func (c *PolicyApp) Images() error {
 
 	var data [][]string
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}

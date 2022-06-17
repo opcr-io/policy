@@ -9,6 +9,7 @@ import (
 	"github.com/aserto-dev/runtime"
 	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/reference/docker"
 	"github.com/google/uuid"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/pkg/oci"
@@ -79,7 +80,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,12 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[ocispec.AnnotationTitle] = ref
+
+	parsedRef, err := docker.ParseDockerRef(ref)
+	if err != nil {
+		return err
+	}
+	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
 	annotations[extendedregistry.AnnotationPolicyRegistryType] = extendedregistry.PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
@@ -117,7 +123,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *content.OCIStore, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *content.OCI, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 
 	fDigest, err := c.fileDigest(tarball)

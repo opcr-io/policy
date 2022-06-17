@@ -16,7 +16,7 @@ import (
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	defer c.Cancel()
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}

@@ -125,17 +125,17 @@ func (mr *MockSourceMockRecorder) HasSecret(arg0, arg1, arg2, arg3, arg4 interfa
 }
 
 // InitialTag mocks base method.
-func (m *MockSource) InitialTag(arg0 context.Context, arg1 *sources.AccessToken, arg2 string) error {
+func (m *MockSource) InitialTag(arg0 context.Context, arg1 *sources.AccessToken, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitialTag", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "InitialTag", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // InitialTag indicates an expected call of InitialTag.
-func (mr *MockSourceMockRecorder) InitialTag(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockSourceMockRecorder) InitialTag(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitialTag", reflect.TypeOf((*MockSource)(nil).InitialTag), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitialTag", reflect.TypeOf((*MockSource)(nil).InitialTag), arg0, arg1, arg2, arg3)
 }
 
 // ListOrgs mocks base method.
@@ -187,15 +187,15 @@ func (mr *MockSourceMockRecorder) Profile(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // ValidateConnection mocks base method.
-func (m *MockSource) ValidateConnection(arg0 context.Context, arg1 *sources.AccessToken) error {
+func (m *MockSource) ValidateConnection(arg0 context.Context, arg1 *sources.AccessToken, arg2 []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateConnection", arg0, arg1)
+	ret := m.ctrl.Call(m, "ValidateConnection", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ValidateConnection indicates an expected call of ValidateConnection.
-func (mr *MockSourceMockRecorder) ValidateConnection(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockSourceMockRecorder) ValidateConnection(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateConnection", reflect.TypeOf((*MockSource)(nil).ValidateConnection), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateConnection", reflect.TypeOf((*MockSource)(nil).ValidateConnection), arg0, arg1, arg2)
 }
