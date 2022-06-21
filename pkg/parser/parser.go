@@ -27,7 +27,9 @@ func CalculatePolicyRef(userRef, defaultDomain string) (string, error) {
 		}
 
 		return parsedWithDomain.String(), nil
+	} else if domain == DefaultCanonicalDomain {
+		return DefaultCanonicalDomain + "/" + familiarized, nil
 	}
 
-	return userRef, nil
+	return familiarized, nil
 }

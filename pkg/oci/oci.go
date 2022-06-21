@@ -130,7 +130,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
 
 	memoryStore := content.NewMemory()
-	manifest, manifestdesc, err := content.GenerateManifest(nil, refDescriptor.Annotations, refDescriptor)
+	manifest, manifestdesc, config, configdesc, err := content.GenerateManifestAndConfig(refDescriptor.Annotations, nil, refDescriptor)
 	if err != nil {
 		return "", err
 	}
@@ -139,6 +139,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	if err != nil {
 		return "", err
 	}
+	memoryStore.Set(configdesc, config)
 
 	pushDescriptor, err := oras.Copy(o.ctx,
 		o.ociStore,
