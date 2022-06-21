@@ -19,7 +19,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		return err
 	}
 
-	ociStore, err := content.NewOCIStore(c.Configuration.PoliciesRoot())
+	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	return nil
 }
 
-func (c *PolicyApp) writePolicy(ociStore *content.OCIStore, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
+func (c *PolicyApp) writePolicy(ociStore *content.OCI, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
 	reader, err := ociStore.ReaderAt(c.Context, *refDescriptor)
 	if err != nil {
 		return errors.Wrap(err, "failed to open store reader")

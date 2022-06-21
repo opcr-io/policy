@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/aserto-dev/go-utils/httptransport"
 	"github.com/containerd/containerd/remotes/docker"
@@ -25,11 +26,11 @@ type Oci struct {
 	logger    *zerolog.Logger
 	ctx       context.Context
 	hostsFunc docker.RegistryHosts
-	ociStore  *content.OCIStore
+	ociStore  *content.OCI
 }
 
 func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryHosts, policyRoot string) (*Oci, error) {
-	ociStore, err := content.NewOCIStore(policyRoot)
+	ociStore, err := content.NewOCI(policyRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -48,32 +49,50 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 }
 
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
-	opts := []oras.PullOpt{
-		oras.WithContentProvideIngester(o.ociStore),
-	}
 
 	resolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
 	})
 
-	_, descriptors, err := oras.Pull(o.ctx, resolver, ref, o.ociStore,
-		opts...,
-	)
-
+	var layers []ocispec.Descriptor
+	allowedMediaTypes := []string{
+		"application/vnd.oci.image.manifest.v1+json",
+		"application/octet-stream",
+		"application/vnd.oci.image.config.v1+json",
+		"application/vnd.unknown.config.v1+json",
+		"application/vnd.oci.image.layer.v1.tar+gzip",
+		"application/vnd.oci.image.layer.v1.tar",
+	}
+	opts := []oras.CopyOpt{
+		oras.WithAllowedMediaTypes(allowedMediaTypes),
+		oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
+		oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
+	}
+	_, err := oras.Copy(o.ctx, resolver, ref, o.ociStore, "", opts...)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	if len(descriptors) != 1 {
-		return "", errors.Errorf("unexpected layer count of [%d] from the registry; expected 1", len(descriptors))
+	// policies have 3 layers (config, manifest & tarball) so we do this check to see if we pull something that resembles a policy
+	if len(layers) != 3 {
+		return "", errors.Errorf("unexpected layer count of [%d] from the registry; expected 3", len(layers))
+	}
+	var layer ocispec.Descriptor
+
+	for _, lyr := range layers {
+		if strings.Contains(lyr.MediaType, "tar") {
+			layer = lyr
+			break
+		}
 	}
 
-	o.ociStore.AddReference(ref, descriptors[0])
+	o.ociStore.AddReference(ref, layer)
 	err = o.ociStore.SaveIndex()
 	if err != nil {
 		return "", err
 	}
-	return descriptors[0].Digest, nil
+
+	return layer.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
@@ -90,6 +109,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	refDescriptor, ok := refs[ref]
 	if !ok {
 		return "", errors.Errorf("policy [%s] not found in the local store", ref)
+
 	}
 
 	resolver := docker.NewResolver(docker.ResolverOptions{
@@ -98,15 +118,49 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 
 	delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
 
-	pushDescriptor, err := oras.Push(o.ctx,
-		resolver,
-		ref,
+	allowedMediaTypes := []string{
+		"application/vnd.oci.image.manifest.v1+json",
+		"application/octet-stream",
+		"application/vnd.oci.image.config.v1+json",
+		"application/vnd.unknown.config.v1+json",
+		"application/vnd.oci.image.layer.v1.tar+gzip",
+		"application/vnd.oci.image.layer.v1.tar",
+	}
+
+	opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
+
+	memoryStore := content.NewMemory()
+	manifest, manifestdesc, err := content.GenerateManifest(nil, refDescriptor.Annotations, refDescriptor)
+	if err != nil {
+		return "", err
+	}
+
+	err = memoryStore.StoreManifest(ref, manifestdesc, manifest)
+	if err != nil {
+		return "", err
+	}
+
+	pushDescriptor, err := oras.Copy(o.ctx,
 		o.ociStore,
-		[]ocispec.Descriptor{refDescriptor},
-		oras.WithConfigMediaType("application/vnd.oci.image.config.v1+json"))
+		ref,
+		resolver,
+		"",
+		opts...)
 
 	if err != nil {
-		return "", errors.Wrap(err, "oras push failed")
+		return "", errors.Wrap(err, "oras push tarball failed")
+	}
+
+	// v1 version of oras-go doesn't push the manifest automatically so this part handles manifest pushing
+	pushDescriptor, err = oras.Copy(o.ctx,
+		memoryStore,
+		ref,
+		resolver,
+		"",
+		opts...)
+
+	if err != nil {
+		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
 	return pushDescriptor.Digest, nil
