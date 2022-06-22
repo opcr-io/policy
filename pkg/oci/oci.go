@@ -73,10 +73,6 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	// policies have 3 layers (config, manifest & tarball) so we do this check to see if we pull something that resembles a policy
-	if len(layers) != 3 {
-		return "", errors.Errorf("unexpected layer count of [%d] from the registry; expected 3", len(layers))
-	}
 	var layer ocispec.Descriptor
 
 	for _, lyr := range layers {
