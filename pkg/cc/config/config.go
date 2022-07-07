@@ -46,10 +46,11 @@ type ContentTemplatesConfig struct {
 }
 
 type ServerCredentials struct {
-	Type     string `json:"type" yaml:"type"`
-	Username string `json:"username" yaml:"username"`
-	Password string `json:"password" yaml:"password"`
-	Default  bool   `json:"default" yaml:"default"`
+	Type         string                 `json:"type" yaml:"type"`
+	Username     string                 `json:"username" yaml:"username"`
+	Password     string                 `json:"password" yaml:"password"`
+	Default      bool                   `json:"default" yaml:"default"`
+	ExtendedInfo map[string]interface{} `json:"extended_info" yaml:"extended_info"`
 }
 
 // Path is a string that points to a config file

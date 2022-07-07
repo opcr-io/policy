@@ -1,6 +1,7 @@
 package app
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -105,11 +106,13 @@ func (c *PolicyApp) RmRemote(existingRef string, removeAll, force bool) error {
 		server.Name(),
 		c.Logger,
 		&extendedregistry.Config{
-			Address:  "https://" + server.Name(),
-			Username: creds.Username,
-			Password: creds.Password,
+			Address:        "https://" + server.Name(),
+			Username:       creds.Username,
+			Password:       creds.Password,
+			LocalInfoCache: filepath.Join(c.Configuration.PoliciesRoot(), server.Name()+".info.json"),
 		},
-		c.TransportWithTrustedCAs())
+		c.TransportWithTrustedCAs(),
+	)
 	if err != nil {
 		return errors.Wrap(err, "no extended remove supported")
 	}

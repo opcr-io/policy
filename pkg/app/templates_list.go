@@ -76,7 +76,8 @@ func (c *PolicyApp) getTemplates(server, org, tag string) ([]templateInfo, error
 		c.Context,
 		c.Logger,
 		c.TransportWithTrustedCAs(),
-		policyTemplatesCfg)
+		policyTemplatesCfg,
+		c.Configuration.PoliciesRoot())
 
 	tmplRepo, err := policyTmpl.ListRepos(org, tag)
 

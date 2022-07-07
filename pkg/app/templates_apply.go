@@ -49,7 +49,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 			Server:     c.Configuration.CITemplates.Server,
 			PolicyRoot: c.Configuration.PoliciesRoot(),
 		}
-		ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), ciTemplateCfg)
+		ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), ciTemplateCfg, c.Configuration.PoliciesRoot())
 		templateFs, err = ciTemplates.Load(
 			fmt.Sprintf("%s/%s:%s",
 				c.Configuration.CITemplates.Organization,
@@ -64,7 +64,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 			Server:     c.Configuration.ContentTemplates.Server,
 			PolicyRoot: c.Configuration.PoliciesRoot(),
 		}
-		ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), contentTemplateCfg)
+		ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), contentTemplateCfg, c.Configuration.PoliciesRoot())
 		templateFs, err = ciTemplates.Load(
 			fmt.Sprintf("%s/%s:%s",
 				c.Configuration.ContentTemplates.Organization,

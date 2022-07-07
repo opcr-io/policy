@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
@@ -18,9 +19,10 @@ func (c *PolicyApp) SetVisibility(server, policy string, public bool) error {
 		server,
 		c.Logger,
 		&extendedregistry.Config{
-			Address:  "https://" + server,
-			Username: creds.Username,
-			Password: creds.Password,
+			Address:        "https://" + server,
+			Username:       creds.Username,
+			Password:       creds.Password,
+			LocalInfoCache: filepath.Join(c.Configuration.PoliciesRoot(), server+".info.json"),
 		},
 		c.TransportWithTrustedCAs())
 

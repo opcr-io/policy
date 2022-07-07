@@ -34,14 +34,15 @@ type oci struct {
 }
 
 // NewOCI returns a new policy template provider for OCI
-func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transport, cfg Config) PolicyTemplates {
+func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transport, cfg Config, localInfoCache string) PolicyTemplates {
 	extClient, err := extendedregistry.GetExtendedClient(
 		ctx,
 		cfg.Server,
 		log, &extendedregistry.Config{
-			Address:  "https://" + cfg.Server,
-			Username: " ",
-			Password: " ",
+			Address:        "https://" + cfg.Server,
+			Username:       " ",
+			Password:       " ",
+			LocalInfoCache: filepath.Join(localInfoCache, cfg.Server+".info.json"),
 		},
 		httpTransport)
 	if err != nil {

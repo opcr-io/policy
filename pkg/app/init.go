@@ -74,7 +74,7 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, i
 	prog := c.UI.Progressf("Generating files")
 	prog.Start()
 
-	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
+	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg, c.Configuration.PoliciesRoot())
 
 	templateFs, err := ciTemplates.Load(imageRef)
 	if err != nil {

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -93,9 +94,10 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 		server,
 		c.Logger,
 		&extendedregistry.Config{
-			Address:  "https://" + server,
-			Username: creds.Username,
-			Password: creds.Password,
+			Address:        "https://" + server,
+			Username:       creds.Username,
+			Password:       creds.Password,
+			LocalInfoCache: filepath.Join(c.Configuration.PoliciesRoot(), server+".info.json"),
 		},
 		c.TransportWithTrustedCAs())
 

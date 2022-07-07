@@ -22,7 +22,7 @@ func TestOCIListRepos(t *testing.T) {
 	ociTemplate := NewOCI(ctx, &log, transport, Config{
 		Server:     "opcr.io",
 		PolicyRoot: "",
-	})
+	}, "")
 
 	templateRepos, err := ociTemplate.ListRepos("aserto-templates", "1")
 	if err != nil {
@@ -65,7 +65,7 @@ func TestOCILoadRepo(t *testing.T) {
 	ociTemplate := NewOCI(ctx, &log, transport, Config{
 		Server:     "opcr.io",
 		PolicyRoot: tmpDir,
-	})
+	}, "")
 
 	bundleFS, err := ociTemplate.Load("aserto-content/policy-template:1.0.1")
 	if err != nil {

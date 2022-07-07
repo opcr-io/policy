@@ -4,22 +4,27 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
+	"github.com/aserto-dev/go-utils/fsutil"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/tidwall/gjson"
 )
 
 type Config struct {
-	Address     string `json:"address"`
-	GRPCAddress string `json:"extended"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
+	Address        string `json:"address"`
+	GRPCAddress    string `json:"extended"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	LocalInfoCache string `json:"local_info_cache"`
 }
 
 type ExtendedClient interface {
@@ -40,6 +45,7 @@ type xClient struct {
 	cfg    *Config
 	logger *zerolog.Logger
 	client *http.Client
+	info   map[string]interface{}
 }
 
 func newExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client) *xClient {
@@ -67,10 +73,11 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 	client := newExtendedClient(logger, cfg, &httpClient)
 	extendedGRPCAddress, err := client.HasGRPCExtendedAddress()
 	if err != nil {
-		return client, errors.Wrapf(err, "server does not support extended registry [%s]", server)
+		logger.Debug().Err(err).Str("server", server).Msg("server does not support extended registry")
+		return client, nil
 	}
 	if extendedGRPCAddress != "" {
-		return newAsertoClient(
+		asertoClient, err := newAsertoClient(
 			ctx,
 			logger,
 			&Config{
@@ -79,6 +86,7 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 				Username:    cfg.Username,
 				Password:    cfg.Password,
 			})
+		return asertoClient, err
 	}
 	return client, errors.Errorf("server does not support extended registry [%s]", server)
 }
@@ -129,15 +137,50 @@ func (c *xClient) CreateRepo(ctx context.Context, org, repo string) error {
 }
 
 func (c *xClient) HasGRPCExtendedAddress() (string, error) {
-	strURL := c.cfg.Address + "/info"
-	resp, err := c.get(strURL)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get /info")
+	var (
+		resp            string
+		err             error
+		infoCacheExists bool
+	)
+
+	if c.cfg.LocalInfoCache != "" {
+		infoCacheExists, err = fsutil.FileExists(c.cfg.LocalInfoCache)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to check if file exists [%s]", c.cfg.LocalInfoCache)
+		}
+	}
+
+	if infoCacheExists {
+		// look inside the local cache to see if we can find our info response for this server
+		// if we can, then we can use the grpc address from there
+		fileContents, err := ioutil.ReadFile(c.cfg.LocalInfoCache)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to read local info cache [%s]", c.cfg.LocalInfoCache)
+		}
+
+		resp = string(fileContents)
+	} else {
+
+		strURL := c.cfg.Address + "/info"
+		resp, err = c.get(strURL)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get /info")
+		}
 	}
 	extendedAPIaddress := gjson.Get(resp, "grpc_extended_api").String()
 	if extendedAPIaddress == "" {
-		return "", errors.New("no exteneded api endpoint defined in info call")
+		return "", errors.New("no extended api endpoint defined in info call")
 	}
+
+	err = os.MkdirAll(filepath.Dir(c.cfg.LocalInfoCache), 0700)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create local info cache directory [%s]", c.cfg.LocalInfoCache)
+	}
+	err = ioutil.WriteFile(c.cfg.LocalInfoCache, []byte(resp), 0600)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write info response to local cache")
+	}
+
 	return extendedAPIaddress, nil
 }
 
