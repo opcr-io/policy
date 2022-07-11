@@ -74,7 +74,6 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 
 	var layer ocispec.Descriptor
-
 	for _, lyr := range layers {
 		if strings.Contains(lyr.MediaType, "tar") {
 			layer = lyr
@@ -118,7 +117,6 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		"application/vnd.oci.image.manifest.v1+json",
 		"application/octet-stream",
 		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.unknown.config.v1+json",
 		"application/vnd.oci.image.layer.v1.tar+gzip",
 		"application/vnd.oci.image.layer.v1.tar",
 	}
@@ -126,7 +124,13 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
 
 	memoryStore := content.NewMemory()
-	manifest, manifestdesc, config, configdesc, err := content.GenerateManifestAndConfig(refDescriptor.Annotations, nil, refDescriptor)
+
+	config, configDescriptor, err := content.GenerateConfig(nil)
+	if err != nil {
+		return "", err
+	}
+	configDescriptor.MediaType = MediaTypeConfig
+	manifest, manifestdesc, err := content.GenerateManifest(&configDescriptor, refDescriptor.Annotations, refDescriptor)
 	if err != nil {
 		return "", err
 	}
@@ -135,7 +139,8 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	if err != nil {
 		return "", err
 	}
-	memoryStore.Set(configdesc, config)
+
+	memoryStore.Set(configDescriptor, config)
 
 	pushDescriptor, err := oras.Copy(o.ctx,
 		o.ociStore,

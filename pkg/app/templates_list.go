@@ -17,11 +17,14 @@ type templateInfo struct {
 
 func (c *PolicyApp) TemplatesList() error {
 	defer c.Cancel()
+	p := c.UI.Progress("Fetching templates")
+	p.Start()
 
 	templateInfos, err := c.listTemplates()
 	if err != nil {
 		return err
 	}
+	p.Stop()
 
 	sort.Slice(templateInfos, func(i, j int) bool {
 		return templateInfos[i].name < templateInfos[j].name
