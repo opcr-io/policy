@@ -42,12 +42,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if err != nil {
 		return errors.Wrap(err, "failed to create temporary build directory")
 	}
-	defer func() {
-		err := os.RemoveAll(workdir)
-		if err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to remove temporary working directory.")
-		}
-	}()
+	defer c.cleanupWkDir(workdir)
 
 	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
 		InstanceID: "policy-build",
@@ -92,8 +87,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-
-	parsedRef, err := docker.ParseDockerRef(ref)
+	parsedRef, err := getParsedRef(ref)
 	if err != nil {
 		return err
 	}
@@ -106,14 +100,14 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	parsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	parsed, err := parser.CalculatePolicyRef(parsedRef.Name(), c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
 
 	ociStore.AddReference(parsed, descriptor)
 
-	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
+	c.UI.Normal().WithStringValue("reference", parsedRef.Name()).Msg("Tagging image.")
 
 	err = ociStore.SaveIndex()
 	if err != nil {
@@ -121,6 +115,13 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	}
 
 	return nil
+}
+
+func (c *PolicyApp) cleanupWkDir(workdir string) {
+	err := os.RemoveAll(workdir)
+	if err != nil {
+		c.UI.Problem().WithErr(err).Msg("Failed to remove temporary working directory.")
+	}
 }
 
 func (c *PolicyApp) createImage(ociStore *content.OCI, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
@@ -215,4 +216,29 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 	}
 
 	return fDigest, nil
+}
+
+func getParsedRef(ref string) (docker.Named, error) {
+	if ref == "" {
+		wkdirRef, err := getRefFromWorkingDir()
+		if err != nil {
+			return nil, err
+		}
+		ref = wkdirRef
+	}
+
+	parsedRef, err := docker.ParseDockerRef(ref)
+	if err != nil {
+		return nil, err
+	}
+	return parsedRef, nil
+}
+
+func getRefFromWorkingDir() (string, error) {
+	workdir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	ref := filepath.Base(workdir)
+	return ref, nil
 }
