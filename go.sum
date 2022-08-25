@@ -146,8 +146,8 @@ github.com/aserto-dev/go-utils v0.8.6 h1:bWTlVPpcUet1US66R2HhFhwHkSzBi77FPo1Ko8I
 github.com/aserto-dev/go-utils v0.8.6/go.mod h1:FvxUzU1nYSAXDc/pz7d0/UmkAEGHKZtu3rTjKxTlU5E=
 github.com/aserto-dev/mage-loot v0.8.1 h1:dBXReBOf8T3Yupp5PFgeSs0//jMPPPFWMDQyWvo3vVw=
 github.com/aserto-dev/mage-loot v0.8.1/go.mod h1:HIdbGTB/JdyEjV9d2dmPMQeqQ1CU21XN3iTOLPBAmeg=
-github.com/aserto-dev/runtime v0.42.3 h1:H9vrFen/3LzFYez4YEFZasXZqiyPGHdSQOGKl1SbpwU=
-github.com/aserto-dev/runtime v0.42.3/go.mod h1:wwFSKr+mf2n1IM8Bh2jrwuc7TuE/AaLumVnIKjRpavg=
+github.com/aserto-dev/runtime v0.42.8 h1:dTErwN4VjHLeepNzpYxGNm8DtIdu2oVh90pnIExbMpo=
+github.com/aserto-dev/runtime v0.42.8/go.mod h1:wwFSKr+mf2n1IM8Bh2jrwuc7TuE/AaLumVnIKjRpavg=
 github.com/aserto-dev/scc-lib v0.0.15 h1:F+IrHPB6190FSp2fG9j7wMDD89TXPuv6drArrOL6cUI=
 github.com/aserto-dev/scc-lib v0.0.15/go.mod h1:pT5KY4y+2fCjcLuZ2mcP+8W0NECvbNSg4pBKdanUAEQ=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=

@@ -67,7 +67,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	}
 	defer cleanup()
 
-	err = opaRuntime.PluginsManager.Start(c.Context)
+	err = opaRuntime.Start(c.Context)
 	if err != nil {
 		return errors.Wrap(err, "OPA runtime failed to start")
 	}
@@ -77,7 +77,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return errors.Wrap(err, "plugins didn't start on time")
 	}
 
-	loop := repl.New(opaRuntime.PluginsManager.Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
+	loop := repl.New(opaRuntime.GetPluginsManager().Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
 	loop.Loop(context.Background())
 
 	return nil
