@@ -146,15 +146,6 @@ jobs:
             kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
             kv/data/github  "ASERTO_TAP"        | ASERTO_TAP;
             kv/data/github  "SSH_PRIVATE_KEY"   | SSH_PRIVATE_KEY;
-      - name: Install Vault CLI
-        uses: innovationnorway/setup-vault@v1.0.3
-        with:
-          version: 1.4.2
-      - name: Renew Vault Token
-        env:
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-        run: |
-          vault token renew
       - name: Release
         env:
           GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
@@ -186,15 +177,6 @@ jobs:
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             kv/data/github  "ROOT_TOKEN"        | ROOT_TOKEN;
-      - name: Install Vault CLI
-        uses: innovationnorway/setup-vault@v1.0.3
-        with:
-          version: 1.4.2
-      - name: Renew Vault Token
-        env:
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-        run: |
-          vault token renew
       - name: Download exe
         id: download_exe
         shell: bash
