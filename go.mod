@@ -10,7 +10,7 @@ require (
 	github.com/aserto-dev/go-grpc v0.8.10
 	github.com/aserto-dev/go-utils v0.8.6
 	github.com/aserto-dev/mage-loot v0.8.1
-	github.com/aserto-dev/runtime v0.42.3
+	github.com/aserto-dev/runtime v0.42.8
 	github.com/aserto-dev/scc-lib v0.0.15
 	github.com/containerd/containerd v1.6.6
 	github.com/dustin/go-humanize v1.0.0
