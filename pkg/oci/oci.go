@@ -2,11 +2,12 @@ package oci
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"strings"
 
-	"github.com/aserto-dev/go-utils/httptransport"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -193,12 +194,8 @@ func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 	sourceRef, sourceUser, sourcePassword,
 	destinationRef, destinationUser, destinationPassword,
 	ociStore string) error {
-	transportConf := &httptransport.Config{
-		Insecure: false,
-		CA:       []string{},
-	}
 
-	transport, err := httptransport.TransportWithTrustedCAs(log, transportConf)
+	transport, err := getTransport(log)
 	if err != nil {
 		return errors.Wrap(err, "failed to create transport")
 	}
@@ -285,4 +282,26 @@ func cloneDescriptor(desc *ocispec.Descriptor) (ocispec.Descriptor, error) {
 	}
 
 	return result, nil
+}
+
+func getTransport(log *zerolog.Logger) (*http.Transport, error) {
+	// Get the SystemCertPool, continue with an empty pool on error
+	var rootCAs *x509.CertPool
+
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load system cert pool")
+	}
+
+	if rootCAs == nil {
+		log.Warn().Err(err).Msg("failed to load system ca certs")
+		rootCAs = x509.NewCertPool()
+	}
+
+	// Trust the augmented cert pool in our client
+	conf := &tls.Config{
+		RootCAs:    rootCAs,
+		MinVersion: tls.VersionTLS12,
+	}
+	return &http.Transport{TLSClientConfig: conf}, nil
 }

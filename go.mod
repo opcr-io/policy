@@ -2,6 +2,8 @@ module github.com/opcr-io/policy
 
 go 1.17
 
+// replace github.com/aserto-dev/go-utils ../go-utils
+
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.4.0
