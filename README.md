@@ -43,6 +43,34 @@ Wanna discuss features or show your support for this tool?
   brew tap opcr-io/tap && brew install opcr-io/tap/policy
    ```
 
+* Via nixpkg for Linux, nixOS, and macOS
+
+   At the moment the package is only available in the unstable channel, below are some examples to install using the shell, NixOS, and home-manager.
+
+   Shell:
+   ```shell
+   nix-env --install -A nixpkgs.opcr-policy
+   ```
+
+   NixOS:
+   ```shell
+     # your other config ...
+     environment.systemPackages = with pkgs; [
+       # your other packages ...
+       opcr-policy
+     ];
+
+   ```
+
+   home-manager:
+   ```shell
+     # your other config ...
+     home.packages = with pkgs; [
+       # your other packages ...
+       opcr-policy
+     ];
+   ```
+
 * Via a GO install
 
   ```shell
