@@ -63,7 +63,7 @@ Wanna discuss features or show your support for this tool?
    ```
 
    home-manager:
-   ```shell
+   ```nix
      # your other config ...
      home.packages = with pkgs; [
        # your other packages ...
