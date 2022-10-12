@@ -45,7 +45,7 @@ Wanna discuss features or show your support for this tool?
 
 * Via nixpkg for Linux, nixOS, and macOS
 
-   At the moment the package is only available in the unstable channel, below are some examples to install using the shell, NixOS, and home-manager.
+   At the moment the package is only available in the `unstable` channel. Below are some examples using nix to install `policy` via the shell, NixOS configuration, and home-manager configuration.
 
    Shell:
    ```shell
