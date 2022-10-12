@@ -53,7 +53,7 @@ Wanna discuss features or show your support for this tool?
    ```
 
    NixOS:
-   ```shell
+   ```nix
      # your other config ...
      environment.systemPackages = with pkgs; [
        # your other packages ...
