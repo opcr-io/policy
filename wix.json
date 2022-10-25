@@ -1,6 +1,6 @@
 {
   "product": "Policy CLI",
-  "company": "Aserto, Inc.",
+  "company": "opcr.io",
   "license": "LICENSE",
   "upgrade-code": "af677eae-09b4-4080-afe1-10db43e0f103",
   "files": {
@@ -24,9 +24,9 @@
   },
   "shortcuts": {},
   "choco": {
-    "description": "Polocy CLI",
+    "description": "Policy CLI",
     "project-url": "https://github.com/opcr-io/policy",
-    "tags": "aserto policy cli",
+    "tags": "policy cli",
     "license-url": "https://github.com/opcr-io/policy/blob/main/LICENSE"
   }
 }
