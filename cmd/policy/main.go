@@ -9,7 +9,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/alecthomas/kong"
-	"github.com/aserto-dev/go-utils/logger"
+	"github.com/aserto-dev/logger"
 	"github.com/opcr-io/policy/pkg/app"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/pkg/errors"
