@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	registryClient "github.com/aserto-dev/aserto-go/client/registry"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
 	"github.com/golang/mock/gomock"
@@ -28,8 +27,7 @@ func TestAsertoListOrgs(t *testing.T) {
 			},
 		}, nil,
 	)
-	client := &AsertoClient{extension: &registryClient.Client{}}
-	client.extension.Registry = regTestClient
+	client := &AsertoClient{registryClient: regTestClient}
 
 	orgs, err := client.ListOrgs(context.Background(), &api.PaginationRequest{Size: -1, Token: ""})
 	assert.NoError(t, err)
@@ -57,8 +55,7 @@ func TestAsertoList(t *testing.T) {
 			},
 		}, nil,
 	)
-	client := &AsertoClient{extension: &registryClient.Client{}}
-	client.extension.Registry = regTestClient
+	client := &AsertoClient{registryClient: regTestClient}
 	images, _, err := client.ListRepos(context.Background(), "some", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(images.Images))
@@ -73,8 +70,7 @@ func TestAsertoSetVisibility(t *testing.T) {
 		Organization: "org",
 		Public:       true,
 	}).Return(nil, nil)
-	client := &AsertoClient{extension: &registryClient.Client{}}
-	client.extension.Registry = regTestClient
+	client := &AsertoClient{registryClient: regTestClient}
 
 	err := client.SetVisibility(context.Background(), "org", "image", true)
 	assert.NoError(t, err)
@@ -89,8 +85,7 @@ func TestAsertoRemoveImage(t *testing.T) {
 		Tag:          "latest",
 		Organization: "org",
 	}).Return(nil, nil)
-	client := &AsertoClient{extension: &registryClient.Client{}}
-	client.extension.Registry = regTestClient
+	client := &AsertoClient{registryClient: regTestClient}
 
 	err := client.RemoveImage(context.Background(), "org", "testpol", "latest")
 	assert.NoError(t, err)

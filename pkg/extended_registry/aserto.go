@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/aserto-dev/aserto-go/client"
-	registryClient "github.com/aserto-dev/aserto-go/client/registry"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-grpc/aserto/registry/v1"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -26,6 +25,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -35,8 +35,9 @@ const (
 )
 
 type AsertoClient struct {
-	cfg       *Config
-	extension *registryClient.Client
+	cfg            *Config
+	registryClient registry.RegistryClient
+	grpcConnection grpc.ClientConnInterface
 }
 
 func newAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
@@ -47,24 +48,30 @@ func newAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (
 	} else if cfg.Password != "" {
 		options = append(options, client.WithAPIKeyAuth(cfg.Password))
 	}
-	extensionClient, err := registryClient.New(
-		ctx,
-		options...,
+
+	connection, err := client.NewConnection(ctx, options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "create grpc client failed")
+	}
+
+	extensionClient := registry.NewRegistryClient(
+		connection.Conn,
 	)
 	return &AsertoClient{
-		cfg:       cfg,
-		extension: extensionClient,
+		cfg:            cfg,
+		registryClient: extensionClient,
+		grpcConnection: connection.Conn,
 	}, err
 }
 
 func (c *AsertoClient) ListOrgs(ctx context.Context, page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
-	orgs, err := c.extension.Registry.ListOrgs(ctx, &registry.ListOrgsRequest{Page: page})
+	orgs, err := c.registryClient.ListOrgs(ctx, &registry.ListOrgsRequest{Page: page})
 	return orgs, err
 }
 
 func (c *AsertoClient) ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
 	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
-	resp, err := c.extension.Registry.ListImages(ctx, &registry.ListImagesRequest{})
+	resp, err := c.registryClient.ListImages(ctx, &registry.ListImagesRequest{})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to list repos")
 	}
@@ -92,7 +99,7 @@ func (c *AsertoClient) ListRepos(ctx context.Context, org string, page *api.Pagi
 }
 
 func (c *AsertoClient) ListPublicRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListPublicImagesResponse, error) {
-	resp, err := c.extension.Registry.ListPublicImages(ctx, &registry.ListPublicImagesRequest{Page: page, Organization: org})
+	resp, err := c.registryClient.ListPublicImages(ctx, &registry.ListPublicImagesRequest{Page: page, Organization: org})
 	return resp, err
 }
 func (c *AsertoClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
@@ -104,7 +111,7 @@ func (c *AsertoClient) ListTags(ctx context.Context, org, repo string, page *api
 	}
 
 	if listTagsExists {
-		listTagsWithDetailsResponse, err := c.extension.Registry.ListTagsWithDetails(ctx, &registry.ListTagsWithDetailsRequest{
+		listTagsWithDetailsResponse, err := c.registryClient.ListTagsWithDetails(ctx, &registry.ListTagsWithDetailsRequest{
 			Page:         page,
 			Organization: org,
 			Repo:         repo,
@@ -183,7 +190,7 @@ func (c *AsertoClient) GetTag(ctx context.Context, org, repo, tag string) (*api.
 }
 
 func (c *AsertoClient) SetVisibility(ctx context.Context, org, repo string, public bool) error {
-	_, err := c.extension.Registry.SetImageVisibility(ctx, &registry.SetImageVisibilityRequest{
+	_, err := c.registryClient.SetImageVisibility(ctx, &registry.SetImageVisibilityRequest{
 		Image:        repo,
 		Organization: org,
 		Public:       public,
@@ -191,7 +198,7 @@ func (c *AsertoClient) SetVisibility(ctx context.Context, org, repo string, publ
 	return err
 }
 func (c *AsertoClient) RemoveImage(ctx context.Context, org, repo, tag string) error {
-	_, err := c.extension.Registry.RemoveImage(ctx, &registry.RemoveImageRequest{
+	_, err := c.registryClient.RemoveImage(ctx, &registry.RemoveImageRequest{
 		Image:        repo,
 		Tag:          tag,
 		Organization: org,
@@ -216,7 +223,7 @@ func (c *AsertoClient) IsValidTag(ctx context.Context, org, repo, tag string) (b
 }
 
 func (c *AsertoClient) RepoAvailable(ctx context.Context, org, repo string) (bool, error) {
-	repoAvailableResponse, err := c.extension.Registry.RepoAvailable(ctx, &registry.RepoAvailableRequest{
+	repoAvailableResponse, err := c.registryClient.RepoAvailable(ctx, &registry.RepoAvailableRequest{
 		Organization: org,
 		Repo:         repo,
 	})
@@ -232,7 +239,7 @@ func (c *AsertoClient) RepoAvailable(ctx context.Context, org, repo string) (boo
 }
 
 func (c *AsertoClient) CreateRepo(ctx context.Context, org, repo string) error {
-	_, err := c.extension.Registry.CreateImage(ctx, &registry.CreateImageRequest{
+	_, err := c.registryClient.CreateImage(ctx, &registry.CreateImageRequest{
 		Organization: org,
 		Image: &api.PolicyImage{
 			Name: repo,
@@ -253,7 +260,7 @@ func (c *AsertoClient) ListDigests(ctx context.Context, org, repo string, page *
 	}
 
 	if listDigestExists {
-		listDigestResponse, err := c.extension.Registry.ListDigests(ctx, &registry.ListDigestsRequest{
+		listDigestResponse, err := c.registryClient.ListDigests(ctx, &registry.ListDigestsRequest{
 			Page:         page,
 			Organization: org,
 			Repo:         repo,
@@ -510,7 +517,7 @@ func (c *AsertoClient) handleTransportError(err error) ([]*api.RegistryRepoTag, 
 }
 
 func (c *AsertoClient) grpcMethodExists(ctx context.Context, method string) (bool, error) {
-	grpcReflectClient := grpcreflect.NewClient(ctx, grpc_reflection_v1alpha.NewServerReflectionClient(c.extension.Connection()))
+	grpcReflectClient := grpcreflect.NewClient(ctx, grpc_reflection_v1alpha.NewServerReflectionClient(c.grpcConnection))
 	defer grpcReflectClient.Reset()
 
 	descriptor, err := grpcReflectClient.ResolveService(AsertoRegistryServiceName)

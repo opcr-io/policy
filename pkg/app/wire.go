@@ -7,7 +7,7 @@ import (
 	"github.com/google/wire"
 
 	"github.com/aserto-dev/clui"
-	"github.com/aserto-dev/go-utils/logger"
+	"github.com/aserto-dev/logger"
 	"github.com/opcr-io/policy/pkg/cc"
 	"github.com/opcr-io/policy/pkg/cc/config"
 )

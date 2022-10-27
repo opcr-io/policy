@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/aserto-dev/go-utils/logger"
+	"github.com/aserto-dev/logger"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"

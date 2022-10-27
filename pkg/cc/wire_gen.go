@@ -7,8 +7,8 @@
 package cc
 
 import (
-	"github.com/aserto-dev/go-utils/certs"
-	"github.com/aserto-dev/go-utils/logger"
+	"github.com/aserto-dev/certs"
+	"github.com/aserto-dev/logger"
 	"github.com/google/wire"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/cc/context"
