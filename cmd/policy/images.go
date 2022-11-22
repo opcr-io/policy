@@ -16,16 +16,16 @@ type ImagesCmd struct {
 func (c *ImagesCmd) Run(g *Globals) error {
 	if c.Remote {
 		if c.Org == "" {
-			return errors.New("Organization parameter is required, please provide it using -o/--organization")
+			return errors.New("organization parameter is required, please provide it using -o/--organization")
 		}
 		err := g.App.ImagesRemote(c.Server, strings.TrimSpace(c.Org), c.ShowEmpty)
 		if err != nil {
-			return errors.Wrap(err, "Failed to list remote policies.")
+			return errors.Wrap(err, "failed to list remote policies")
 		}
 	} else {
 		err := g.App.Images()
 		if err != nil {
-			return errors.Wrap(err, "Failed to list local policies.")
+			return errors.Wrap(err, "failed to list local policies")
 		}
 	}
 

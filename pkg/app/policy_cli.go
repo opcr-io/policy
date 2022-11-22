@@ -10,7 +10,7 @@ import (
 	"github.com/opcr-io/policy/pkg/cc/config"
 )
 
-// PolicyApp represents the policy CLI
+// PolicyApp represents the policy CLI.
 type PolicyApp struct {
 	Context       context.Context
 	Cancel        context.CancelFunc

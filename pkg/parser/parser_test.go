@@ -1,8 +1,9 @@
-package parser
+package parser_test
 
 import (
 	"testing"
 
+	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +18,7 @@ func TestCalculatePolicyRef(t *testing.T) {
 	}
 
 	for userRef, ref := range expectedValues {
-		computedRef, err := CalculatePolicyRef(userRef, defaultDomain)
+		computedRef, err := parser.CalculatePolicyRef(userRef, defaultDomain)
 		if err != nil {
 			assert.FailNow(err.Error())
 		}

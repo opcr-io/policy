@@ -1,6 +1,6 @@
 package main
 
-import "errors"
+import "github.com/pkg/errors"
 
 type RmCmd struct {
 	Policies []string `arg:"" name:"policy" help:"Policies to remove from the local registry."`
@@ -29,7 +29,7 @@ func (c *RmCmd) Run(g *Globals) error {
 
 	<-g.App.Context.Done()
 	if errs != nil {
-		return errors.New("failed to remove one or more policies")
+		return errors.Wrap(errs, "failed to remove one or more policies")
 	}
 
 	return nil

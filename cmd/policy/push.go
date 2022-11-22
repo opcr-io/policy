@@ -1,6 +1,6 @@
 package main
 
-import "errors"
+import "github.com/pkg/errors"
 
 type PushCmd struct {
 	Policies []string `arg:"" name:"policy" help:"Policies to push."`
@@ -19,7 +19,7 @@ func (c *PushCmd) Run(g *Globals) error {
 	<-g.App.Context.Done()
 
 	if errs != nil {
-		return errors.New("failed to push one or more policies")
+		return errors.Wrap(errs, "failed to push one or more policies")
 	}
 
 	return nil

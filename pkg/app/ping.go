@@ -20,7 +20,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		}),
 	)
 
-	// Request #1 for login
+	// Request #1 for login.
 	req := &http.Request{
 		Method: "GET",
 		URL: &url.URL{
@@ -44,7 +44,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		return errors.Wrapf(err, "failed to consume response from server [%s]", server)
 	}
 
-	// Request #2 (with authentication)
+	// Request #2 (with authentication).
 	req2 := &http.Request{
 		Method: "GET",
 		URL: &url.URL{

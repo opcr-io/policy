@@ -10,7 +10,7 @@ type SaveCmd struct {
 func (c *SaveCmd) Run(g *Globals) error {
 	err := g.App.Save(c.Policy, c.File)
 	if err != nil {
-		return errors.Wrap(err, "Failed to save local bundle tarball.")
+		return errors.Wrap(err, "failed to save local bundle tarball")
 	}
 
 	<-g.App.Context.Done()

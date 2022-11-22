@@ -33,7 +33,7 @@ type oci struct {
 	cfg       Config
 }
 
-// NewOCI returns a new policy template provider for OCI
+// NewOCI returns a new policy template provider for OCI.
 func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transport, cfg Config) PolicyTemplates {
 	extClient, err := extendedregistry.GetExtendedClient(
 		ctx,
@@ -57,7 +57,7 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transp
 	}
 }
 
-// Lists the policy templates
+// Lists the policy templates.
 func (o *oci) ListRepos(org, tag string) (map[string]*api.RegistryRepoTag, error) {
 	templateRepos := make(map[string]*api.RegistryRepoTag)
 
@@ -86,7 +86,7 @@ func (o *oci) ListRepos(org, tag string) (map[string]*api.RegistryRepoTag, error
 	return templateRepos, nil
 }
 
-// Loads a policy template into a fs.FS
+// Loads a policy template into a fs.FS.
 func (o *oci) Load(userRef string) (fs.FS, error) {
 	ref, err := parser.CalculatePolicyRef(userRef, o.cfg.Server)
 	if err != nil {

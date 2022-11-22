@@ -30,7 +30,7 @@ const public = "public"
 
 var packageType = "container"
 
-// when page size is -1 grab loop through all pages
+// when page size is -1 grab loop through all pages.
 func newGHCRClient(logger *zerolog.Logger, cfg *Config, client *http.Client) ExtendedClient {
 	baseClient := newExtendedClient(logger, cfg, client)
 	tp := github.BasicAuthTransport{
@@ -147,7 +147,7 @@ func (g *GHCRClient) SetVisibility(ctx context.Context, org, repo string, public
 	return errors.New("not supported. Please set the visibility using the web UI")
 }
 
-// ListTags returns tags on the image - if org is empty it returns the tags of the user's image
+// ListTags returns tags on the image - if org is empty it returns the tags of the user's image.
 func (g *GHCRClient) ListTags(ctx context.Context, org, repo string, page *api.PaginationRequest, deep bool) ([]*api.RegistryRepoTag, *api.PaginationResponse, error) {
 	pageNumber, pageSize, err := parsePaginationRequest(page)
 	if err != nil {
@@ -223,7 +223,7 @@ func (g *GHCRClient) GetTag(ctx context.Context, org, repo, tag string) (*api.Re
 	return nil, nil
 }
 
-// If tag not specified remove repository
+// If tag not specified remove repository.
 func (g *GHCRClient) RemoveImage(ctx context.Context, org, repo, tag string) error {
 
 	pieces := strings.Split(repo, "/")
@@ -382,7 +382,7 @@ func (g *GHCRClient) listTagInformation(ctx context.Context, org, repo string, p
 	var err error
 	perPage := size
 	for {
-		// Grab all package versions
+		// Grab all package versions.
 		if size == -1 {
 			perPage = 100 // max allowed by github api
 		}
@@ -455,7 +455,7 @@ func (g *GHCRClient) validImage(ctx context.Context, repoName, username, passwor
 
 func parsePaginationRequest(page *api.PaginationRequest) (int, int, error) {
 	pageNumber := 0
-	pageSize := 30 // Default github page size value
+	pageSize := 30 // Default github page size value.
 
 	if page == nil {
 		return pageNumber, pageSize, nil

@@ -68,7 +68,7 @@ func (c *PolicyApp) Images() error {
 		data = append(data, arrData)
 	}
 
-	// sort data by CreatedAt DESC
+	// sort data by CreatedAt DESC.
 	sort.SliceStable(data, func(i, j int) bool {
 		return data[i][5] < data[j][5] || (data[i][5] == data[j][5] && data[i][1] < data[j][1])
 	})
@@ -153,17 +153,17 @@ func (c *PolicyApp) ImagesRemote(server, org string, showEmpty bool) error {
 	}
 	table.Do()
 
-	// Get a list of tags for each image
+	// Get a list of tags for each image.
 	return nil
 }
 
-//TODO: Expose pagination options
+// TODO: Expose pagination options.
 func (c *PolicyApp) listImages(xClient extendedregistry.ExtendedClient, org string) (*registry.ListImagesResponse, error) {
 	var response *registry.ListImagesResponse
 
 	response, _, err := xClient.ListRepos(c.Context, org, &api.PaginationRequest{Size: -1, Token: ""})
 	if err != nil {
-		//TODO: use cerr
+		// TODO: use cerr.
 		initialError := errors.Cause(err)
 		if !strings.Contains(initialError.Error(), "authentication failed") {
 			return nil, err

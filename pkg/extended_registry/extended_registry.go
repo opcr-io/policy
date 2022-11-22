@@ -50,7 +50,7 @@ func newExtendedClient(logger *zerolog.Logger, cfg *Config, client *http.Client)
 	}
 }
 
-//TODO: This needs to be smarted - rework in progress
+// TODO: This needs to be smarted - rework in progress.
 func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logger, cfg *Config, transport *http.Transport) (ExtendedClient, error) {
 	httpClient := http.Client{}
 	httpClient.Transport = transport
@@ -72,7 +72,6 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 	if extendedGRPCAddress != "" {
 		return newAsertoClient(
 			ctx,
-			logger,
 			&Config{
 				Address:     cfg.Address,
 				GRPCAddress: extendedGRPCAddress,
@@ -83,7 +82,7 @@ func GetExtendedClient(ctx context.Context, server string, logger *zerolog.Logge
 	return client, errors.Errorf("server does not support extended registry [%s]", server)
 }
 
-//TODO: Implement as OCI specific client
+// TODO: Implement as OCI specific client.
 func (c *xClient) ListOrgs(ctx context.Context, page *api.PaginationRequest) (*registry.ListOrgsResponse, error) {
 	return nil, errors.New("not implemented")
 }

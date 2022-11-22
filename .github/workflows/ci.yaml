@@ -19,14 +19,14 @@ on:
 env:
   VAULT_ADDR: https://vault.eng.aserto.com/
   PRE_RELEASE: ${{ github.ref == 'refs/heads/main' && 'development' || '' }}
-  GO_VERSION: "1.17"
+  GO_VERSION: "1.19"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Read Configuration
-        uses: hashicorp/vault-action@v2.4.1
+        uses: hashicorp/vault-action@v2.4.3
         id: vault
         with:
           url: ${{ env.VAULT_ADDR }}

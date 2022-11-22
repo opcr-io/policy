@@ -37,7 +37,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	claimsFile string) error {
 	defer c.Cancel()
 
-	// Create a tmp dir where to do our work
+	// Create a tmp dir where to do our work.
 	workdir, err := os.MkdirTemp("", "policy-build")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temporary build directory")
