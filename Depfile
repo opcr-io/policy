@@ -24,7 +24,7 @@ go:
     version: "v1.3.9"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
-    version: "v1.7.0"
+    version: "v1.8.2"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    version: "v1.42.1"
+    version: "v1.50.1"

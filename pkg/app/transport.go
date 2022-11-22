@@ -3,9 +3,9 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 )
 
@@ -37,7 +37,7 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 
 	// Read in the cert files
 	for _, localCertFile := range c.Configuration.CA {
-		certs, err := ioutil.ReadFile(localCertFile)
+		certs, err := os.ReadFile(localCertFile)
 		if err != nil {
 			c.UI.Problem().WithErr(err).WithEnd(1).Msgf("Failed to append %q to RootCAs.", localCertFile)
 		}

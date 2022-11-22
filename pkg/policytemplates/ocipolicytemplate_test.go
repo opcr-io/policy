@@ -1,4 +1,4 @@
-package policytemplates
+package policytemplates_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/opcr-io/policy/pkg/policytemplates"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,7 @@ func TestOCIListRepos(t *testing.T) {
 	ctx := context.Background()
 	expectedRepo := "peoplefinder-rbac"
 
-	ociTemplate := NewOCI(ctx, &log, transport, Config{
+	ociTemplate := policytemplates.NewOCI(ctx, &log, transport, policytemplates.Config{
 		Server:     "opcr.io",
 		PolicyRoot: "",
 	})
@@ -62,7 +63,7 @@ func TestOCILoadRepo(t *testing.T) {
 
 	defer os.RemoveAll(tmpDir)
 
-	ociTemplate := NewOCI(ctx, &log, transport, Config{
+	ociTemplate := policytemplates.NewOCI(ctx, &log, transport, policytemplates.Config{
 		Server:     "opcr.io",
 		PolicyRoot: tmpDir,
 	})

@@ -53,7 +53,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	ociStore.DeleteReference(existingRefParsed)
 
 	// TODO: if there are no references left to the policy, perhaps delete the descriptor?
-	// or implement a cleanup command
+	// or implement a cleanup command.
 
 	c.UI.Normal().
 		WithStringValue("reference", existingRef).

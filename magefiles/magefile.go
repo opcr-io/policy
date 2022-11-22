@@ -16,7 +16,7 @@ import (
 
 func init() {
 	// Set go version for docker builds
-	os.Setenv("GO_VERSION", "1.17")
+	os.Setenv("GO_VERSION", "1.19")
 	// Enable docker buildkit capabilities
 	os.Setenv("DOCKER_BUILDKIT", "1")
 }
