@@ -24,7 +24,6 @@ import (
 	"github.com/jhump/protoreflect/grpcreflect"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -40,7 +39,7 @@ type AsertoClient struct {
 	grpcConnection grpc.ClientConnInterface
 }
 
-func newAsertoClient(ctx context.Context, logger *zerolog.Logger, cfg *Config) (ExtendedClient, error) {
+func newAsertoClient(ctx context.Context, cfg *Config) (ExtendedClient, error) {
 	var options []client.ConnectionOption
 	options = append(options, client.WithAddr(cfg.GRPCAddress))
 	if cfg.Username != "" && cfg.Password != "" {
@@ -70,7 +69,8 @@ func (c *AsertoClient) ListOrgs(ctx context.Context, page *api.PaginationRequest
 }
 
 func (c *AsertoClient) ListRepos(ctx context.Context, org string, page *api.PaginationRequest) (*registry.ListImagesResponse, *api.PaginationResponse, error) {
-	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests
+
+	// TODO: Aserto ListImages does not include pagination and does not allow paginated requests.
 	resp, err := c.registryClient.ListImages(ctx, &registry.ListImagesRequest{})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to list repos")
@@ -517,7 +517,7 @@ func (c *AsertoClient) handleTransportError(err error) ([]*api.RegistryRepoTag, 
 }
 
 func (c *AsertoClient) grpcMethodExists(ctx context.Context, method string) (bool, error) {
-	grpcReflectClient := grpcreflect.NewClient(ctx, grpc_reflection_v1alpha.NewServerReflectionClient(c.grpcConnection))
+	grpcReflectClient := grpcreflect.NewClientV1Alpha(ctx, grpc_reflection_v1alpha.NewServerReflectionClient(c.grpcConnection))
 	defer grpcReflectClient.Reset()
 
 	descriptor, err := grpcReflectClient.ResolveService(AsertoRegistryServiceName)

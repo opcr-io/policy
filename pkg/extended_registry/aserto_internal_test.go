@@ -35,9 +35,9 @@ func TestAsertoListOrgs(t *testing.T) {
 }
 
 func TestAsertoList(t *testing.T) {
-	// Example aserto client to make a call to opcr.io
-	// testlog := zerolog.New(os.Stdout)
-	// client, err := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password, GRPCAddress: "api.opcr.io:8443"})
+	// Example aserto client to make a call to opcr.io.
+	// testlog := zerolog.New(os.Stdout).
+	// client, err := NewAsertoClient(&testlog, &Config{Address: "https://opcr.io", Username: username, Password: password, GRPCAddress: "api.opcr.io:8443"}).
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	regTestClient := mocksources.NewMockRegistryClient(ctrl)

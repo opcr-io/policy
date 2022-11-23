@@ -1,6 +1,6 @@
 package extendedregistry
 
-// OCI Annotations
+// OCI Annotations.
 const (
 	AnnotationPolicyRegistryType = "org.openpolicyregistry.type"
 	PolicyTypePolicy             = "policy"

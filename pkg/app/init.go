@@ -18,8 +18,7 @@ const (
 	ciTemplateTag          = "latest"
 )
 
-// Init
-// path is rootpath of project
+// Init: path is rootpath of project.
 func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
 	defer c.Cancel()
 

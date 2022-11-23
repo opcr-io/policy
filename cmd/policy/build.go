@@ -44,7 +44,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		c.ClaimsFile,
 	)
 	if err != nil {
-		return errors.Wrap(err, "Build failed.")
+		return errors.Wrap(err, "build failed")
 	}
 
 	<-g.App.Context.Done()

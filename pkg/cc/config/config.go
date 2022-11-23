@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Overrider is a func that mutates configuration
+// Overrider is a func that mutates configuration.
 type Overrider func(*Config)
 
 // Config holds the configuration for the app.
@@ -52,10 +52,10 @@ type ServerCredentials struct {
 	Default  bool   `json:"default" yaml:"default"`
 }
 
-// Path is a string that points to a config file
+// Path is a string that points to a config file.
 type Path string
 
-// NewConfig creates the configuration by reading env & files
+// NewConfig creates the configuration by reading env & files.
 func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsGenerator *certs.Generator) (*Config, error) { // nolint // function will contain repeating statements for defaults
 	configLogger := log.With().Str("component", "config").Logger()
 	log = &configLogger
@@ -81,7 +81,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	v.SetEnvPrefix("POLICY")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	// Set defaults
+	// Set defaults.
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine user home directory")
@@ -124,7 +124,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 		overrides(cfg)
 	}
 
-	// This is where validation of config happens
+	// This is where validation of config happens.
 	err = func() error {
 		err = cfg.Logging.ParseLogLevel(zerolog.Disabled)
 		if err != nil {
@@ -154,9 +154,9 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	return cfg, nil
 }
 
-// NewLoggerConfig creates a new LoggerConfig
+// NewLoggerConfig creates a new LoggerConfig.
 func NewLoggerConfig(configPath Path, overrides Overrider) (*logger.Config, error) {
-	discardLogger := zerolog.New(ioutil.Discard)
+	discardLogger := zerolog.New(io.Discard)
 	cfg, err := NewConfig(configPath, &discardLogger, overrides, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config")

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"syscall"
@@ -33,7 +33,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 			return errors.New("Must provide --username with --password-stdin")
 		}
 
-		contents, err := ioutil.ReadAll(g.App.UI.Input())
+		contents, err := io.ReadAll(g.App.UI.Input())
 		if err != nil {
 			return err
 		}

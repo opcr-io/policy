@@ -19,7 +19,7 @@ var tmpConfig *config.Config
 
 func ConfigExpander() kong.Resolver {
 	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
-		resolveTmpConfig(context, flag)
+		resolveTmpConfig(context)
 		t, err := template.New("value").Parse(flag.Default)
 		if err != nil {
 			return nil, err
@@ -43,7 +43,7 @@ func ConfigExpander() kong.Resolver {
 	return f
 }
 
-func resolveTmpConfig(context *kong.Context, flag *kong.Flag) {
+func resolveTmpConfig(context *kong.Context) {
 	if tmpConfig != nil {
 		return
 	}
