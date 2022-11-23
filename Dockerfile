@@ -26,7 +26,7 @@ LABEL org.opencontainers.image.url="https://openpolicyregistry.io"
 
 RUN apk add --no-cache bash
 WORKDIR /app
-COPY --from=build /src/dist/build_linux_amd64/policy /app/
+COPY --from=build /src/dist/build_linux_amd64_v1/policy /app/
 
 COPY --from=build /src/scripts /app/
 RUN  chmod +x /app/*.sh
