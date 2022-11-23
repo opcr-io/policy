@@ -12,7 +12,7 @@ jobs:
     name: build
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -38,7 +38,7 @@ jobs:
           tags="$tags {{`${{ steps.config.outputs.repo }}` }}:$tag"
         done < <(echo "{{`${{ steps.sver.outputs.version }}` }}")
 
-        echo ::set-output name=target_tags::$tags
+        echo target_tags=${tags} >> $GITHUB_OUTPUT
 
     - name: Policy Login
       id: policy-login

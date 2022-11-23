@@ -2,29 +2,31 @@
 bin:
   vault:
     url: "https://releases.hashicorp.com/vault/{{.Version}}/vault_{{.Version}}_{{.OS}}_{{.Arch}}.zip"
-    version: "1.8.1"
+    version: "1.8.12"
     zipPaths:
     - "./vault"
     sha:
-      linux-amd64: "bb411f2bbad79c2e4f0640f1d3d5ef50e2bda7d4f40875a56917c95ff783c2db"
-      darwin-amd64: "f87221e4f56b3da41f0a029bf2b48896ec3be84dd7075bdb9466def1e056f809"
-      darwin-arm64: "571985c34990a2a7b913cee8c50be42b34c8d8cb751a2aed2c80121ad4b4e44b"
+      linux-amd64: "88c280945db62b118435ec1bf0086a719f6b6551cba052e5f8d1e25a80884bca"
+      linux-arm64: "e57e719e1eec9bce9057751e2583907210d3ac99c0a01897479506fbb2af828d"
+      darwin-amd64: "b398481bf33ebf9563cf69d7639014f0d652a2d5e26c0a9a424e2a39bb853354"
+      darwin-arm64: "20aead134ef8e77cb70efcfe047fc2e381793004fba103e7692b7dab00fe5131"
+
 go:
-  mockgen:
-    importPath: github.com/golang/mock/mockgen
-    version: "v1.6.0"
-  goreleaser:
-    importPath: github.com/goreleaser/goreleaser
-    version: "v1.0.0"
+  sver:
+    importPath: "github.com/aserto-dev/sver/cmd/sver"
+    version: "v1.3.11"
   wire:
     importPath: "github.com/google/wire/cmd/wire"
     version: "v0.5.0"
-  sver:
-    importPath: "github.com/aserto-dev/sver/cmd/sver"
-    version: "v1.3.9"
+  goreleaser:
+    importPath: github.com/goreleaser/goreleaser
+    version: "v1.12.3"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
     version: "v1.8.2"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
     version: "v1.50.1"
+  mockgen:
+    importPath: github.com/golang/mock/mockgen
+    version: "v1.6.0"
