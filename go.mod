@@ -17,7 +17,7 @@ require (
 	github.com/aserto-dev/logger v0.0.2
 	github.com/aserto-dev/runtime v0.47.3
 	github.com/aserto-dev/scc-lib v0.0.20
-	github.com/containerd/containerd v1.6.10
+	github.com/containerd/containerd v1.6.12
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-containerregistry v0.12.1
@@ -96,7 +96,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
