@@ -239,6 +239,15 @@ func (g *GHCRClient) RemoveImage(ctx context.Context, org, repo, tag string) err
 		return err
 	}
 
+	tags, _, err := g.ListTags(ctx, org, repo, &api.PaginationRequest{Size: -1, Token: ""}, true)
+	if err != nil {
+		return err
+	}
+
+	if len(tags) == 1 && tags[0].Name == tag {
+		return errors.New("You cannot delete the last tagged version of a package on ghcr.io. Please use `rm` method with `--all` flag to remove the package instead.")
+	}
+
 	for i := range tagDetails {
 		containerTags := strings.Join(tagDetails[i].GetMetadata().Container.Tags, ",")
 		if strings.Contains(containerTags, tag) {

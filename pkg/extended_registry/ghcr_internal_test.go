@@ -100,7 +100,8 @@ var listVersions = `
 		"package_type": "container",
 		"container": {
 		  "tags": [
-			"0.0.1"
+			"0.0.1",
+			"0.0.2"
 		  ]
 		}
 	  }
@@ -183,7 +184,7 @@ func TestGHCRListTags(t *testing.T) {
 
 	resp, _, err := client.ListTags(context.Background(), "", "hello_docker", &api.PaginationRequest{Size: -1, Token: ""}, false)
 	assert.NilError(t, err)
-	assert.Equal(t, len(resp), 2)
+	assert.Equal(t, len(resp), 3)
 }
 func TestGHCRGetTag(t *testing.T) {
 	testlog := zerolog.New(os.Stdout)
@@ -260,6 +261,7 @@ func TestGHCRRemoveImage(t *testing.T) {
 	gock.New("https://api.github.com/user/packages/container/test2/versions").
 		Get("").
 		Reply(200).BodyString(listVersions)
+	gock.New("https://api.github.com/user/packages/container/hello_docker/versions").Get("").Reply(200).BodyString(listVersions)
 	gock.New("https://api.github.com/user/packages/container/test2/versions/4576").
 		Delete("").
 		Reply(204)
@@ -267,4 +269,38 @@ func TestGHCRRemoveImage(t *testing.T) {
 
 	err := client.RemoveImage(context.Background(), "", "test2", "0.0.1")
 	assert.NilError(t, err)
+}
+
+func TestGHCRRemoveImageLastTag(t *testing.T) {
+	testlog := zerolog.New(os.Stdout)
+
+	defer gock.Off() // Flush pending mocks after test execution
+
+	gock.New("https://api.github.com/user/packages/container/test2/versions").
+		Get("").
+		Reply(200).BodyString(listVersions)
+	gock.New("https://api.github.com/user/packages/container/hello_docker/versions").Get("").Reply(200).BodyString(`
+	[
+	  {
+		"id": 881,
+		"name": "sha256:b3d3e366b55f9a54599220198b3db5da8f53592acbbb7dc7e4e9878762fc5344",
+		"url": "https://api.github.com/users/octocat/packages/container/hello_docker/versions/881",
+		"package_html_url": "https://github.com/users/octocat/packages/container/package/hello_docker",
+		"created_at": "2020-05-21T22:22:20Z",
+		"updated_at": "2021-02-05T21:32:32Z",
+		"html_url": "https://github.com/users/octocat/packages/container/hello_docker/881",
+		"metadata": {
+		  "package_type": "container",
+		  "container": {
+			"tags": [
+				"0.0.1"
+			]
+		  }
+		}
+	  }
+	]`)
+	client := newGHCRClient(&testlog, &Config{Address: "https://ghcr.io", Username: username, Password: password}, http.DefaultClient)
+
+	err := client.RemoveImage(context.Background(), "", "test2", "0.0.1")
+	assert.ErrorContains(t, err, "You cannot delete the last tagged version of a package on ghcr.io. Please use `rm` method with `--all` flag to remove the package instead.")
 }

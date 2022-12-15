@@ -15,7 +15,7 @@ require (
 	github.com/aserto-dev/go-grpc v0.8.54
 	github.com/aserto-dev/go-utils v0.8.29
 	github.com/aserto-dev/logger v0.0.2
-	github.com/aserto-dev/runtime v0.46.3
+	github.com/aserto-dev/runtime v0.47.3
 	github.com/aserto-dev/scc-lib v0.0.20
 	github.com/containerd/containerd v1.6.10
 	github.com/dustin/go-humanize v1.0.0
@@ -29,7 +29,7 @@ require (
 	github.com/magefile/mage v1.14.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nlepage/go-tarfs v1.1.0
-	github.com/open-policy-agent/opa v0.46.2-0.20221118100140-667015d797bc
+	github.com/open-policy-agent/opa v0.47.3
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
@@ -38,7 +38,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.4
 	golang.org/x/sync v0.1.0
-	golang.org/x/term v0.2.0
+	golang.org/x/term v0.3.0
 	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/h2non/gock.v1 v1.1.2
@@ -56,7 +56,7 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/aserto-dev/errors v0.0.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bytecodealliance/wasmtime-go v1.0.0 // indirect
+	github.com/bytecodealliance/wasmtime-go/v3 v3.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.20+incompatible // indirect
@@ -134,10 +134,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.1.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
