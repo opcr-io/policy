@@ -1,4 +1,4 @@
-# Contributing to Open Policy Registry (OPCR)
+# Contributing to Open Policy Containers (OPCR)
 
 Welcome, and thank you for considering contributing to OPCR. We encourage
 you to help out by raising issues, improving documentation, fixing bugs, or
@@ -6,7 +6,7 @@ adding new features
 
 If you're interested in contributing please start by reading this document. If
 you have any questions at all, or don't know where to start, please reach out to
-us on [Slack]. Please also take a look at our [code of conduct], which details
+us on [Slack](SLACK). Please also take a look at our [code of conduct](CODE_OF_CONDUCT), which details
 how contributors are expected to conduct themselves as part of the OPCR
 community.
 
@@ -28,4 +28,4 @@ best way to communicate your intent is via a detailed GitHub issue. Take a look
 first to see if there's already an issue relating to the thing you'd like to
 contribute. If there isn't, please raise a new one! Let us know what you'd like
 to work on, and why. The Open Policy Registry maintainers can't always triage new issues
-immediately, but we encourage you to bring them to our attention via [Slack].
+immediately, but we encourage you to bring them to our attention via [Slack](Slack).
