@@ -1,4 +1,4 @@
-# Open Policy Registry (OPCR) Slack Guidelines
+# Open Policy Containers (OPCR) Slack Guidelines
 
 The [CNCF Code of
 Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
