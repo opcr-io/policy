@@ -83,6 +83,8 @@ jobs:
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
 
+          eval `ssh-agent`
+  
           go run mage.go deps dockerImage
           go run mage.go dockerPush ghcr.io "opcr-io"
 
