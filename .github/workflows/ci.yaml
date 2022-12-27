@@ -45,10 +45,10 @@ jobs:
           git config --global user.name "Aserto Bot"
 
           go run mage.go deps lint test
-      - name: Upload code coverage
-        uses: shogo82148/actions-goveralls@v1
-        with:
-          path-to-profile: cover.out
+      #- name: Upload code coverage
+      #  uses: shogo82148/actions-goveralls@v1
+      #  with:
+      #    path-to-profile: cover.out
 
   push:
     needs: test
