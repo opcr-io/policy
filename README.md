@@ -14,13 +14,14 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 ![Apache 2.0](https://img.shields.io/github/license/opcr-io/policy)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/opcr-io/policy)
 [<img src="https://img.shields.io/badge/slack-@asertocommunity-yellow.svg?logo=slack">](https://asertocommunity.slack.com/)
-[<img src="https://img.shields.io/badge/docs-%F0%9F%95%B6-blue">](https://www.openpolicyregistry.io/docs/intro)
+[<img src="https://img.shields.io/badge/docs-%F0%9F%95%B6-blue">](https://www.openpolicycontainers.com/docs/intro)
 [![CodeQL](https://github.com/opcr-io/policy/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/opcr-io/policy/actions/workflows/codeql-analysis.yml)
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6859/badge)](https://bestpractices.coreinfrastructure.org/projects/6859)
 ---
 
 ## Documentation
 
-Please refer to our [documentation](https://openpolicyregistry.io) site for installation, usage, customization and tips.
+Please refer to our [documentation](https://openpolicycontainers.com) site for installation, usage, customization and tips.
 
 ## Slack Channel
 
@@ -114,7 +115,7 @@ Usage: policy <command>
 
 Flags:
   -h, --help             Show context-sensitive help.
-  -c, --config="/Users/ogazitt/.config/policy/config.yaml"
+  -c, --config="/Users/ogazitt/.policy/config.yaml"
                          Path to the policy CLI config file.
       --debug            Enable debug mode.
   -v, --verbosity=INT    Use to increase output verbosity.
@@ -133,7 +134,7 @@ Commands:
   pull <policy> ...
     Pull policies from a registry.
 
-  login --username=STRING
+  login --server=STRING --username=STRING
     Login to a registry.
 
   logout
@@ -204,3 +205,8 @@ A big thank you to all of them!
 * File an issue first prior to submitting a PR!
 * Ensure all exported items are properly commented
 * If applicable, submit a test suite against your PR
+
+## Reporting Vulnerabilities
+
+Please send an email to one of the [maintainers](MAINTAINERS.md). We commit to addressing vulnerabilities promptly.
+
