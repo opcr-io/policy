@@ -15,6 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	appName string = "policy"
+)
+
 var tmpConfig *config.Config
 
 func ConfigExpander() kong.Resolver {
@@ -110,7 +114,7 @@ var PolicyCLI struct {
 	Repl      ReplCmd      `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
 	Remote    RemoteCmd    `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
 	Init      InitCmd      `cmd:"" help:"(Deprecated) Initialize policy repo"`
-	Templates TemplatesCmd `cmd:"" help:""`
+	Templates TemplatesCmd `cmd:"" help:"List and apply templates"`
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
 
@@ -151,7 +155,21 @@ func main() {
 		panic(errors.Wrap(err, "failed to determine user home directory"))
 	}
 
-	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home})
+	ctx := kong.Parse(
+		&PolicyCLI,
+		kong.Name(appName),
+		kong.UsageOnError(),
+		kong.ConfigureHelp(kong.HelpOptions{
+			NoAppSummary:        false,
+			Summary:             false,
+			Compact:             true,
+			Tree:                false,
+			FlagsLast:           true,
+			Indenter:            kong.SpaceIndenter,
+			NoExpandSubcommands: true,
+		}),
+		kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home},
+	)
 
 	g = &Globals{
 		Debug:     PolicyCLI.Debug,
@@ -159,14 +177,14 @@ func main() {
 		Verbosity: PolicyCLI.Verbosity,
 		Insecure:  PolicyCLI.Insecure,
 	}
+
 	cleanup := g.setup()
 
-	err = ctx.Run(g)
-
-	if err != nil {
+	if err = ctx.Run(g); err != nil {
 		g.App.UI.Problem().Msg(err.Error())
 		cleanup()
 		os.Exit(1)
 	}
+
 	cleanup()
 }
