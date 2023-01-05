@@ -114,7 +114,7 @@ var PolicyCLI struct {
 	Repl      ReplCmd      `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
 	Remote    RemoteCmd    `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
 	Init      InitCmd      `cmd:"" help:"(Deprecated) Initialize policy repo"`
-	Templates TemplatesCmd `cmd:"" help:""`
+	Templates TemplatesCmd `cmd:"" help:"List and apply templates"`
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
 
@@ -166,7 +166,7 @@ func main() {
 			Tree:                false,
 			FlagsLast:           true,
 			Indenter:            kong.SpaceIndenter,
-			NoExpandSubcommands: false,
+			NoExpandSubcommands: true,
 		}),
 		kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home},
 	)
