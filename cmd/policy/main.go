@@ -15,6 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	appName string = "policy"
+)
+
 var tmpConfig *config.Config
 
 func ConfigExpander() kong.Resolver {
@@ -151,7 +155,21 @@ func main() {
 		panic(errors.Wrap(err, "failed to determine user home directory"))
 	}
 
-	ctx := kong.Parse(&PolicyCLI, kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home})
+	ctx := kong.Parse(
+		&PolicyCLI,
+		kong.Name(appName),
+		kong.UsageOnError(),
+		kong.ConfigureHelp(kong.HelpOptions{
+			NoAppSummary:        false,
+			Summary:             false,
+			Compact:             true,
+			Tree:                false,
+			FlagsLast:           true,
+			Indenter:            kong.SpaceIndenter,
+			NoExpandSubcommands: false,
+		}),
+		kong.Resolvers(ConfigExpander()), kong.Vars{"userHome": home},
+	)
 
 	g = &Globals{
 		Debug:     PolicyCLI.Debug,
@@ -159,14 +177,14 @@ func main() {
 		Verbosity: PolicyCLI.Verbosity,
 		Insecure:  PolicyCLI.Insecure,
 	}
+
 	cleanup := g.setup()
 
-	err = ctx.Run(g)
-
-	if err != nil {
+	if err = ctx.Run(g); err != nil {
 		g.App.UI.Problem().Msg(err.Error())
 		cleanup()
 		os.Exit(1)
 	}
+
 	cleanup()
 }
