@@ -163,4 +163,4 @@ jobs:
           gh api -X PATCH "$release_url" "${publish_args[@]}"
         env:
           MSI_FILE: ${{ steps.buildmsi.outputs.msi }}
-          GITHUB_TOKEN: ${{ steps.vault.outputs.ROOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_ROOT_TOKEN }}
