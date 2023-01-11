@@ -11,9 +11,9 @@ require (
 	github.com/aserto-dev/go-grpc v0.8.55
 	github.com/aserto-dev/go-utils v0.8.29
 	github.com/aserto-dev/logger v0.0.2
-	github.com/aserto-dev/runtime v0.47.3
+	github.com/aserto-dev/runtime v0.48.0
 	github.com/aserto-dev/scc-lib v0.0.22
-	github.com/containerd/containerd v1.6.14
+	github.com/containerd/containerd v1.6.15
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-containerregistry v0.12.1
@@ -25,7 +25,7 @@ require (
 	github.com/magefile/mage v1.14.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nlepage/go-tarfs v1.1.0
-	github.com/open-policy-agent/opa v0.47.3
+	github.com/open-policy-agent/opa v0.48.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
