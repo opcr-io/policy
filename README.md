@@ -1,4 +1,4 @@
-<img src="assets/policy.png" alt="policy">
+<img src="assets/opcr.png" alt="opcr" width="200">
 
 # policy - the CLI for managing authorization policies
 
