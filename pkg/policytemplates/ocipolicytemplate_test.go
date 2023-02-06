@@ -18,7 +18,7 @@ func TestOCIListRepos(t *testing.T) {
 	log := zerolog.New(os.Stdout)
 	transport := &http.Transport{}
 	ctx := context.Background()
-	expectedRepo := "peoplefinder-rbac"
+	expectedRepo := "policy-peoplefinder-rbac"
 
 	ociTemplate := policytemplates.NewOCI(ctx, &log, transport, policytemplates.Config{
 		Server:     "opcr.io",
