@@ -10,7 +10,7 @@ import (
 func TestCalculatePolicyRef(t *testing.T) {
 	assert := require.New(t)
 
-	defaultDomain := "opcr.io"
+	defaultDomain := "ghcr.io"
 	expectedValues := map[string]string{
 		"foo/bar:baz":           defaultDomain + "/foo/bar:baz",
 		"foo/bar":               defaultDomain + "/foo/bar:latest",

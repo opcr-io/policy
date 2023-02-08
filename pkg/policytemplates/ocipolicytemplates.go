@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
@@ -38,10 +39,11 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transp
 	extClient, err := extendedregistry.GetExtendedClient(
 		ctx,
 		cfg.Server,
+		//TODO: fix extended registry for ghcr to allow both with and without credentials for public images
 		log, &extendedregistry.Config{
 			Address:  "https://" + cfg.Server,
-			Username: " ",
-			Password: " ",
+			Username: os.Getenv("USER"),
+			Password: os.Getenv("GIT_TOKEN"),
 		},
 		httpTransport)
 	if err != nil {
@@ -67,8 +69,16 @@ func (o *oci) ListRepos(org, tag string) (map[string]*api.RegistryRepoTag, error
 	}
 
 	for _, repo := range policyRepo.Images {
+
+		if strings.Contains(repo.Name, org) {
+			repo.Name = strings.TrimPrefix(repo.Name, org+"/")
+		}
 		apiTag, err := o.extClient.GetTag(o.ctx, org, repo.Name, tag)
 
+		//TODO: pull images for details on annotation and description
+		if org == "aserto-policies" {
+			apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{Key: extendedregistry.AnnotationPolicyRegistryTemplateKind, Value: "policy"})
+		}
 		tErr, ok := errors.Cause(err).(*transport.Error)
 		if ok {
 			if tErr.StatusCode == http.StatusNotFound {
