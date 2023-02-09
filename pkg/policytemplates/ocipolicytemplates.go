@@ -34,6 +34,9 @@ type oci struct {
 	cfg       Config
 }
 
+const policy = "aserto-templates"
+const ci = "ci-"
+
 // NewOCI returns a new policy template provider for OCI.
 func NewOCI(ctx context.Context, log *zerolog.Logger, httpTransport *http.Transport, cfg Config) PolicyTemplates {
 	extClient, err := extendedregistry.GetExtendedClient(
@@ -69,15 +72,45 @@ func (o *oci) ListRepos(org, tag string) (map[string]*api.RegistryRepoTag, error
 	}
 
 	for _, repo := range policyRepo.Images {
-
+		// userRef := fmt.Sprintf("%s:%s", repo.Name, tag)
 		if strings.Contains(repo.Name, org) {
 			repo.Name = strings.TrimPrefix(repo.Name, org+"/")
 		}
 		apiTag, err := o.extClient.GetTag(o.ctx, org, repo.Name, tag)
 
-		//TODO: pull images for details on annotation and description
-		if org == "aserto-policies" {
+		// ref, err := parser.CalculatePolicyRef(userRef, o.cfg.Server)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// ociClient, err := ociclient.NewOCI(o.ctx, o.logger, o.getHosts, o.cfg.PolicyRoot)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// Even pulling the images from aserto-templates the annotation do not contain the description and kind desired
+		// _, err = ociClient.Pull(ref)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// descriptos, err := ociClient.ListReferences()
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// for annotationKey, annotationValue := range descriptos[ref].Annotations {
+		// 	apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{
+		// 		Key:   annotationKey,
+		// 		Value: annotationValue,
+		// 	})
+		// }
+		if strings.Contains(repo.Name, ci) {
+			apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{Key: extendedregistry.AnnotationPolicyRegistryTemplateKind, Value: "ci-template"})
+			apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{Key: extendedregistry.AnnotationImageDescription, Value: "CI Templates"})
+		}
+		if org == policy {
 			apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{Key: extendedregistry.AnnotationPolicyRegistryTemplateKind, Value: "policy"})
+			apiTag.Annotations = append(apiTag.Annotations, &api.RegistryRepoAnnotation{Key: extendedregistry.AnnotationImageDescription, Value: "Policy example templates"})
 		}
 		tErr, ok := errors.Cause(err).(*transport.Error)
 		if ok {
@@ -148,12 +181,20 @@ func (o *oci) getHosts(server string) ([]docker.RegistryHost, error) {
 		Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
 		Client:       client,
 		Path:         "/v2",
-		Authorizer: docker.NewDockerAuthorizer(
-			docker.WithAuthClient(client),
-			docker.WithAuthCreds(func(s string) (string, string, error) {
-				return " ", " ", nil
-			})),
+		Authorizer:   docker.NewDockerAuthorizer(o.getDockerAuthorizerOptions(client)...),
 	}
 
 	return []docker.RegistryHost{registryHost}, nil
+}
+
+func (o *oci) getDockerAuthorizerOptions(client *http.Client) []docker.AuthorizerOpt {
+	var opts []docker.AuthorizerOpt
+	opts = append(opts, docker.WithAuthClient(client))
+	//TODO: replace if with credentials configuration
+	if o.cfg.Server == "opcr.io" {
+		opts = append(opts, docker.WithAuthCreds(func(s string) (string, string, error) {
+			return " ", " ", nil
+		}))
+	}
+	return opts
 }
