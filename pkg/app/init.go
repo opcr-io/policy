@@ -7,7 +7,7 @@ import (
 
 	"github.com/aserto-dev/scc-lib/generators"
 	"github.com/magefile/mage/sh"
-	"github.com/opcr-io/policy/pkg/policytemplates"
+	"github.com/opcr-io/policy/templates"
 
 	"github.com/pkg/errors"
 )
@@ -46,7 +46,7 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 	err = c.generateContent(
 		generatorConfig,
 		path,
-		fmt.Sprintf("%s/%s:%s", c.Configuration.CITemplates.Organization, scc, c.Configuration.CITemplates.Tag),
+		scc,
 		overwrite)
 
 	if err != nil {
@@ -64,26 +64,14 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 	return nil
 }
 
-func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, imageRef string, overwrite bool) error {
-	policyTemplatesCfg := policytemplates.Config{
-		Server:     c.Configuration.CITemplates.Server,
-		PolicyRoot: c.Configuration.PoliciesRoot(),
-	}
-
+func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, scc string, overwrite bool) error {
 	prog := c.UI.Progressf("Generating files")
 	prog.Start()
-
-	ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), policyTemplatesCfg)
-
-	templateFs, err := ciTemplates.Load(imageRef)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load '%s' template", imageRef)
-	}
 
 	generator, err := generators.NewGenerator(
 		generatorConf,
 		c.Logger,
-		templateFs,
+		templates.Assets(),
 	)
 
 	if err != nil {
