@@ -52,15 +52,14 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 	var list []templateInfo
 	err := fs.WalkDir(templates.Assets(), ".", func(path string, d fs.DirEntry, err error) error {
 		if d.Name() != "." && !strings.Contains(path, string(os.PathSeparator)) {
-			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
-				if d.IsDir() {
-					list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: fmt.Sprintf("%s template", d.Name())})
-				}
-			} else {
-				if d.IsDir() {
-					list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypePolicy, description: fmt.Sprintf("%s template", d.Name())})
-				}
+			if !d.IsDir() {
+				return nil
 			}
+			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
+				list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: fmt.Sprintf("%s template", d.Name())})
+				return nil
+			}
+			list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypePolicy, description: fmt.Sprintf("%s template", d.Name())})
 		}
 		return nil
 	})
