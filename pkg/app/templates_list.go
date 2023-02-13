@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"sort"
 	"strings"
 
@@ -50,7 +51,7 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 
 	var list []templateInfo
 	err := fs.WalkDir(templates.Assets(), ".", func(path string, d fs.DirEntry, err error) error {
-		if d.Name() != "." {
+		if d.Name() != "." && !strings.Contains(path, string(os.PathSeparator)) {
 			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
 				if d.IsDir() {
 					list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: fmt.Sprintf("%s template", d.Name())})

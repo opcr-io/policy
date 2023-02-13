@@ -18,10 +18,10 @@ include:
       - '/lib/gitlab/templates/Policy/Policy-Logout.gitlab-ci.yml'
 
 variables:
-  POLICY_TAG: '{{.Repo}}'
-  POLICY_DEFAULT_DOMAIN: '{{.Server}}'
-  POLICY_USERNAME: '{{.Username}}'
-  POLICY_PASSWORD: {{.PushKey}}
+  POLICY_TAG: '{{repo}}'
+  POLICY_DEFAULT_DOMAIN: '{{server}}'
+  POLICY_USERNAME: '{{username}}'
+  POLICY_PASSWORD: {{pushkey}}
 
 stages:
   - build

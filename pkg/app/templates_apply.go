@@ -91,6 +91,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed tog get sub fs %s", name)
 	}
+
 	generator, err := generators.NewGenerator(
 		&generatorCfg,
 		c.Logger,
