@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"sort"
@@ -17,6 +16,14 @@ type templateInfo struct {
 	kind        string
 	description string
 }
+
+var (
+	templatesDescription = map[string]string{
+		"github":          "GitHub policy CI/CD template.",
+		"gitlab":          "GitLab policy CI/CD template.",
+		"policy-template": "Minimal policy template.",
+	}
+)
 
 func (c *PolicyApp) TemplatesList() error {
 	defer c.Cancel()
@@ -56,10 +63,10 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 				return nil
 			}
 			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
-				list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: fmt.Sprintf("%s template", d.Name())})
+				list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: getDescription(d.Name())})
 				return nil
 			}
-			list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypePolicy, description: fmt.Sprintf("%s template", d.Name())})
+			list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypePolicy, description: getDescription(d.Name())})
 		}
 		return nil
 	})
@@ -70,4 +77,12 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 
 	return list, nil
 
+}
+
+func getDescription(folderName string) string {
+	val, ok := templatesDescription[folderName]
+	if !ok {
+		return "no description available"
+	}
+	return val
 }

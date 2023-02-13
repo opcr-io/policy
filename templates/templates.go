@@ -2,7 +2,7 @@ package templates
 
 import "embed"
 
-//go:embed general/* github/* hello-rego/* gitlab/*
+//go:embed github/* policy-template/* gitlab/*
 var staticAssets embed.FS
 
 // Static embedded FS service openapi.json file.
