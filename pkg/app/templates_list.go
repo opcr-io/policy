@@ -65,20 +65,6 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 		return nil
 	})
 
-	// templateInfos, err := c.getTemplates(
-	// 	c.Configuration.ContentTemplates.Server,
-	// 	c.Configuration.ContentTemplates.Organization,
-	// 	c.Configuration.ContentTemplates.Tag)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "failed to list templates")
-	// }
-
-	// ciTemplates, err := c.getTemplates(
-	// 	c.Configuration.CITemplates.Server,
-	// 	c.Configuration.CITemplates.Organization,
-	// 	c.Configuration.CITemplates.Tag,
-	// )
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list templates")
 	}
@@ -86,48 +72,3 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 	return list, nil
 
 }
-
-// func (c *PolicyApp) getTemplates(server, org, tag string) ([]templateInfo, error) {
-// 	var tmplInfo []templateInfo
-
-// 	policyTemplatesCfg := policytemplates.Config{
-// 		Server:     server,
-// 		PolicyRoot: c.Configuration.PoliciesRoot(),
-// 	}
-// 	policyTmpl := policytemplates.NewOCI(
-// 		c.Context,
-// 		c.Logger,
-// 		c.TransportWithTrustedCAs(),
-// 		policyTemplatesCfg)
-
-// 	tmplRepo, err := policyTmpl.ListRepos(org, tag)
-
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "failed to list templates")
-// 	}
-// 	for repo, tag := range tmplRepo {
-// 		vendor, description := getDetails(tag.Annotations)
-// 		tmplInfo = append(tmplInfo, templateInfo{
-// 			name:        repo,
-// 			kind:        vendor,
-// 			description: description,
-// 		})
-// 	}
-
-// 	return tmplInfo, nil
-// }
-
-// func getDetails(annotations []*api.RegistryRepoAnnotation) (kind, description string) {
-// 	for _, annotation := range annotations {
-// 		if annotation == nil {
-// 			continue
-// 		}
-// 		if annotation.Key == extendedregistry.AnnotationPolicyRegistryTemplateKind {
-// 			kind = annotation.Value
-// 		}
-// 		if annotation.Key == extendedregistry.AnnotationImageDescription {
-// 			description = annotation.Value
-// 		}
-// 	}
-// 	return
-// }

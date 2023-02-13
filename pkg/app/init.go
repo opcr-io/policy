@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -68,10 +69,15 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 	prog := c.UI.Progressf("Generating files")
 	prog.Start()
 
+	templateRoot, err := fs.Sub(templates.Assets(), scc)
+	if err != nil {
+		return errors.Wrapf(err, "failed tog get sub fs %s", scc)
+	}
+
 	generator, err := generators.NewGenerator(
 		generatorConf,
 		c.Logger,
-		templates.Assets(),
+		templateRoot,
 	)
 
 	if err != nil {
