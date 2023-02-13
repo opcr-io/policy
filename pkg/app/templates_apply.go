@@ -9,6 +9,7 @@ import (
 
 	"github.com/aserto-dev/scc-lib/generators"
 	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
+	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
 )
 
@@ -40,42 +41,42 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 		return errors.Errorf("template '%s' not found", name)
 	}
 
-	var templateFs fs.FS
+	// var templateFs fs.FS
 
-	switch tmplInfo.kind {
-	case extendedregistry.TemplateTypeCICD:
-		// ciTemplateCfg := policytemplates.Config{
-		// 	Server:     c.Configuration.CITemplates.Server,
-		// 	PolicyRoot: c.Configuration.PoliciesRoot(),
-		// }
-		// ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), ciTemplateCfg)
-		// templateFs, err = ciTemplates.Load(
-		// 	fmt.Sprintf("%s/%s:%s",
-		// 		c.Configuration.CITemplates.Organization,
-		// 		name,
-		// 		c.Configuration.CITemplates.Tag),
-		// )
-		// if err != nil {
-		// 	return errors.Wrapf(err, "failed to load '%s' template", name)
-		// }
-	case extendedregistry.TemplateTypePolicy:
-		// contentTemplateCfg := policytemplates.Config{
-		// 	Server:     c.Configuration.ContentTemplates.Server,
-		// 	PolicyRoot: c.Configuration.PoliciesRoot(),
-		// }
-		// ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), contentTemplateCfg)
-		// templateFs, err = ciTemplates.Load(
-		// 	fmt.Sprintf("%s/%s:%s",
-		// 		c.Configuration.ContentTemplates.Organization,
-		// 		name,
-		// 		c.Configuration.ContentTemplates.Tag),
-		// )
-		// if err != nil {
-		// 	return errors.Wrapf(err, "failed to load '%s' template", name)
-		// }
-	default:
-		return errors.Errorf("template '%s' has an unknown kind", name)
-	}
+	// switch tmplInfo.kind {
+	// case extendedregistry.TemplateTypeCICD:
+	// 	// ciTemplateCfg := policytemplates.Config{
+	// 	// 	Server:     c.Configuration.CITemplates.Server,
+	// 	// 	PolicyRoot: c.Configuration.PoliciesRoot(),
+	// 	// }
+	// 	// ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), ciTemplateCfg)
+	// 	// templateFs, err = ciTemplates.Load(
+	// 	// 	fmt.Sprintf("%s/%s:%s",
+	// 	// 		c.Configuration.CITemplates.Organization,
+	// 	// 		name,
+	// 	// 		c.Configuration.CITemplates.Tag),
+	// 	// )
+	// 	// if err != nil {
+	// 	// 	return errors.Wrapf(err, "failed to load '%s' template", name)
+	// 	// }
+	// case extendedregistry.TemplateTypePolicy:
+	// 	// contentTemplateCfg := policytemplates.Config{
+	// 	// 	Server:     c.Configuration.ContentTemplates.Server,
+	// 	// 	PolicyRoot: c.Configuration.PoliciesRoot(),
+	// 	// }
+	// 	// ciTemplates := policytemplates.NewOCI(c.Context, c.Logger, c.TransportWithTrustedCAs(), contentTemplateCfg)
+	// 	// templateFs, err = ciTemplates.Load(
+	// 	// 	fmt.Sprintf("%s/%s:%s",
+	// 	// 		c.Configuration.ContentTemplates.Organization,
+	// 	// 		name,
+	// 	// 		c.Configuration.ContentTemplates.Tag),
+	// 	// )
+	// 	// if err != nil {
+	// 	// 	return errors.Wrapf(err, "failed to load '%s' template", name)
+	// 	// }
+	// default:
+	// 	return errors.Errorf("template '%s' has an unknown kind", name)
+	// }
 
 	prog.Stop()
 
@@ -86,11 +87,14 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 
 	prog.ChangeMessage("Generating files")
 	prog.Start()
-
+	templateRoot, err := fs.Sub(templates.Assets(), name)
+	if err != nil {
+		return errors.Wrapf(err, "failed tog get sub fs %s", name)
+	}
 	generator, err := generators.NewGenerator(
 		&generatorCfg,
 		c.Logger,
-		templateFs,
+		templateRoot,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize generator")
