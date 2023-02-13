@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # set defaults when not set
-[ -z "${INPUT_SERVER}" ]    && INPUT_SERVER="opcr.io"
+[ -z "${INPUT_SERVER}" ]    && INPUT_SERVER="ghcr.io"
 [ -z "${INPUT_VERBOSITY}" ] && INPUT_VERBOSITY="error"
 
 # validate if values are set
