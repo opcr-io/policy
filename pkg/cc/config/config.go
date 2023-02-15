@@ -118,7 +118,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	if err != nil {
 		return nil, err
 	}
-	if cfg.DefaultDomain == "" {
+	if cfg.DefaultDomain == "" || cfg.DefaultDomain == "ghcr.io" {
 		for key, val := range cfg.Servers {
 			if val.Default {
 				cfg.DefaultDomain = key
