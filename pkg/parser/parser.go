@@ -21,6 +21,9 @@ func CalculatePolicyRef(userRef, defaultDomain string) (string, error) {
 	domain := docker.Domain(parsed)
 
 	if (familiarized == userRef || familiarized == userRef+":latest") && domain == DefaultCanonicalDomain {
+		if defaultDomain == "" {
+			defaultDomain = DefaultCanonicalDomain
+		}
 		parsedWithDomain, err := docker.ParseDockerRef(defaultDomain + "/" + userRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to parse normalized reference [%s]", defaultDomain+"/"+userRef)
