@@ -42,6 +42,10 @@ func (c *LoginCmd) Run(g *Globals) error {
 		c.Password = strings.TrimSuffix(c.Password, "\r")
 	}
 
+	if c.Server == "" {
+		return errors.New("Must provide --server")
+	}
+
 	password := c.Password
 	if c.Password == "" {
 		g.App.UI.Normal().NoNewline().Msg("Password: ")
