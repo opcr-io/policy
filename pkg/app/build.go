@@ -11,13 +11,17 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/google/uuid"
-	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"oras.land/oras-go/pkg/content"
+)
+
+const (
+	AnnotationPolicyRegistryType = "org.openpolicyregistry.type"
+	PolicyTypePolicy             = "policy"
 )
 
 func (c *PolicyApp) Build(ref string, path []string, annotations map[string]string,
@@ -98,7 +102,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
-	annotations[extendedregistry.AnnotationPolicyRegistryType] = extendedregistry.PolicyTypePolicy
+	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
 	descriptor, err := c.createImage(ociStore, outfile, annotations)

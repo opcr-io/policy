@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
 )
@@ -63,10 +62,10 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 				return nil
 			}
 			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
-				list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypeCICD, description: getDescription(d.Name())})
+				list = append(list, templateInfo{name: d.Name(), kind: "cicd", description: getDescription(d.Name())})
 				return nil
 			}
-			list = append(list, templateInfo{name: d.Name(), kind: extendedregistry.TemplateTypePolicy, description: getDescription(d.Name())})
+			list = append(list, templateInfo{name: d.Name(), kind: "policy", description: getDescription(d.Name())})
 		}
 		return nil
 	})

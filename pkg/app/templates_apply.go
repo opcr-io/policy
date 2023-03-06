@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/aserto-dev/scc-lib/generators"
-	extendedregistry "github.com/opcr-io/policy/pkg/extended_registry"
 	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
 )
@@ -78,7 +77,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 
 func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config, error) {
 	genConfig := generators.Config{}
-	if tmpInfo.kind == extendedregistry.TemplateTypePolicy {
+	if tmpInfo.kind == "policy" {
 		return genConfig, nil
 	}
 
