@@ -15,6 +15,7 @@ type ImagesCmd struct {
 
 func (c *ImagesCmd) Run(g *Globals) error {
 	if c.Remote {
+		g.App.UI.Exclamation().Msg("This command is deprecated and it will be removed in a future version of the policy CLI.")
 		if c.Org == "" {
 			return errors.New("organization parameter is required, please provide it using -o/--organization")
 		}

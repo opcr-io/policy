@@ -13,6 +13,7 @@ func (c *RmCmd) Run(g *Globals) error {
 	var errs error
 	for _, policyRef := range c.Policies {
 		if c.Remote {
+			g.App.UI.Exclamation().Msg("This command is deprecated and it will be removed in a future version of the policy CLI.")
 			err := g.App.RmRemote(policyRef, c.All, c.Force)
 			if err != nil {
 				g.App.UI.Problem().WithErr(err).Msgf("Failed to remove policy: %s", policyRef)

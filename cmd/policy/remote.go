@@ -20,6 +20,7 @@ type RemoteImagesCmd struct {
 }
 
 func (c *SetPublicCmd) Run(g *Globals) error {
+	g.App.UI.Exclamation().Msg("This command is deprecated and it will be removed in a future version of the policy CLI.")
 	public := false
 	if c.Public == "true" {
 		public = true
