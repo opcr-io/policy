@@ -3,7 +3,6 @@ package app
 import (
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
@@ -15,26 +14,25 @@ func (c *PolicyApp) Images() error {
 
 	var data [][]string
 
-	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
+	ociStore, err := oci.New(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
 
-	err = ociStore.LoadIndex()
-	if err != nil {
+	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Size")
+	var tgs []string
+	ociStore.Tags(c.Context, "", func(tags []string) error {
+		tgs = append(tgs, tags...)
 		return nil
-	}
+	})
 
-	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Created", "Size")
-	refs := ociStore.ListReferences()
-
-	for k, v := range refs {
-		info, err := ociStore.Info(c.Context, v.Digest)
+	for _, tag := range tgs {
+		descr, err := ociStore.Resolve(c.Context, tag)
 		if err != nil {
 			return err
 		}
 
-		ref, err := docker.ParseDockerRef(k)
+		ref, err := docker.ParseDockerRef(tag)
 		if err != nil {
 			return err
 		}
@@ -52,25 +50,25 @@ func (c *PolicyApp) Images() error {
 			return err
 		}
 
+		fmt.Println(descr)
+
 		arrData := []string{
 			familiarName,
 			tagOrNone,
-			info.Digest.Encoded()[:12],
-			humanize.Time(info.CreatedAt),
-			strings.ReplaceAll(humanize.Bytes(uint64(v.Size)), " ", ""),
-			info.CreatedAt.Format(time.RFC3339Nano)}
+			descr.Digest.Encoded()[:12],
+			strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
 
 		data = append(data, arrData)
 	}
 
 	// sort data by CreatedAt DESC.
 	sort.SliceStable(data, func(i, j int) bool {
-		return data[i][5] < data[j][5] || (data[i][5] == data[j][5] && data[i][1] < data[j][1])
+		return data[i][3] < data[j][3] || (data[i][3] == data[j][3] && data[i][1] < data[j][1])
 	})
 
 	for i := len(data) - 1; i >= 0; i-- {
 		v := data[i]
-		table.WithTableRow(v[0], v[1], v[2], v[3], v[4])
+		table.WithTableRow(v[0], v[1], v[2], v[3])
 	}
 
 	table.Do()

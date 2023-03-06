@@ -30,6 +30,7 @@ require (
 	google.golang.org/grpc v1.51.0
 	gopkg.in/yaml.v2 v2.4.0
 	oras.land/oras-go v1.2.2
+	oras.land/oras-go/v2 v2.0.0
 	sigs.k8s.io/controller-runtime v0.14.1
 )
 
@@ -66,6 +67,7 @@ require (
 	github.com/google/go-github/v33 v33.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/subcommands v1.0.1 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

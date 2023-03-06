@@ -5,16 +5,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
-	"strings"
 
+	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/oras"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -26,19 +28,15 @@ type Oci struct {
 	logger    *zerolog.Logger
 	ctx       context.Context
 	hostsFunc docker.RegistryHosts
-	ociStore  *content.OCI
+	ociStore  *oci.Store
 }
 
 func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryHosts, policyRoot string) (*Oci, error) {
-	ociStore, err := content.NewOCI(policyRoot)
+	ociStore, err := oci.New(policyRoot)
 	if err != nil {
 		return nil, err
 	}
-
-	err = ociStore.LoadIndex()
-	if err != nil {
-		return nil, err
-	}
+	ociStore.AutoSaveIndex = true
 
 	return &Oci{
 		logger:    log,
@@ -49,123 +47,125 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 }
 
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
-
-	resolver := docker.NewResolver(docker.ResolverOptions{
+	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
 	})
+	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	var layers []ocispec.Descriptor
-	allowedMediaTypes := []string{
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/octet-stream",
-		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.unknown.config.v1+json",
-		"application/vnd.oci.image.layer.v1.tar+gzip",
-		"application/vnd.oci.image.layer.v1.tar",
-	}
-	opts := []oras.CopyOpt{
-		oras.WithAllowedMediaTypes(allowedMediaTypes),
-		oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
-		oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
-	}
-	_, err := oras.Copy(o.ctx, resolver, ref, o.ociStore, "", opts...)
+	// var layers []ocispec.Descriptor
+	// allowedMediaTypes := []string{
+	// 	"application/vnd.oci.image.manifest.v1+json",
+	// 	"application/octet-stream",
+	// 	"application/vnd.oci.image.config.v1+json",
+	// 	"application/vnd.unknown.config.v1+json",
+	// 	"application/vnd.oci.image.layer.v1.tar+gzip",
+	// 	"application/vnd.oci.image.layer.v1.tar",
+	// }
+	// opts := []oras.CopyOpt{
+	// 	oras.WithAllowedMediaTypes(allowedMediaTypes),
+	// 	oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
+	// 	oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
+	// }
+	descr, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	var layer ocispec.Descriptor
-	for _, lyr := range layers {
-		if strings.Contains(lyr.MediaType, "tar") {
-			layer = lyr
-			break
-		}
-	}
+	// var layer ocispec.Descriptor
+	// for _, lyr := range layers {
+	// 	if strings.Contains(lyr.MediaType, "tar") {
+	// 		layer = lyr
+	// 		break
+	// 	}
+	// }
 
-	o.ociStore.AddReference(ref, layer)
+	// o.ociStore.AddReference(ref, layer)
 	err = o.ociStore.SaveIndex()
 	if err != nil {
 		return "", err
 	}
-
-	return layer.Digest, nil
+	fmt.Println(descr)
+	return descr.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
-	refs := o.ociStore.ListReferences()
-	return refs, nil
+	// refs := o.ociStore.ListReferences()
+	// return refs, nil
+	return nil, nil
 }
 
 func (o *Oci) Push(ref string) (digest.Digest, error) {
-	refs, err := o.ListReferences()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list references")
-	}
+	// refs, err := o.ListReferences()
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "failed to list references")
+	// }
 
-	refDescriptor, ok := refs[ref]
-	if !ok {
-		return "", errors.Errorf("policy [%s] not found in the local store", ref)
+	// refDescriptor, ok := refs[ref]
+	// if !ok {
+	// 	return "", errors.Errorf("policy [%s] not found in the local store", ref)
 
-	}
+	// }
 
-	resolver := docker.NewResolver(docker.ResolverOptions{
-		Hosts: o.hostsFunc,
-	})
+	// resolver := docker.NewResolver(docker.ResolverOptions{
+	// 	Hosts: o.hostsFunc,
+	// })
 
-	delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
+	// delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
 
-	allowedMediaTypes := []string{
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/octet-stream",
-		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.oci.image.layer.v1.tar+gzip",
-		"application/vnd.oci.image.layer.v1.tar",
-	}
+	// allowedMediaTypes := []string{
+	// 	"application/vnd.oci.image.manifest.v1+json",
+	// 	"application/octet-stream",
+	// 	"application/vnd.oci.image.config.v1+json",
+	// 	"application/vnd.oci.image.layer.v1.tar+gzip",
+	// 	"application/vnd.oci.image.layer.v1.tar",
+	// }
 
-	opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
+	// opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
 
-	memoryStore := content.NewMemory()
+	// memoryStore := content.NewMemory()
 
-	config, configDescriptor, err := content.GenerateConfig(nil)
-	if err != nil {
-		return "", err
-	}
-	configDescriptor.MediaType = MediaTypeConfig
-	manifest, manifestdesc, err := content.GenerateManifest(&configDescriptor, refDescriptor.Annotations, refDescriptor)
-	if err != nil {
-		return "", err
-	}
+	// config, configDescriptor, err := content.GenerateConfig(nil)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// configDescriptor.MediaType = MediaTypeConfig
+	// manifest, manifestdesc, err := content.GenerateManifest(&configDescriptor, refDescriptor.Annotations, refDescriptor)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	err = memoryStore.StoreManifest(ref, manifestdesc, manifest)
-	if err != nil {
-		return "", err
-	}
+	// err = memoryStore.StoreManifest(ref, manifestdesc, manifest)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	memoryStore.Set(configDescriptor, config)
+	// memoryStore.Set(configDescriptor, config)
 
-	pushDescriptor, err := oras.Copy(o.ctx,
-		o.ociStore,
-		ref,
-		resolver,
-		"",
-		opts...)
+	// pushDescriptor, err := oras.Copy(o.ctx,
+	// 	o.ociStore,
+	// 	ref,
+	// 	resolver,
+	// 	"",
+	// 	opts...)
 
-	if err != nil {
-		return "", errors.Wrap(err, "oras push tarball failed")
-	}
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "oras push tarball failed")
+	// }
 
-	// v1 version of oras-go doesn't push the manifest automatically so this part handles manifest pushing
-	pushDescriptor, err = oras.Copy(o.ctx,
-		memoryStore,
-		ref,
-		resolver,
-		"",
-		opts...)
+	// // v1 version of oras-go doesn't push the manifest automatically so this part handles manifest pushing
+	// pushDescriptor, err = oras.Copy(o.ctx,
+	// 	memoryStore,
+	// 	ref,
+	// 	resolver,
+	// 	"",
+	// 	opts...)
 
-	if err != nil {
-		return "", errors.Wrap(err, "oras push manifest failed")
-	}
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "oras push manifest failed")
+	// }
 
-	return pushDescriptor.Digest, nil
+	// return pushDescriptor.Digest, nil
+	return "", nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {
@@ -179,12 +179,12 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 		return errors.Errorf("policy [%s] not found in the local store", existingRef)
 	}
 
-	newDescriptor, err := cloneDescriptor(&descriptor)
+	_, err = cloneDescriptor(&descriptor)
 	if err != nil {
 		return err
 	}
 
-	o.ociStore.AddReference(newRef, newDescriptor)
+	// o.ociStore.AddReference(newRef, newDescriptor)
 
 	return o.ociStore.SaveIndex()
 }
@@ -303,4 +303,34 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 		MinVersion: tls.VersionTLS12,
 	}
 	return &http.Transport{TLSClientConfig: conf}, nil
+}
+
+type remoteManager struct {
+	resolver remotes.Resolver
+	srcRef   string
+}
+
+func (r *remoteManager) Resolve(ctx context.Context, ref string) (ocispec.Descriptor, error) {
+	_, desc, err := r.resolver.Resolve(ctx, ref)
+	if err != nil {
+		return ocispec.Descriptor{}, err
+	}
+	return desc, nil
+}
+
+func (r *remoteManager) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
+	fetcher, err := r.resolver.Fetcher(ctx, r.srcRef)
+	if err != nil {
+		return nil, err
+	}
+	return fetcher.Fetch(ctx, target)
+}
+
+func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
+	_, err := r.Fetch(ctx, target)
+	if err == nil {
+		return true, nil
+	}
+
+	return false, err
 }

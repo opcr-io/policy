@@ -1,7 +1,6 @@
 package app
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -16,7 +15,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"oras.land/oras-go/pkg/content"
+	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -84,14 +83,14 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
-	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
+	ociStore, err := orasoci.New(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
-	err = ociStore.LoadIndex()
-	if err != nil {
-		return err
-	}
+	// err = ociStore.LoadIndex()
+	// if err != nil {
+	// 	return err
+	// }
 
 	if annotations == nil {
 		annotations = map[string]string{}
@@ -105,17 +104,17 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
-	descriptor, err := c.createImage(ociStore, outfile, annotations)
+	_, err = c.createImage(ociStore, outfile, annotations)
 	if err != nil {
 		return err
 	}
 
-	parsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	_, err = parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
 
-	ociStore.AddReference(parsed, descriptor)
+	// ociStore.AddReference(parsed, descriptor)
 
 	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
 
@@ -127,76 +126,76 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *content.OCI, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 
-	fDigest, err := c.fileDigest(tarball)
-	if err != nil {
-		return descriptor, err
-	}
+	// fDigest, err := c.fileDigest(tarball)
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
-	_, err = ociStore.Info(c.Context, fDigest)
-	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
-		return descriptor, err
-	}
+	// _, err = ociStore.Info(c.Context, fDigest)
+	// if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
+	// 	return descriptor, err
+	// }
 
-	if err == nil {
-		err = ociStore.Delete(c.Context, fDigest)
-		if err != nil {
-			return descriptor, errors.Wrap(err, "couldn't overwrite existing image")
-		}
-	}
+	// if err == nil {
+	// 	err = ociStore.Delete(c.Context, fDigest)
+	// 	if err != nil {
+	// 		return descriptor, errors.Wrap(err, "couldn't overwrite existing image")
+	// 	}
+	// }
 
-	tarballFile, err := os.Open(tarball)
-	if err != nil {
-		return descriptor, err
-	}
-	defer func() {
-		err := tarballFile.Close()
-		if err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
-		}
-	}()
+	// tarballFile, err := os.Open(tarball)
+	// if err != nil {
+	// 	return descriptor, err
+	// }
+	// defer func() {
+	// 	err := tarballFile.Close()
+	// 	if err != nil {
+	// 		c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
+	// 	}
+	// }()
 
-	fileInfo, err := tarballFile.Stat()
-	if err != nil {
-		return descriptor, err
-	}
+	// fileInfo, err := tarballFile.Stat()
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
-	descriptor = ocispec.Descriptor{
-		MediaType:   oci.MediaTypeImageLayer,
-		Digest:      fDigest,
-		Size:        fileInfo.Size(),
-		Annotations: annotations,
-	}
+	// descriptor = ocispec.Descriptor{
+	// 	MediaType:   oci.MediaTypeImageLayer,
+	// 	Digest:      fDigest,
+	// 	Size:        fileInfo.Size(),
+	// 	Annotations: annotations,
+	// }
 
-	ociWriter, err := ociStore.Writer(
-		c.Context,
-		containerd_content.WithDescriptor(descriptor),
-		containerd_content.WithRef(uuid.NewString()))
-	if err != nil {
-		return descriptor, err
-	}
-	defer func() {
-		err := ociWriter.Close()
-		if err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to close local OCI store.")
-		}
-	}()
+	// ociWriter, err := ociStore.Writer(
+	// 	c.Context,
+	// 	containerd_content.WithDescriptor(descriptor),
+	// 	containerd_content.WithRef(uuid.NewString()))
+	// if err != nil {
+	// 	return descriptor, err
+	// }
+	// defer func() {
+	// 	err := ociWriter.Close()
+	// 	if err != nil {
+	// 		c.UI.Problem().WithErr(err).Msg("Failed to close local OCI store.")
+	// 	}
+	// }()
 
-	_, err = io.Copy(ociWriter, tarballFile)
-	if err != nil {
-		return descriptor, err
-	}
+	// _, err = io.Copy(ociWriter, tarballFile)
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
-	err = ociWriter.Commit(c.Context, fileInfo.Size(), fDigest)
-	if err != nil {
-		return descriptor, err
-	}
+	// err = ociWriter.Commit(c.Context, fileInfo.Size(), fDigest)
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
-	c.UI.Normal().
-		WithStringValue("digest", ociWriter.Digest().String()).
-		Msg("Created new image.")
+	// c.UI.Normal().
+	// 	WithStringValue("digest", ociWriter.Digest().String()).
+	// 	Msg("Created new image.")
 
 	return descriptor, nil
 }
