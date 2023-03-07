@@ -1,11 +1,12 @@
 package oci
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
+	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/content/oci"
 )
 
@@ -84,17 +87,89 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(descr)
+
 	return descr.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
-	// refs := o.ociStore.ListReferences()
-	// return refs, nil
-	return nil, nil
+	var tgs []string
+	refs := make(map[string]ocispec.Descriptor, 0)
+	err := o.ociStore.Tags(o.ctx, "", func(tags []string) error {
+		tgs = append(tgs, tags...)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range tgs {
+		descr, err := o.ociStore.Resolve(o.ctx, tag)
+		if err != nil {
+			return nil, err
+		}
+
+		refs[tag] = descr
+	}
+
+	return refs, nil
 }
 
 func (o *Oci) Push(ref string) (digest.Digest, error) {
+	dockerResolver := docker.NewResolver(docker.ResolverOptions{
+		Hosts: o.hostsFunc,
+	})
+	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref, fetcher: o.ociStore}
+
+	desc, err := o.ociStore.Resolve(o.ctx, ref)
+	if err != nil {
+		return "", err
+	}
+
+	memoryStore := memory.New()
+	configBytes := []byte("{}")
+	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
+
+	err = memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
+	if err != nil {
+		return "", err
+	}
+
+	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
+		PackImageManifest:   true,
+		ManifestAnnotations: desc.Annotations,
+		ConfigDescriptor:    &configDesc,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	descr, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
+
+	err = memoryStore.Tag(o.ctx, manifestDesc, ref)
+	if err != nil {
+		return "", err
+	}
+
+	remoteManager.fetcher = memoryStore
+	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push manifest failed")
+	}
+
+	err = memoryStore.Tag(o.ctx, configDesc, ref)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push manifest failed")
+	}
+
 	// refs, err := o.ListReferences()
 	// if err != nil {
 	// 	return "", errors.Wrap(err, "failed to list references")
@@ -165,7 +240,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	// }
 
 	// return pushDescriptor.Digest, nil
-	return "", nil
+	return descr.Digest, nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {
@@ -184,7 +259,10 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 		return err
 	}
 
-	// o.ociStore.AddReference(newRef, newDescriptor)
+	err = o.ociStore.Tag(o.ctx, descriptor, newRef)
+	if err != nil {
+		return err
+	}
 
 	return o.ociStore.SaveIndex()
 }
@@ -307,6 +385,7 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 
 type remoteManager struct {
 	resolver remotes.Resolver
+	fetcher  content.Fetcher
 	srcRef   string
 }
 
@@ -333,4 +412,44 @@ func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (
 	}
 
 	return false, err
+}
+
+func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
+	pusher, err := r.resolver.Pusher(ctx, r.srcRef)
+	if err != nil {
+		return err
+	}
+
+	writer, err := pusher.Push(ctx, expected)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		writer.Close()
+	}()
+
+	reader := bufio.NewReader(content)
+	size, err := reader.WriteTo(writer)
+	if err != nil {
+		return err
+	}
+
+	return writer.Commit(ctx, size, expected.Digest)
+}
+
+func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
+	originalRef := r.srcRef
+	content, err := r.fetcher.Fetch(ctx, desc)
+	if err != nil {
+		return err
+	}
+	r.srcRef = reference
+	err = r.Push(ctx, desc, content)
+	if err != nil {
+		return err
+	}
+
+	r.srcRef = originalRef
+	return nil
 }

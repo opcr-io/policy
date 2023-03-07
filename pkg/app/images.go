@@ -50,8 +50,6 @@ func (c *PolicyApp) Images() error {
 			return err
 		}
 
-		fmt.Println(descr)
-
 		arrData := []string{
 			familiarName,
 			tagOrNone,

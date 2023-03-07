@@ -106,7 +106,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
-	desc, err := c.createImage(ociStore, outfile, annotations)
+	desc, err := c.createImage(ociStore, outfile, ref, annotations)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,6 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if err != nil {
 		return err
 	}
-	// ociStore.AddReference(parsed, descriptor)
 
 	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
 
@@ -132,7 +131,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
 	fDigest, err := c.fileDigest(tarball)
@@ -171,10 +170,15 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 
 	reader := bufio.NewReader(tarballFile)
 
-	_, err = oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
+	manifestDesc, err := oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
 		PackImageManifest:   true,
 		ManifestAnnotations: descriptor.Annotations,
 	})
+	if err != nil {
+		return descriptor, err
+	}
+
+	err = ociStore.Tag(c.Context, manifestDesc, ref)
 	if err != nil {
 		return descriptor, err
 	}
