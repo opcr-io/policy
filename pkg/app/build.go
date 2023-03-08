@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aserto-dev/runtime"
@@ -165,7 +166,14 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, an
 	}
 
 	if exists {
-		//TODO: delete first
+		// Hack to remove the existing digest until ocistore deleter is implemented
+		// https://github.com/oras-project/oras-go/issues/454
+		digestPath := filepath.Join(strings.Split(descriptor.Digest.String(), ":")...)
+		blob := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", digestPath)
+		err = os.Remove(blob)
+		if err != nil {
+			return descriptor, err
+		}
 	}
 
 	reader := bufio.NewReader(tarballFile)
