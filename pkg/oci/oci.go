@@ -20,6 +20,7 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/content/oci"
+	"oras.land/oras-go/v2/errdef"
 )
 
 const (
@@ -439,17 +440,20 @@ func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, c
 }
 
 func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
-	originalRef := r.srcRef
-	content, err := r.fetcher.Fetch(ctx, desc)
-	if err != nil {
-		return err
-	}
-	r.srcRef = reference
-	err = r.Push(ctx, desc, content)
-	if err != nil {
-		return err
-	}
+	_, err := r.Resolve(ctx, desc.Digest.String())
+	if errors.Is(err, errdef.ErrNotFound) {
+		originalRef := r.srcRef
+		content, err := r.fetcher.Fetch(ctx, desc)
+		if err != nil {
+			return err
+		}
+		r.srcRef = reference
+		err = r.Push(ctx, desc, content)
+		if err != nil {
+			return err
+		}
 
-	r.srcRef = originalRef
+		r.srcRef = originalRef
+	}
 	return nil
 }
