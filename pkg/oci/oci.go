@@ -73,9 +73,17 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	// }
 	var tarDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
-	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
 		fmt.Println(desc)
 		fmt.Println("----------------------")
+		if strings.Contains(desc.MediaType, "tar") {
+			tarDescriptor = desc
+		}
+		return nil
+	}
+	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		fmt.Println(desc)
+		fmt.Println("POST - -----------")
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc
 		}
