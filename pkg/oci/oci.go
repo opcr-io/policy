@@ -7,8 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
@@ -20,7 +22,6 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/content/oci"
-	"oras.land/oras-go/v2/errdef"
 )
 
 const (
@@ -70,7 +71,17 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	// 	oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
 	// 	oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
 	// }
-	descr, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", oras.DefaultCopyOptions)
+	var tarDescriptor ocispec.Descriptor
+	opts := oras.DefaultCopyOptions
+	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		fmt.Println(desc)
+		fmt.Println("----------------------")
+		if strings.Contains(desc.MediaType, "tar") {
+			tarDescriptor = desc
+		}
+		return nil
+	}
+	_, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", opts)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
@@ -84,12 +95,18 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	// }
 
 	// o.ociStore.AddReference(ref, layer)
+	if len(tarDescriptor.Digest) > 0 {
+		err = o.ociStore.Tag(o.ctx, tarDescriptor, ref)
+		if err != nil {
+			return "", err
+		}
+	}
 	err = o.ociStore.SaveIndex()
 	if err != nil {
 		return "", err
 	}
 
-	return descr.Digest, nil
+	return tarDescriptor.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
@@ -415,7 +432,7 @@ func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (
 	return false, err
 }
 
-func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
+func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, ctn io.Reader) error {
 	pusher, err := r.resolver.Pusher(ctx, r.srcRef)
 	if err != nil {
 		return err
@@ -423,37 +440,38 @@ func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, c
 
 	writer, err := pusher.Push(ctx, expected)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return nil
+		}
 		return err
 	}
-
 	defer func() {
 		writer.Close()
 	}()
+	reader := bufio.NewReader(ctn)
 
-	reader := bufio.NewReader(content)
 	size, err := reader.WriteTo(writer)
 	if err != nil {
 		return err
 	}
-
 	return writer.Commit(ctx, size, expected.Digest)
 }
 
 func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
-	_, err := r.Resolve(ctx, desc.Digest.String())
-	if errors.Is(err, errdef.ErrNotFound) {
-		originalRef := r.srcRef
-		content, err := r.fetcher.Fetch(ctx, desc)
-		if err != nil {
-			return err
-		}
-		r.srcRef = reference
-		err = r.Push(ctx, desc, content)
-		if err != nil {
-			return err
-		}
-
-		r.srcRef = originalRef
+	originalRef := r.srcRef
+	content, err := r.fetcher.Fetch(ctx, desc)
+	if err != nil {
+		return err
 	}
+	r.srcRef = reference
+	desc.Annotations = make(map[string]string)
+	desc.Annotations[ocispec.AnnotationRefName] = reference
+	err = r.Push(ctx, desc, content)
+	if err != nil {
+		return err
+	}
+
+	r.srcRef = originalRef
+
 	return nil
 }
