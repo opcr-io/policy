@@ -57,52 +57,33 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	// var layers []ocispec.Descriptor
-	// allowedMediaTypes := []string{
-	// 	"application/vnd.oci.image.manifest.v1+json",
-	// 	"application/octet-stream",
-	// 	"application/vnd.oci.image.config.v1+json",
-	// 	"application/vnd.unknown.config.v1+json",
-	// 	"application/vnd.oci.image.layer.v1.tar+gzip",
-	// 	"application/vnd.oci.image.layer.v1.tar",
-	// }
-	// opts := []oras.CopyOpt{
-	// 	oras.WithAllowedMediaTypes(allowedMediaTypes),
-	// 	oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
-	// 	oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
-	// }
 	var tarDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
+	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		fmt.Println(desc)
-		fmt.Println("----------------------")
+		if !IsAllowedMediaType(desc.MediaType) {
+			return fmt.Errorf("%s media type not allowed", desc.MediaType)
+		}
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc
 		}
 		return nil
 	}
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		fmt.Println(desc)
-		fmt.Println("POST - -----------")
+		if !IsAllowedMediaType(desc.MediaType) {
+			return fmt.Errorf("%s media type not allowed", desc.MediaType)
+		}
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc
 		}
 		return nil
 	}
+
 	_, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", opts)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	// var layer ocispec.Descriptor
-	// for _, lyr := range layers {
-	// 	if strings.Contains(lyr.MediaType, "tar") {
-	// 		layer = lyr
-	// 		break
-	// 	}
-	// }
-
-	// o.ociStore.AddReference(ref, layer)
 	if len(tarDescriptor.Digest) > 0 {
 		err = o.ociStore.Tag(o.ctx, tarDescriptor, ref)
 		if err != nil {
@@ -482,4 +463,22 @@ func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, refere
 	r.srcRef = originalRef
 
 	return nil
+}
+
+func IsAllowedMediaType(mediatype string) bool {
+	allowedMediaTypes := []string{
+		"application/vnd.oci.image.manifest.v1+json",
+		"application/octet-stream",
+		"application/vnd.oci.image.config.v1+json",
+		"application/vnd.unknown.config.v1+json",
+		"application/vnd.oci.image.layer.v1.tar+gzip",
+		"application/vnd.oci.image.layer.v1.tar",
+	}
+
+	for i := range allowedMediaTypes {
+		if allowedMediaTypes[i] == mediatype {
+			return true
+		}
+	}
+	return false
 }
