@@ -144,7 +144,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		return "", err
 	}
 
-	descr, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "oras push failed")
 	}
@@ -240,7 +240,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	// }
 
 	// return pushDescriptor.Digest, nil
-	return descr.Digest, nil
+	return manifestDesc.Digest, nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {

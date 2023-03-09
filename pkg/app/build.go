@@ -17,7 +17,6 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"oras.land/oras-go/v2"
 	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
@@ -99,10 +98,16 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		annotations = map[string]string{}
 	}
 
-	parsedRef, err := docker.ParseDockerRef(ref)
+	familiarezedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	if err != nil {
+		return errors.Wrap(err, "failed to calculate policy reference")
+	}
+
+	parsedRef, err := docker.ParseDockerRef(familiarezedRef)
 	if err != nil {
 		return err
 	}
+
 	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
@@ -112,17 +117,12 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	_, err = parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
-	if err != nil {
-		return errors.Wrap(err, "failed to calculate policy reference")
-	}
-
-	err = ociStore.Tag(c.Context, desc, ref)
+	err = ociStore.Tag(c.Context, desc, parsedRef.String())
 	if err != nil {
 		return err
 	}
 
-	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
+	c.UI.Normal().WithStringValue("reference", parsedRef.String()).Msg("Tagging image.")
 
 	err = ociStore.SaveIndex()
 	if err != nil {
@@ -178,18 +178,18 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, an
 
 	reader := bufio.NewReader(tarballFile)
 
-	manifestDesc, err := oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
-		PackImageManifest:   true,
-		ManifestAnnotations: descriptor.Annotations,
-	})
-	if err != nil {
-		return descriptor, err
-	}
+	// manifestDesc, err := oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
+	// 	PackImageManifest:   true,
+	// 	ManifestAnnotations: descriptor.Annotations,
+	// })
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
-	err = ociStore.Tag(c.Context, manifestDesc, ref)
-	if err != nil {
-		return descriptor, err
-	}
+	// err = ociStore.Tag(c.Context, manifestDesc, ref)
+	// if err != nil {
+	// 	return descriptor, err
+	// }
 
 	err = ociStore.Push(c.Context, descriptor, reader)
 	if err != nil {
