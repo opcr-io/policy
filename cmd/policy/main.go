@@ -112,8 +112,6 @@ var PolicyCLI struct {
 	Rm        RmCmd        `cmd:"" help:"Removes a policy from the local registry."`
 	Inspect   InspectCmd   `cmd:"" help:"Displays information about a policy."`
 	Repl      ReplCmd      `cmd:"" help:"Sets you up with a shell for running queries using an OPA instance with a policy loaded."`
-	Remote    RemoteCmd    `cmd:"" help:"Extra commands for managing policy images on a remote registry."`
-	Init      InitCmd      `cmd:"" help:"(Deprecated) Initialize policy repo"`
 	Templates TemplatesCmd `cmd:"" help:"List and apply templates"`
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
