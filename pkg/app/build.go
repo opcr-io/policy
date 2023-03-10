@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
-	"github.com/google/uuid"
+
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
@@ -89,10 +88,6 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if err != nil {
 		return err
 	}
-	// err = ociStore.LoadIndex()
-	// if err != nil {
-	// 	return err
-	// }
 
 	if annotations == nil {
 		annotations = map[string]string{}
@@ -177,19 +172,6 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, an
 	}
 
 	reader := bufio.NewReader(tarballFile)
-
-	// manifestDesc, err := oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
-	// 	PackImageManifest:   true,
-	// 	ManifestAnnotations: descriptor.Annotations,
-	// })
-	// if err != nil {
-	// 	return descriptor, err
-	// }
-
-	// err = ociStore.Tag(c.Context, manifestDesc, ref)
-	// if err != nil {
-	// 	return descriptor, err
-	// }
 
 	err = ociStore.Push(c.Context, descriptor, reader)
 	if err != nil {

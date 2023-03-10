@@ -6,7 +6,7 @@ import (
 
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
-	"oras.land/oras-go/pkg/content"
+	"oras.land/oras-go/v2/content/oci"
 )
 
 func (c *PolicyApp) Images() error {
