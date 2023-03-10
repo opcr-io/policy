@@ -7,25 +7,24 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
+	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/open-policy-agent/opa/repl"
 	"github.com/pkg/errors"
-	"oras.land/oras-go/pkg/content"
 )
 
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	defer c.Cancel()
 
-	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
-	if err != nil {
-		return err
-	}
-	err = ociStore.LoadIndex()
+	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
 
-	existingRefs := ociStore.ListReferences()
+	existingRefs, err := ociClient.ListReferences()
+	if err != nil {
+		return err
+	}
 	existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
@@ -38,12 +37,10 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 			return err
 		}
 
-		err = ociStore.LoadIndex()
+		existingRefs, err := ociClient.ListReferences()
 		if err != nil {
 			return err
 		}
-
-		existingRefs = ociStore.ListReferences()
 		existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
