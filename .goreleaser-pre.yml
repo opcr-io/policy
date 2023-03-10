@@ -63,8 +63,8 @@ brews:
   - name: policy-pre
 
     tap:
-      owner: aserto-dev
-      name: aserto-tap
+      owner: opcr-io
+      name: homebrew-tap
       token: "{{ .Env.ASERTO_TAP }}"
 
     url_template: "https://github.com/opcr-io/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
