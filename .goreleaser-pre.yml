@@ -60,7 +60,7 @@ release:
   name_template: "policy {{.Tag}}"
 
 brews:
-  - name: policy-pre
+  - name: policy-rc
 
     tap:
       owner: opcr-io
