@@ -35,7 +35,10 @@ func Build() error {
 }
 
 // Release releases the project.
-func Release() error {
+func Release(releaseFilePath string) error {
+	if releaseFilePath != "" {
+		return common.Release("--config", releaseFilePath)
+	}
 	return common.Release()
 }
 

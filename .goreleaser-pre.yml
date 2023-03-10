@@ -1,0 +1,88 @@
+before:
+  hooks:
+
+builds:
+  - id: build
+    main: ./cmd/policy
+    binary: policy
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s
+      - -w
+      - -X github.com/opcr-io/policy/pkg/version.ver={{.Version}}
+      - -X github.com/opcr-io/policy/pkg/version.commit={{.ShortCommit}}
+      - -X github.com/opcr-io/policy/pkg/version.date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - format: zip
+    replacements:
+      darwin: darwin
+      linux: linux
+      windows: windows
+      amd64: x86_64
+    files:
+      - LICENSE
+      - README.md
+    name_template: "policy{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: opcr-io
+    name: policy
+
+  draft: false
+  prerelease: auto
+  name_template: "policy {{.Tag}}"
+
+brews:
+  - name: policy-pre
+
+    tap:
+      owner: aserto-dev
+      name: aserto-tap
+      token: "{{ .Env.ASERTO_TAP }}"
+
+    url_template: "https://github.com/opcr-io/policy/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    commit_author:
+      name: Aserto Bot
+      email: github-bot@aserto.com
+
+    homepage: "https://aserto.com/"
+
+    description: "policy CLI for building and managing authorization policies"
+
+    license: "Apache License Version 2.0"
+
+    skip_upload: false
+
+    test: |
+      system "#{bin}/policy version"
+
+    install: |
+      bin.install "policy"
