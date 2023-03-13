@@ -174,76 +174,6 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
-	// refs, err := o.ListReferences()
-	// if err != nil {
-	// 	return "", errors.Wrap(err, "failed to list references")
-	// }
-
-	// refDescriptor, ok := refs[ref]
-	// if !ok {
-	// 	return "", errors.Errorf("policy [%s] not found in the local store", ref)
-
-	// }
-
-	// resolver := docker.NewResolver(docker.ResolverOptions{
-	// 	Hosts: o.hostsFunc,
-	// })
-
-	// delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
-
-	// allowedMediaTypes := []string{
-	// 	"application/vnd.oci.image.manifest.v1+json",
-	// 	"application/octet-stream",
-	// 	"application/vnd.oci.image.config.v1+json",
-	// 	"application/vnd.oci.image.layer.v1.tar+gzip",
-	// 	"application/vnd.oci.image.layer.v1.tar",
-	// }
-
-	// opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
-
-	// memoryStore := content.NewMemory()
-
-	// config, configDescriptor, err := content.GenerateConfig(nil)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// configDescriptor.MediaType = MediaTypeConfig
-	// manifest, manifestdesc, err := content.GenerateManifest(&configDescriptor, refDescriptor.Annotations, refDescriptor)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// err = memoryStore.StoreManifest(ref, manifestdesc, manifest)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// memoryStore.Set(configDescriptor, config)
-
-	// pushDescriptor, err := oras.Copy(o.ctx,
-	// 	o.ociStore,
-	// 	ref,
-	// 	resolver,
-	// 	"",
-	// 	opts...)
-
-	// if err != nil {
-	// 	return "", errors.Wrap(err, "oras push tarball failed")
-	// }
-
-	// // v1 version of oras-go doesn't push the manifest automatically so this part handles manifest pushing
-	// pushDescriptor, err = oras.Copy(o.ctx,
-	// 	memoryStore,
-	// 	ref,
-	// 	resolver,
-	// 	"",
-	// 	opts...)
-
-	// if err != nil {
-	// 	return "", errors.Wrap(err, "oras push manifest failed")
-	// }
-
-	// return pushDescriptor.Digest, nil
 	return manifestDesc.Digest, nil
 }
 
@@ -269,6 +199,10 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 	}
 
 	return o.ociStore.SaveIndex()
+}
+
+func (o *Oci) GetStore() *oci.Store {
+	return o.ociStore
 }
 
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
