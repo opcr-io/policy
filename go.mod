@@ -29,7 +29,6 @@ require (
 	golang.org/x/term v0.4.0
 	google.golang.org/grpc v1.51.0
 	gopkg.in/yaml.v2 v2.4.0
-	oras.land/oras-go v1.2.2
 	oras.land/oras-go/v2 v2.0.0
 	sigs.k8s.io/controller-runtime v0.14.1
 )
@@ -135,4 +134,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
+	oras.land/oras-go v1.2.2 // indirect
 )
