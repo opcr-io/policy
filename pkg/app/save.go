@@ -55,7 +55,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		}()
 	}
 
-	err = c.writePolicy(ociClient, refDescriptor, outputFile)
+	err = c.writePolicy(ociClient, &refDescriptor, outputFile)
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	return nil
 }
 
-func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor v1.Descriptor, outputFile io.Writer) error {
-	reader, err := ociStore.GetStore().Fetch(c.Context, refDescriptor)
+func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
+	reader, err := ociStore.GetStore().Fetch(c.Context, *refDescriptor)
 	if err != nil {
 		return err
 	}

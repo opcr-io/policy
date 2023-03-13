@@ -50,11 +50,11 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	if !ok {
 		return errors.Errorf("ref [%s] not found in the local store", existingRef)
 	}
-	// attach ref name annotation for comparisson.
+	// attach ref name annotation for comparison.
 	ref.Annotations = make(map[string]string)
 	ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 
-	err = c.removeFromIndex(ref)
+	err = c.removeFromIndex(&ref)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	return nil
 }
 
-func (c *PolicyApp) removeFromIndex(ref ocispec.Descriptor) error {
+func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
 
 	type index struct {
 		Version   int                  `json:"schemaVersion"`
@@ -122,14 +122,14 @@ func (c *PolicyApp) removeFromIndex(ref ocispec.Descriptor) error {
 		return err
 	}
 
-	err = os.WriteFile(indexPath, newIndexBytes, 0664)
+	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec,keep same permissions
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func removeFromManifests(manifests []ocispec.Descriptor, ref ocispec.Descriptor) []ocispec.Descriptor {
+func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
 	newarray := make([]ocispec.Descriptor, len(manifests)-1)
 	k := 0
 	for i := 0; i < len(manifests); i++ {

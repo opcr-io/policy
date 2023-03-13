@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -59,7 +58,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
 		if !IsAllowedMediaType(desc.MediaType) {
-			return fmt.Errorf("%s media type not allowed", desc.MediaType)
+			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc
@@ -68,7 +67,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		if !IsAllowedMediaType(desc.MediaType) {
-			return fmt.Errorf("%s media type not allowed", desc.MediaType)
+			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc

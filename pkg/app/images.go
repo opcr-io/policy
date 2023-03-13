@@ -21,10 +21,13 @@ func (c *PolicyApp) Images() error {
 
 	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Size")
 	var tgs []string
-	ociStore.Tags(c.Context, "", func(tags []string) error {
+	err = ociStore.Tags(c.Context, "", func(tags []string) error {
 		tgs = append(tgs, tags...)
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	for _, tag := range tgs {
 		descr, err := ociStore.Resolve(c.Context, tag)

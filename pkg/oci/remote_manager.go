@@ -1,3 +1,4 @@
+//nolint:gocritic, big parameter linter error passing ocispec.Descriptor, needed to implement oras.ReadOnlyTarget intarface
 package oci
 
 import (
@@ -69,14 +70,14 @@ func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, c
 
 func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
 	originalRef := r.srcRef
-	content, err := r.fetcher.Fetch(ctx, desc)
+	reader, err := r.fetcher.Fetch(ctx, desc)
 	if err != nil {
 		return err
 	}
 	r.srcRef = reference
 	desc.Annotations = make(map[string]string)
 	desc.Annotations[ocispec.AnnotationRefName] = reference
-	err = r.Push(ctx, desc, content)
+	err = r.Push(ctx, desc, reader)
 	if err != nil {
 		return err
 	}

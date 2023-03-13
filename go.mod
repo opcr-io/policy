@@ -14,7 +14,6 @@ require (
 	github.com/containerd/containerd v1.6.15
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/magefile/mage v1.14.0
 	github.com/mitchellh/mapstructure v1.5.0
