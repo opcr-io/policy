@@ -8,11 +8,12 @@ import (
 
 	"github.com/aserto-dev/certs"
 	"github.com/aserto-dev/logger"
+	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/credentials"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 // Overrider is a func that mutates configuration.
@@ -20,25 +21,21 @@ type Overrider func(*Config)
 
 // Config holds the configuration for the app.
 type Config struct {
-	FileStoreRoot string            `json:"file_store_root" yaml:"file_store_root"`
-	DefaultDomain string            `json:"default_domain" yaml:"default_domain"`
-	Logging       logger.Config     `json:"logging" yaml:"logging"`
-	CA            []string          `json:"ca" yaml:"ca"`
-	Insecure      bool              `json:"insecure" yaml:"insecure"`
-	TokenDefaults map[string]string `json:"token_defaults" yaml:"token_defaults"`
-
-	Servers map[string]ServerCredentials `json:"-" yaml:"-"`
-}
-
-type ServerCredentials struct {
-	Type     string `json:"type" yaml:"type"`
-	Username string `json:"username" yaml:"username"`
-	Password string `json:"password" yaml:"password"`
-	Default  bool   `json:"default" yaml:"default"`
+	FileStoreRoot    string            `json:"file_store_root" yaml:"file_store_root"`
+	DefaultDomain    string            `json:"default_domain" yaml:"default_domain"`
+	Logging          logger.Config     `json:"logging" yaml:"logging"`
+	CA               []string          `json:"ca" yaml:"ca"`
+	Insecure         bool              `json:"insecure" yaml:"insecure"`
+	TokenDefaults    map[string]string `json:"token_defaults" yaml:"token_defaults"`
+	CredentialsStore credentials.Store `json:"-"`
 }
 
 // Path is a string that points to a config file.
 type Path string
+
+const (
+	defaultDomain = "default-domain.cfg"
+)
 
 // NewConfig creates the configuration by reading env & files.
 func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsGenerator *certs.Generator) (*Config, error) { // nolint // function will contain repeating statements for defaults
@@ -114,18 +111,16 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 		return nil, errors.Wrap(err, "failed to validate config file")
 	}
 
-	err = cfg.LoadCreds()
+	policyDirPath := filepath.Join(home, ".policy")
+	cf, err := config.Load(policyDirPath)
 	if err != nil {
 		return nil, err
 	}
-	if cfg.DefaultDomain == "" {
-		for key, val := range cfg.Servers {
-			if val.Default {
-				cfg.DefaultDomain = key
-				break
-			}
-		}
+	err = cfg.LoadDefaultDomain()
+	if err != nil {
+		return nil, err
 	}
+	cfg.CredentialsStore = cf.GetCredentialsStore(cfg.DefaultDomain)
 
 	return cfg, nil
 }
@@ -148,46 +143,23 @@ func (c *Config) PoliciesRoot() string {
 func (c *Config) ReplHistoryFile() string {
 	return filepath.Join(c.FileStoreRoot, "repl_history")
 }
-
-func (c *Config) LoadCreds() error {
-	path := filepath.Join(c.FileStoreRoot, "policy-registries.yaml")
-
-	if _, err := os.Stat(path); err == nil {
-		contents, err := os.ReadFile(path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to read registry creds file [%s]", path)
-		}
-
-		err = yaml.Unmarshal(contents, &c.Servers)
-		if err != nil {
-			return errors.Wrapf(err, "failed to unmarshal registry creds file [%s]", path)
-		}
-
-	} else if !os.IsNotExist(err) {
-		return errors.Wrapf(err, "failed to determine if creds file [%s] exists", path)
-	}
-
-	return nil
+func (c *Config) SaveDefaultDomain() error {
+	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), 0600)
 }
 
-func (c *Config) SaveCreds() error {
-	path := filepath.Join(c.FileStoreRoot, "policy-registries.yaml")
-
-	cfgBytes, err := yaml.Marshal(c.Servers)
+func (c *Config) LoadDefaultDomain() error {
+	defaultPath := filepath.Join(c.FileStoreRoot, defaultDomain)
+	ok, err := fileExists(defaultPath)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal registry creds for writing")
+		return err
 	}
-
-	err = os.MkdirAll(filepath.Dir(path), 0700)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create registry creds dir [%s]", filepath.Dir(path))
+	if ok {
+		domain, err := os.ReadFile(defaultPath)
+		if err != nil {
+			return err
+		}
+		c.DefaultDomain = string(domain)
 	}
-
-	err = os.WriteFile(path, cfgBytes, 0600)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write registry creds file [%s]", path)
-	}
-
 	return nil
 }
 
