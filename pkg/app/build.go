@@ -1,22 +1,22 @@
 package app
 
 import (
-	"io"
+	"bufio"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	containerd_content "github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
-	"github.com/google/uuid"
+
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"oras.land/oras-go/pkg/content"
+	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -84,11 +84,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
-	ociStore, err := content.NewOCI(c.Configuration.PoliciesRoot())
-	if err != nil {
-		return err
-	}
-	err = ociStore.LoadIndex()
+	ociStore, err := orasoci.New(c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -97,27 +93,31 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		annotations = map[string]string{}
 	}
 
-	parsedRef, err := docker.ParseDockerRef(ref)
-	if err != nil {
-		return err
-	}
-	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
-	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
-	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
-
-	descriptor, err := c.createImage(ociStore, outfile, annotations)
-	if err != nil {
-		return err
-	}
-
-	parsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	familiarezedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
 
-	ociStore.AddReference(parsed, descriptor)
+	parsedRef, err := docker.ParseDockerRef(familiarezedRef)
+	if err != nil {
+		return err
+	}
 
-	c.UI.Normal().WithStringValue("reference", ref).Msg("Tagging image.")
+	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
+	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
+	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+
+	desc, err := c.createImage(ociStore, outfile, annotations)
+	if err != nil {
+		return err
+	}
+
+	err = ociStore.Tag(c.Context, desc, parsedRef.String())
+	if err != nil {
+		return err
+	}
+
+	c.UI.Normal().WithStringValue("reference", parsedRef.String()).Msg("Tagging image.")
 
 	err = ociStore.SaveIndex()
 	if err != nil {
@@ -127,27 +127,19 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *content.OCI, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
-
+	ociStore.AutoSaveIndex = true
 	fDigest, err := c.fileDigest(tarball)
 	if err != nil {
 		return descriptor, err
 	}
 
-	_, err = ociStore.Info(c.Context, fDigest)
-	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
+	tarballFile, err := os.Open(tarball)
+	if err != nil {
 		return descriptor, err
 	}
-
-	if err == nil {
-		err = ociStore.Delete(c.Context, fDigest)
-		if err != nil {
-			return descriptor, errors.Wrap(err, "couldn't overwrite existing image")
-		}
-	}
-
-	tarballFile, err := os.Open(tarball)
+	fileInfo, err := tarballFile.Stat()
 	if err != nil {
 		return descriptor, err
 	}
@@ -158,44 +150,35 @@ func (c *PolicyApp) createImage(ociStore *content.OCI, tarball string, annotatio
 		}
 	}()
 
-	fileInfo, err := tarballFile.Stat()
-	if err != nil {
+	descriptor.Digest = fDigest
+	descriptor.Size = fileInfo.Size()
+	descriptor.Annotations = annotations
+	descriptor.MediaType = oci.MediaTypeImageLayer
+
+	exists, err := ociStore.Exists(c.Context, descriptor)
+	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
 		return descriptor, err
 	}
 
-	descriptor = ocispec.Descriptor{
-		MediaType:   oci.MediaTypeImageLayer,
-		Digest:      fDigest,
-		Size:        fileInfo.Size(),
-		Annotations: annotations,
-	}
-
-	ociWriter, err := ociStore.Writer(
-		c.Context,
-		containerd_content.WithDescriptor(descriptor),
-		containerd_content.WithRef(uuid.NewString()))
-	if err != nil {
-		return descriptor, err
-	}
-	defer func() {
-		err := ociWriter.Close()
+	if exists {
+		// Hack to remove the existing digest until ocistore deleter is implemented
+		// https://github.com/oras-project/oras-go/issues/454
+		digestPath := filepath.Join(strings.Split(descriptor.Digest.String(), ":")...)
+		blob := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", digestPath)
+		err = os.Remove(blob)
 		if err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to close local OCI store.")
+			return descriptor, err
 		}
-	}()
+	}
 
-	_, err = io.Copy(ociWriter, tarballFile)
+	reader := bufio.NewReader(tarballFile)
+
+	err = ociStore.Push(c.Context, descriptor, reader)
 	if err != nil {
 		return descriptor, err
 	}
-
-	err = ociWriter.Commit(c.Context, fileInfo.Size(), fDigest)
-	if err != nil {
-		return descriptor, err
-	}
-
 	c.UI.Normal().
-		WithStringValue("digest", ociWriter.Digest().String()).
+		WithStringValue("digest", descriptor.Digest.String()).
 		Msg("Created new image.")
 
 	return descriptor, nil

@@ -1,6 +1,7 @@
 package oci
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -13,8 +14,10 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/oras"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
+	"oras.land/oras-go/v2/content/memory"
+	"oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -26,19 +29,15 @@ type Oci struct {
 	logger    *zerolog.Logger
 	ctx       context.Context
 	hostsFunc docker.RegistryHosts
-	ociStore  *content.OCI
+	ociStore  *oci.Store
 }
 
 func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryHosts, policyRoot string) (*Oci, error) {
-	ociStore, err := content.NewOCI(policyRoot)
+	ociStore, err := oci.New(policyRoot)
 	if err != nil {
 		return nil, err
 	}
-
-	err = ociStore.LoadIndex()
-	if err != nil {
-		return nil, err
-	}
+	ociStore.AutoSaveIndex = true
 
 	return &Oci{
 		logger:    log,
@@ -49,123 +48,132 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 }
 
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
-
-	resolver := docker.NewResolver(docker.ResolverOptions{
+	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
 	})
+	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	var layers []ocispec.Descriptor
-	allowedMediaTypes := []string{
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/octet-stream",
-		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.unknown.config.v1+json",
-		"application/vnd.oci.image.layer.v1.tar+gzip",
-		"application/vnd.oci.image.layer.v1.tar",
+	var tarDescriptor ocispec.Descriptor
+	opts := oras.DefaultCopyOptions
+	// Get tarball descriptor digest
+	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+		if !IsAllowedMediaType(desc.MediaType) {
+			return errors.Errorf("%s media type not allowed", desc.MediaType)
+		}
+		if strings.Contains(desc.MediaType, "tar") {
+			tarDescriptor = desc
+		}
+		return nil
 	}
-	opts := []oras.CopyOpt{
-		oras.WithAllowedMediaTypes(allowedMediaTypes),
-		oras.WithAdditionalCachedMediaTypes(allowedMediaTypes...),
-		oras.WithLayerDescriptors(func(d []ocispec.Descriptor) { layers = d }),
+	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		if !IsAllowedMediaType(desc.MediaType) {
+			return errors.Errorf("%s media type not allowed", desc.MediaType)
+		}
+		if strings.Contains(desc.MediaType, "tar") {
+			tarDescriptor = desc
+		}
+		return nil
 	}
-	_, err := oras.Copy(o.ctx, resolver, ref, o.ociStore, "", opts...)
+
+	_, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", opts)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	var layer ocispec.Descriptor
-	for _, lyr := range layers {
-		if strings.Contains(lyr.MediaType, "tar") {
-			layer = lyr
-			break
+	if len(tarDescriptor.Digest) > 0 {
+		err = o.ociStore.Tag(o.ctx, tarDescriptor, ref)
+		if err != nil {
+			return "", err
 		}
 	}
-
-	o.ociStore.AddReference(ref, layer)
 	err = o.ociStore.SaveIndex()
 	if err != nil {
 		return "", err
 	}
 
-	return layer.Digest, nil
+	return tarDescriptor.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
-	refs := o.ociStore.ListReferences()
+	var tgs []string
+	refs := make(map[string]ocispec.Descriptor, 0)
+	err := o.ociStore.Tags(o.ctx, "", func(tags []string) error {
+		tgs = append(tgs, tags...)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range tgs {
+		descr, err := o.ociStore.Resolve(o.ctx, tag)
+		if err != nil {
+			return nil, err
+		}
+
+		refs[tag] = descr
+	}
+
 	return refs, nil
 }
 
 func (o *Oci) Push(ref string) (digest.Digest, error) {
-	refs, err := o.ListReferences()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list references")
-	}
-
-	refDescriptor, ok := refs[ref]
-	if !ok {
-		return "", errors.Errorf("policy [%s] not found in the local store", ref)
-
-	}
-
-	resolver := docker.NewResolver(docker.ResolverOptions{
+	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
 	})
+	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref, fetcher: o.ociStore}
 
-	delete(refDescriptor.Annotations, "org.opencontainers.image.ref.name")
-
-	allowedMediaTypes := []string{
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/octet-stream",
-		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.oci.image.layer.v1.tar+gzip",
-		"application/vnd.oci.image.layer.v1.tar",
-	}
-
-	opts := []oras.CopyOpt{oras.WithAllowedMediaTypes(allowedMediaTypes)}
-
-	memoryStore := content.NewMemory()
-
-	config, configDescriptor, err := content.GenerateConfig(nil)
-	if err != nil {
-		return "", err
-	}
-	configDescriptor.MediaType = MediaTypeConfig
-	manifest, manifestdesc, err := content.GenerateManifest(&configDescriptor, refDescriptor.Annotations, refDescriptor)
+	desc, err := o.ociStore.Resolve(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
 
-	err = memoryStore.StoreManifest(ref, manifestdesc, manifest)
+	memoryStore := memory.New()
+	configBytes := []byte("{}")
+	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
+
+	err = memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
 	if err != nil {
 		return "", err
 	}
 
-	memoryStore.Set(configDescriptor, config)
-
-	pushDescriptor, err := oras.Copy(o.ctx,
-		o.ociStore,
-		ref,
-		resolver,
-		"",
-		opts...)
-
+	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
+		PackImageManifest:   true,
+		ManifestAnnotations: desc.Annotations,
+		ConfigDescriptor:    &configDesc,
+	})
 	if err != nil {
-		return "", errors.Wrap(err, "oras push tarball failed")
+		return "", err
 	}
 
-	// v1 version of oras-go doesn't push the manifest automatically so this part handles manifest pushing
-	pushDescriptor, err = oras.Copy(o.ctx,
-		memoryStore,
-		ref,
-		resolver,
-		"",
-		opts...)
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
 
+	err = memoryStore.Tag(o.ctx, manifestDesc, ref)
+	if err != nil {
+		return "", err
+	}
+
+	remoteManager.fetcher = memoryStore
+	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
-	return pushDescriptor.Digest, nil
+	err = memoryStore.Tag(o.ctx, configDesc, ref)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push manifest failed")
+	}
+
+	return manifestDesc.Digest, nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {
@@ -179,14 +187,21 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 		return errors.Errorf("policy [%s] not found in the local store", existingRef)
 	}
 
-	newDescriptor, err := cloneDescriptor(&descriptor)
+	_, err = cloneDescriptor(&descriptor)
 	if err != nil {
 		return err
 	}
 
-	o.ociStore.AddReference(newRef, newDescriptor)
+	err = o.ociStore.Tag(o.ctx, descriptor, newRef)
+	if err != nil {
+		return err
+	}
 
 	return o.ociStore.SaveIndex()
+}
+
+func (o *Oci) GetStore() *oci.Store {
+	return o.ociStore
 }
 
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
@@ -303,4 +318,22 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 		MinVersion: tls.VersionTLS12,
 	}
 	return &http.Transport{TLSClientConfig: conf}, nil
+}
+
+func IsAllowedMediaType(mediatype string) bool {
+	allowedMediaTypes := []string{
+		"application/vnd.oci.image.manifest.v1+json",
+		"application/octet-stream",
+		"application/vnd.oci.image.config.v1+json",
+		"application/vnd.unknown.config.v1+json",
+		"application/vnd.oci.image.layer.v1.tar+gzip",
+		"application/vnd.oci.image.layer.v1.tar",
+	}
+
+	for i := range allowedMediaTypes {
+		if allowedMediaTypes[i] == mediatype {
+			return true
+		}
+	}
+	return false
 }
