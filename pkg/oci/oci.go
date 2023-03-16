@@ -26,10 +26,11 @@ const (
 )
 
 type Oci struct {
-	logger    *zerolog.Logger
-	ctx       context.Context
-	hostsFunc docker.RegistryHosts
-	ociStore  *oci.Store
+	logger         *zerolog.Logger
+	ctx            context.Context
+	hostsFunc      docker.RegistryHosts
+	ociStore       *oci.Store
+	policyRootPath string
 }
 
 func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryHosts, policyRoot string) (*Oci, error) {
@@ -40,10 +41,11 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	ociStore.AutoSaveIndex = true
 
 	return &Oci{
-		logger:    log,
-		ctx:       ctx,
-		hostsFunc: hostsFunc,
-		ociStore:  ociStore,
+		logger:         log,
+		ctx:            ctx,
+		hostsFunc:      hostsFunc,
+		ociStore:       ociStore,
+		policyRootPath: policyRoot,
 	}, nil
 }
 
@@ -54,7 +56,14 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
 	var tarDescriptor ocispec.Descriptor
+	var manifestDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
+
+	noOfLayers := 0
+	opts.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		noOfLayers += 1
+		return nil
+	}
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
 		if !IsAllowedMediaType(desc.MediaType) {
@@ -65,9 +74,22 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		}
 		return nil
 	}
+
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		// if noOfLayers != 3 {
+		// 	digestPath := filepath.Join(strings.Split(desc.Digest.String(), ":")...)
+		// 	blob := filepath.Join(o.policyRootPath, "blobs", digestPath)
+		// 	err := os.Remove(blob)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	return fmt.Errorf("the image tried to be pulled have invalid numbers of layers %d, required 3", noOfLayers)
+		// }
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
+		}
+		if strings.Contains(desc.MediaType, "manifest") {
+			manifestDescriptor = desc
 		}
 		if strings.Contains(desc.MediaType, "tar") {
 			tarDescriptor = desc
