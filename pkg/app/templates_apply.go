@@ -77,11 +77,15 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 
 func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config, error) {
 	genConfig := generators.Config{}
+	var err error
 	if tmpInfo.kind == "policy" {
 		return genConfig, nil
 	}
 
-	genConfig.Server = c.getDefaultServer()
+	genConfig.Server, err = c.getDefaultServer()
+	if err != nil {
+		return genConfig, err
+	}
 	respServer := ""
 
 	c.UI.Normal().Compact().WithAskString(
@@ -146,26 +150,28 @@ func (c *PolicyApp) getDefaultTokenName(server string) string {
 }
 
 func (c *PolicyApp) getDefaultUser(server string) string {
-	if s, ok := c.Configuration.Servers[server]; ok {
+	if s, err := c.Configuration.CredentialsStore.Get(server); err != nil {
 		return s.Username
 	}
 	return ""
 }
 
-func (c *PolicyApp) getDefaultServer() string {
-	if len(c.Configuration.Servers) == 0 {
-		if c.Configuration.DefaultDomain != "" {
-			return c.Configuration.DefaultDomain
-		}
-		return ""
+func (c *PolicyApp) getDefaultServer() (string, error) {
+
+	if c.Configuration.DefaultDomain != "" {
+		return c.Configuration.DefaultDomain, nil
 	}
 
-	servers := []string{}
-	for name := range c.Configuration.Servers {
-		servers = append(servers, name)
+	servers, err := c.Configuration.CredentialsStore.GetAll()
+	if err != nil {
+		return "", err
+	}
+	var serverlist []string
+	for name := range servers {
+		serverlist = append(serverlist, name)
 	}
 
-	return c.buildTable("server", servers)
+	return c.buildTable("server", serverlist), nil
 }
 
 func (c *PolicyApp) buildTable(name string, items []string) string {

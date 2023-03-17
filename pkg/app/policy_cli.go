@@ -8,6 +8,8 @@ import (
 
 	"github.com/aserto-dev/clui"
 	"github.com/opcr-io/policy/pkg/cc/config"
+
+	"github.com/docker/cli/cli/config/types"
 )
 
 // PolicyApp represents the policy CLI.
@@ -19,19 +21,13 @@ type PolicyApp struct {
 	UI            *clui.UI
 }
 
-func (c *PolicyApp) SaveServerCreds(server string, creds config.ServerCredentials) error {
+func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 	defer c.Cancel()
-	if server == "" {
-		server = c.Configuration.DefaultDomain
+	if creds == nil {
+		return errors.New("could not save nil credentials")
 	}
 
-	if c.Configuration.Servers == nil {
-		c.Configuration.Servers = map[string]config.ServerCredentials{}
-	}
-
-	c.Configuration.Servers[server] = creds
-
-	err := c.Configuration.SaveCreds()
+	err := c.Configuration.CredentialsStore.Store(*creds)
 	if err != nil {
 		return errors.Wrap(err, "failed to save server credentials")
 	}
@@ -45,13 +41,7 @@ func (c *PolicyApp) RemoveServerCreds(server string) error {
 		server = c.Configuration.DefaultDomain
 	}
 
-	if c.Configuration.Servers == nil {
-		c.Configuration.Servers = map[string]config.ServerCredentials{}
-	}
-
-	c.Configuration.Servers[server] = config.ServerCredentials{}
-
-	err := c.Configuration.SaveCreds()
+	err := c.Configuration.CredentialsStore.Erase(server)
 	if err != nil {
 		return errors.Wrap(err, "failed to save server credentials")
 	}

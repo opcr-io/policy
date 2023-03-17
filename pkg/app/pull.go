@@ -50,8 +50,8 @@ func (c *PolicyApp) getHosts(server string) ([]docker.RegistryHost, error) {
 			Authorizer: docker.NewDockerAuthorizer(
 				docker.WithAuthClient(client),
 				docker.WithAuthCreds(func(s string) (string, string, error) {
-					creds, ok := c.Configuration.Servers[s]
-					if !ok || (creds.Username == "" && creds.Password == "") {
+					creds, err := c.Configuration.CredentialsStore.Get(s)
+					if err != nil || (creds.Username == "" && creds.Password == "") {
 						return " ", " ", nil
 					}
 

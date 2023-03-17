@@ -6,7 +6,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/docker/cli/cli/config/types"
+
 	"github.com/pkg/errors"
 	"golang.org/x/term"
 )
@@ -73,19 +74,22 @@ func (c *LoginCmd) Run(g *Globals) error {
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		setDefault = c.DefaultDomain
 	} else {
-		setDefault, err = checkDefault(g, c)
-		if err != nil {
-			return err
-		}
+		setDefault = checkDefault(g, c)
 	}
 
-	err = g.App.SaveServerCreds(c.Server, config.ServerCredentials{
-		Type:     "basic",
-		Username: c.Username,
-		Password: password,
-		Default:  setDefault,
+	err = g.App.SaveServerCreds(&types.AuthConfig{
+		ServerAddress: c.Server,
+		Auth:          "basic",
+		Username:      c.Username,
+		Password:      password,
 	})
-
+	if err != nil {
+		return err
+	}
+	if setDefault {
+		g.App.Configuration.DefaultDomain = c.Server
+	}
+	err = g.App.Configuration.SaveDefaultDomain()
 	if err != nil {
 		return err
 	}
@@ -96,7 +100,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 	return nil
 }
 
-func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
+func checkDefault(g *Globals, c *LoginCmd) bool {
 	setDefault := c.DefaultDomain
 	if c.Server != g.App.Configuration.DefaultDomain && !c.DefaultDomain {
 		g.App.UI.Normal().WithAskBoolMap("Do you want to set this server as your default domain?[yes/no]", &setDefault, map[string]bool{
@@ -109,19 +113,8 @@ func checkDefault(g *Globals, c *LoginCmd) (bool, error) {
 		}).Do()
 	} else {
 		// already on default server
-		return true, nil
+		return true
 	}
 
-	// Reset all defaults to false to return true in order to set the current login as default
-	if setDefault {
-		for k, v := range g.App.Configuration.Servers {
-			v.Default = false
-			g.App.Configuration.Servers[k] = v
-		}
-		err := g.App.Configuration.SaveCreds()
-		if err != nil {
-			return false, err
-		}
-	}
-	return setDefault, nil
+	return setDefault
 }
