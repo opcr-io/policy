@@ -219,6 +219,32 @@ func (o *Oci) GetStore() *oci.Store {
 	return o.ociStore
 }
 
+func (o *Oci) GetTarballLayerDigestHex(ctx context.Context, descriptor ocispec.Descriptor) (string, error) {
+	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
+		return "", errors.New("provided descriptor is not a manifest descriptor")
+	}
+	reader, err := o.GetStore().Fetch(ctx, descriptor)
+	if err != nil {
+		return "", err
+	}
+	manifestBytes := new(bytes.Buffer)
+	_, err = manifestBytes.ReadFrom(reader)
+	if err != nil {
+		return "", err
+	}
+	var manifest ocispec.Manifest
+	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
+	if err != nil {
+		return "", err
+	}
+	for _, layer := range manifest.Layers {
+		if layer.MediaType == ocispec.MediaTypeImageLayerGzip {
+			return layer.Digest.Hex(), nil
+		}
+	}
+	return "", nil
+}
+
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 	sourceRef, sourceUser, sourcePassword,
 	destinationRef, destinationUser, destinationPassword,
