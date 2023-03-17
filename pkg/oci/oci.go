@@ -55,44 +55,29 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	var tarDescriptor ocispec.Descriptor
 	var manifestDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
 
 	noOfLayers := 0
-	opts.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		noOfLayers += 1
-		return nil
-	}
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		if !IsAllowedMediaType(desc.MediaType) {
-			return errors.Errorf("%s media type not allowed", desc.MediaType)
-		}
-		if strings.Contains(desc.MediaType, "tar") {
-			tarDescriptor = desc
-		}
-		return nil
-	}
-
-	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		// if noOfLayers != 3 {
-		// 	digestPath := filepath.Join(strings.Split(desc.Digest.String(), ":")...)
-		// 	blob := filepath.Join(o.policyRootPath, "blobs", digestPath)
-		// 	err := os.Remove(blob)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	return fmt.Errorf("the image tried to be pulled have invalid numbers of layers %d, required 3", noOfLayers)
-		// }
+		noOfLayers += 1
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
 		if strings.Contains(desc.MediaType, "manifest") {
 			manifestDescriptor = desc
 		}
-		if strings.Contains(desc.MediaType, "tar") {
-			tarDescriptor = desc
+		return nil
+	}
+
+	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		noOfLayers += 1
+		if !IsAllowedMediaType(desc.MediaType) {
+			return errors.Errorf("%s media type not allowed", desc.MediaType)
+		}
+		if strings.Contains(desc.MediaType, "manifest") {
+			manifestDescriptor = desc
 		}
 		return nil
 	}
@@ -102,8 +87,16 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	if len(tarDescriptor.Digest) > 0 {
-		err = o.ociStore.Tag(o.ctx, tarDescriptor, ref)
+	// if noOfLayers != 3 {
+	// 	// TODO remove digests
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	return "", fmt.Errorf("the image tried to be pulled have invalid numbers of layers %d, required 3", noOfLayers)
+	// }
+
+	if len(manifestDescriptor.Digest) > 0 {
+		err = o.ociStore.Tag(o.ctx, manifestDescriptor, ref)
 		if err != nil {
 			return "", err
 		}
@@ -113,7 +106,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", err
 	}
 
-	return tarDescriptor.Digest, nil
+	return manifestDescriptor.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
