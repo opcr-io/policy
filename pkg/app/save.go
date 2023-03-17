@@ -7,7 +7,7 @@ import (
 
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -33,6 +33,15 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	refDescriptor, ok := refs[ref]
 	if !ok {
 		return errors.Errorf("policy [%s] not found in the local store", ref)
+	}
+
+	// if the refrence descriptor is the manifest get the tarball descriptor information from the manifest layers
+	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
+		bundleDescriptor, err := ociClient.GetTarballLayerDescriptor(c.Context, &refDescriptor)
+		if err != nil {
+			return err
+		}
+		refDescriptor = *bundleDescriptor
 	}
 
 	if outputFilePath == "-" {
@@ -63,7 +72,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	return nil
 }
 
-func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
+func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *ocispec.Descriptor, outputFile io.Writer) error {
 	reader, err := ociStore.GetStore().Fetch(c.Context, *refDescriptor)
 	if err != nil {
 		return err

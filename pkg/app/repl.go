@@ -36,10 +36,11 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	bundleHex := descriptor.Digest.Hex()
 	//check for media type - if manifest get tarbarll digest hex
 	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
-		bundleHex, err = ociClient.GetTarballLayerDigestHex(c.Context, descriptor)
+		bundleDescriptor, err := ociClient.GetTarballLayerDescriptor(c.Context, &descriptor)
 		if err != nil {
 			return err
 		}
+		bundleHex = bundleDescriptor.Digest.Hex()
 		if bundleHex == "" {
 			return errors.New("current manifest does not contain a MediaTypeImageLayerGzip")
 		}

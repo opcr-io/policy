@@ -219,30 +219,37 @@ func (o *Oci) GetStore() *oci.Store {
 	return o.ociStore
 }
 
-func (o *Oci) GetTarballLayerDigestHex(ctx context.Context, descriptor ocispec.Descriptor) (string, error) {
-	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
-		return "", errors.New("provided descriptor is not a manifest descriptor")
+func (o *Oci) GetTarballLayerDescriptor(ctx context.Context, descriptor *ocispec.Descriptor) (*ocispec.Descriptor, error) {
+	if descriptor == nil {
+		return nil, errors.New("nil descriptor provided")
 	}
-	reader, err := o.GetStore().Fetch(ctx, descriptor)
+	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
+		return nil, errors.New("provided descriptor is not a manifest descriptor")
+	}
+	reader, err := o.GetStore().Fetch(ctx, *descriptor)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	manifestBytes := new(bytes.Buffer)
 	_, err = manifestBytes.ReadFrom(reader)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var manifest ocispec.Manifest
 	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for _, layer := range manifest.Layers {
 		if layer.MediaType == ocispec.MediaTypeImageLayerGzip {
-			return layer.Digest.Hex(), nil
+			tarballDescriptor, err := o.ociStore.Resolve(ctx, layer.Digest.String())
+			if err != nil {
+				return nil, err
+			}
+			return &tarballDescriptor, nil
 		}
 	}
-	return "", nil
+	return nil, nil
 }
 
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
