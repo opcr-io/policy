@@ -15,8 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/content"
-	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/content/oci"
 )
 
@@ -139,56 +137,56 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref, fetcher: o.ociStore}
 
-	desc, err := o.ociStore.Resolve(o.ctx, ref)
+	descriptor, err := o.ociStore.Resolve(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
 
-	memoryStore := memory.New()
-	configBytes := []byte("{}")
-	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
+	// memoryStore := memory.New()
+	// configBytes := []byte("{}")
+	// configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
 
-	err = memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
-	if err != nil {
-		return "", err
-	}
+	// err = memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
-		PackImageManifest:   true,
-		ManifestAnnotations: desc.Annotations,
-		ConfigDescriptor:    &configDesc,
-	})
-	if err != nil {
-		return "", err
-	}
+	// manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
+	// 	PackImageManifest:   true,
+	// 	ManifestAnnotations: desc.Annotations,
+	// 	ConfigDescriptor:    &configDesc,
+	// })
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "oras push failed")
 	}
 
-	err = memoryStore.Tag(o.ctx, manifestDesc, ref)
-	if err != nil {
-		return "", err
-	}
+	// err = memoryStore.Tag(o.ctx, manifestDesc, ref)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	remoteManager.fetcher = memoryStore
-	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
-		return "", errors.Wrap(err, "oras push manifest failed")
-	}
+	// remoteManager.fetcher = memoryStore
+	// _, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "oras push manifest failed")
+	// }
 
-	err = memoryStore.Tag(o.ctx, configDesc, ref)
-	if err != nil {
-		return "", err
-	}
+	// err = memoryStore.Tag(o.ctx, configDesc, ref)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
-		return "", errors.Wrap(err, "oras push manifest failed")
-	}
+	// _, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "oras push manifest failed")
+	// }
 
-	return manifestDesc.Digest, nil
+	return descriptor.Digest, nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {

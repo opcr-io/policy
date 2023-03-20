@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,8 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
@@ -107,7 +110,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
-	desc, err := c.createImage(ociStore, outfile, annotations)
+	desc, err := c.createImage(ociStore, outfile, parsedRef.String(), annotations)
 	if err != nil {
 		return err
 	}
@@ -127,7 +130,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
 	fDigest, err := c.fileDigest(tarball)
@@ -177,11 +180,34 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 	if err != nil {
 		return descriptor, err
 	}
+
+	err = ociStore.Tag(c.Context, descriptor, ref)
+	if err != nil {
+		return descriptor, err
+	}
+
+	configBytes := []byte("{}")
+	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
+
+	err = ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes))
+	if err != nil {
+		return descriptor, err
+	}
+
+	manifestDesc, err := oras.Pack(c.Context, ociStore, oci.MediaTypeConfig, []ocispec.Descriptor{descriptor}, oras.PackOptions{
+		PackImageManifest:   true,
+		ManifestAnnotations: descriptor.Annotations,
+		ConfigDescriptor:    &configDesc,
+	})
+	if err != nil {
+		return manifestDesc, err
+	}
+
 	c.UI.Normal().
-		WithStringValue("digest", descriptor.Digest.String()).
+		WithStringValue("digest", manifestDesc.Digest.String()).
 		Msg("Created new image.")
 
-	return descriptor, nil
+	return manifestDesc, nil
 }
 
 func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
