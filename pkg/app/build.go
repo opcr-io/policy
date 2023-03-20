@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -186,7 +187,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, an
 		return descriptor, err
 	}
 
-	configBytes := []byte("{}")
+	configBytes := []byte(fmt.Sprintf("{\"created\":\"%s\"}", time.Now().UTC().Format(time.RFC3339)))
 	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
 
 	err = ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes))

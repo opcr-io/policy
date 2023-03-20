@@ -37,7 +37,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 
 	// if the refrence descriptor is the manifest get the tarball descriptor information from the manifest layers
 	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
-		bundleDescriptor, err := ociClient.GetTarballLayerDescriptor(c.Context, &refDescriptor)
+		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &refDescriptor)
 		if err != nil {
 			return err
 		}
