@@ -68,11 +68,6 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 		return c.removeBasedOnManifest(ociClient, &ref)
 	}
 
-	err = c.removeFromIndex(&ref)
-	if err != nil {
-		return err
-	}
-
 	updatedRefs, err := ociClient.ListReferences()
 	if err != nil {
 		return err
@@ -85,8 +80,12 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 			break
 		}
 	}
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, &ref)
+	if err != nil {
+		return err
+	}
 	// only remove the blob if not used by another reference.
-	if removeBlob {
+	if removeBlob && !tarballStillUsed {
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
 		err := oci.RemoveBlob(&ref, c.Configuration.PoliciesRoot())
@@ -208,7 +207,7 @@ func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
 func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
 	newarray := make([]ocispec.Descriptor, len(manifests)-1)
 	k := 0
-	for i := 0; i < len(manifests); i++ {
+	for i := range manifests {
 		if manifests[i].Digest == ref.Digest && manifests[i].Annotations[ocispec.AnnotationRefName] == ref.Annotations[ocispec.AnnotationRefName] {
 			continue
 		}
