@@ -58,15 +58,13 @@ func (c *PolicyApp) Inspect(userRef string) error {
 			msg.Msg("Annotations")
 		}
 
-	} else {
-		if len(contentInfo.Annotations) > 0 {
-			msg := c.UI.Normal().WithTable("Annotation", "Value")
+	} else if len(contentInfo.Annotations) > 0 {
+		msg := c.UI.Normal().WithTable("Annotation", "Value")
 
-			for k, v := range contentInfo.Annotations {
-				msg.WithTableRow(k, v)
-			}
-			msg.Msg("Annotations")
+		for k, v := range contentInfo.Annotations {
+			msg.WithTableRow(k, v)
 		}
+		msg.Msg("Annotations")
 	}
 
 	return nil

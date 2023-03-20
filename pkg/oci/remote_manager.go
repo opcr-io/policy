@@ -1,4 +1,4 @@
-//nolint:gocritic, big parameter linter error passing ocispec.Descriptor, needed to implement oras.ReadOnlyTarget intarface
+//nolint:gocritic // Big parameter linter error passing ocispec.Descriptor, needed to implement oras.ReadOnlyTarget interface.
 package oci
 
 import (

@@ -122,7 +122,7 @@ func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
 		return err
 	}
 
-	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec,keep same permissions
+	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec // Keep same permissions.
 	if err != nil {
 		return err
 	}

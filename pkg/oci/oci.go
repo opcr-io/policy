@@ -145,7 +145,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	if descriptor.MediaType == MediaTypeImageLayer {
-		return o.pushBasedOnTarBall(remoteManager, descriptor, ref)
+		return o.pushBasedOnTarBall(remoteManager, &descriptor, ref)
 	}
 
 	tarBallDescriptor, configDescriptor, err := o.GetTarballAndConfigLayerDescriptor(o.ctx, &descriptor)
@@ -195,7 +195,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	return descriptor.Digest, nil
 }
 
-func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc ocispec.Descriptor, ref string) (digest.Digest, error) {
+func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Descriptor, ref string) (digest.Digest, error) {
 	memoryStore := memory.New()
 	configBytes := []byte("{}")
 	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
@@ -205,7 +205,7 @@ func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc ocispec.Desc
 		return "", err
 	}
 
-	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
+	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{*desc}, oras.PackOptions{
 		PackImageManifest:   true,
 		ManifestAnnotations: desc.Annotations,
 		ConfigDescriptor:    &configDesc,

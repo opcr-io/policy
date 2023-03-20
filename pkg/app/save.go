@@ -35,7 +35,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		return errors.Errorf("policy [%s] not found in the local store", ref)
 	}
 
-	// if the refrence descriptor is the manifest get the tarball descriptor information from the manifest layers
+	// if the reference descriptor is the manifest get the tarball descriptor information from the manifest layers.
 	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
 		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &refDescriptor)
 		if err != nil {

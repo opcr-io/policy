@@ -34,7 +34,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	descriptor, ok := existingRefs[existingRefParsed]
 
 	bundleHex := descriptor.Digest.Hex()
-	//check for media type - if manifest get tarbarll digest hex
+	// check for media type - if manifest get tarbarll digest hex.
 	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
 		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &descriptor)
 		if err != nil {
