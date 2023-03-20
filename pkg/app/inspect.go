@@ -1,9 +1,6 @@
 package app
 
 import (
-	"bytes"
-	"encoding/json"
-
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -34,21 +31,10 @@ func (c *PolicyApp) Inspect(userRef string) error {
 		Do()
 
 	if contentInfo.MediaType == ocispec.MediaTypeImageManifest {
-		reader, err := ociClient.GetStore().Fetch(c.Context, contentInfo)
+		manifest, err := ociClient.GetManifest(&contentInfo)
 		if err != nil {
 			return err
 		}
-		manifestBytes := new(bytes.Buffer)
-		_, err = manifestBytes.ReadFrom(reader)
-		if err != nil {
-			return err
-		}
-		var manifest ocispec.Manifest
-		err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
-		if err != nil {
-			return err
-		}
-
 		if len(manifest.Annotations) > 0 {
 			msg := c.UI.Normal().WithTable("Annotation", "Value")
 
