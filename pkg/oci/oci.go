@@ -7,6 +7,8 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
@@ -58,10 +60,10 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	var manifestDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
 
-	noOfLayers := 0
+	var descriptors []ocispec.Descriptor
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		noOfLayers += 1
+		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -72,7 +74,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		noOfLayers += 1
+		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -87,13 +89,20 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	// if noOfLayers != 3 {
-	// 	// TODO remove digests
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// 	return "", fmt.Errorf("the image tried to be pulled have invalid numbers of layers %d, required 3", noOfLayers)
-	// }
+	if len(descriptors) != 3 {
+		for i := range descriptors {
+			err := RemoveBlob(&descriptors[i], o.policyRootPath)
+			if err != nil {
+				return "", err
+			}
+		}
+		if err != nil {
+			return "", err
+		}
+
+		invalidNoOfLayersErr := errors.New("the image tried to be pulled have invalid numbers of layers")
+		return "", errors.Wrapf(invalidNoOfLayersErr, " %d, required 3", len(descriptors))
+	}
 
 	if len(manifestDescriptor.Digest) > 0 {
 		err = o.ociStore.Tag(o.ctx, manifestDescriptor, ref)
@@ -311,6 +320,24 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 	return nil, nil, nil
 }
 
+func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
+	reader, err := o.GetStore().Fetch(o.ctx, *descriptor)
+	if err != nil {
+		return nil, err
+	}
+	manifestBytes := new(bytes.Buffer)
+	_, err = manifestBytes.ReadFrom(reader)
+	if err != nil {
+		return nil, err
+	}
+	var manifest ocispec.Manifest
+	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
+	if err != nil {
+		return nil, err
+	}
+	return &manifest, nil
+}
+
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 	sourceRef, sourceUser, sourcePassword,
 	destinationRef, destinationUser, destinationPassword,
@@ -443,4 +470,15 @@ func IsAllowedMediaType(mediatype string) bool {
 		}
 	}
 	return false
+}
+
+func RemoveBlob(ref *ocispec.Descriptor, path string) error {
+	digestPath := filepath.Join(strings.Split(ref.Digest.String(), ":")...)
+	blob := filepath.Join(path, "blobs", digestPath)
+	err := os.Remove(blob)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
