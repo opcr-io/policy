@@ -287,21 +287,10 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
 		return nil, nil, errors.New("provided descriptor is not a manifest descriptor")
 	}
-	reader, err := o.GetStore().Fetch(ctx, *descriptor)
+	manifest, err := o.GetManifest(descriptor)
 	if err != nil {
 		return nil, nil, err
 	}
-	manifestBytes := new(bytes.Buffer)
-	_, err = manifestBytes.ReadFrom(reader)
-	if err != nil {
-		return nil, nil, err
-	}
-	var manifest ocispec.Manifest
-	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	configDigest := manifest.Config.Digest
 	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest.String())
 	if err != nil {

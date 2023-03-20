@@ -6,7 +6,8 @@ import (
 
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
-	"oras.land/oras-go/v2/content/oci"
+	"github.com/opcr-io/policy/pkg/oci"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *PolicyApp) Images() error {
@@ -14,14 +15,14 @@ func (c *PolicyApp) Images() error {
 
 	var data [][]string
 
-	ociStore, err := oci.New(c.Configuration.PoliciesRoot())
+	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
 
-	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Size")
+	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Created", "Size")
 	var tgs []string
-	err = ociStore.Tags(c.Context, "", func(tags []string) error {
+	err = ociClient.GetStore().Tags(c.Context, "", func(tags []string) error {
 		tgs = append(tgs, tags...)
 		return nil
 	})
@@ -30,11 +31,17 @@ func (c *PolicyApp) Images() error {
 	}
 
 	for _, tag := range tgs {
-		descr, err := ociStore.Resolve(c.Context, tag)
+		descr, err := ociClient.GetStore().Resolve(c.Context, tag)
 		if err != nil {
 			return err
 		}
-
+		var manifest *ocispec.Manifest
+		if descr.MediaType == ocispec.MediaTypeImageManifest {
+			manifest, err = ociClient.GetManifest(&descr)
+			if err != nil {
+				return err
+			}
+		}
 		ref, err := docker.ParseDockerRef(tag)
 		if err != nil {
 			return err
@@ -52,13 +59,22 @@ func (c *PolicyApp) Images() error {
 		if err != nil {
 			return err
 		}
-
-		arrData := []string{
-			familiarName,
-			tagOrNone,
-			descr.Digest.Encoded()[:12],
-			strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
-
+		var arrData []string
+		if manifest != nil {
+			arrData = []string{
+				familiarName,
+				tagOrNone,
+				descr.Digest.Encoded()[:12],
+				manifest.Annotations[ocispec.AnnotationCreated],
+				strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
+		} else {
+			arrData = []string{
+				familiarName,
+				tagOrNone,
+				descr.Digest.Encoded()[:12],
+				"",
+				strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
+		}
 		data = append(data, arrData)
 	}
 
@@ -69,7 +85,7 @@ func (c *PolicyApp) Images() error {
 
 	for i := len(data) - 1; i >= 0; i-- {
 		v := data[i]
-		table.WithTableRow(v[0], v[1], v[2], v[3])
+		table.WithTableRow(v[0], v[1], v[2], v[3], v[4])
 	}
 
 	table.Do()
