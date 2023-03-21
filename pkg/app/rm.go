@@ -53,11 +53,6 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	ref.Annotations = make(map[string]string)
 	ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 
-	// err = c.removeFromIndex(&ref)
-	// if err != nil {
-	// 	return err
-	// }
-
 	// Reload ociClient with refreshed index to update reference list.
 	ociClient, err = oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -89,7 +84,6 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
 		err := ociClient.GetStore().Delete(c.Context, ref)
-		// err := oci.RemoveBlob(&ref, c.Configuration.PoliciesRoot())
 		if err != nil {
 			return err
 		}
@@ -111,7 +105,6 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 	// Hack to remove the existing digest until ocistore deleter is implemented
 	// https://github.com/oras-project/oras-go/issues/454
 	err = ociClient.GetStore().Delete(c.Context, *ref)
-	//err = oci.RemoveBlob(ref, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -123,13 +116,11 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 
 	if !tarballStillUsed {
 		err = ociClient.GetStore().Delete(c.Context, *tarballDesc)
-		//err = oci.RemoveBlob(tarballDesc, c.Configuration.PoliciesRoot())
 		if err != nil {
 			return err
 		}
 	}
 	err = ociClient.GetStore().Delete(c.Context, *configDesc)
-	//err = oci.RemoveBlob(configDesc, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -172,50 +163,4 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 	}
 
 	return false, nil
-}
-
-func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
-
-	type index struct {
-		Version   int                  `json:"schemaVersion"`
-		Manifests []ocispec.Descriptor `json:"manifests"`
-	}
-
-	var localIndex index
-	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
-	indexBytes, err := os.ReadFile(indexPath)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
-		return err
-	}
-
-	localIndex.Manifests = removeFromManifests(localIndex.Manifests, ref)
-
-	newIndexBytes, err := json.Marshal(localIndex)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec // Keep same permissions.
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
-	newarray := make([]ocispec.Descriptor, len(manifests)-1)
-	k := 0
-	for i := range manifests {
-		if manifests[i].Digest == ref.Digest && manifests[i].Annotations[ocispec.AnnotationRefName] == ref.Annotations[ocispec.AnnotationRefName] {
-			continue
-		}
-		newarray[k] = manifests[i]
-		k++
-	}
-	return newarray
 }
