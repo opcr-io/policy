@@ -86,3 +86,7 @@ func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, refere
 
 	return nil
 }
+
+func (r *remoteManager) Delete(ctx context.Context, desc ocispec.Descriptor) error {
+	return nil
+}

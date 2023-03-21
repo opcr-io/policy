@@ -72,7 +72,7 @@ func (c *PolicyApp) Images() error {
 				familiarName,
 				tagOrNone,
 				descr.Digest.Encoded()[:12],
-				"",
+				descr.Annotations[ocispec.AnnotationCreated],
 				strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
 		}
 		data = append(data, arrData)

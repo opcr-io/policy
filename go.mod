@@ -13,7 +13,6 @@ require (
 	github.com/aserto-dev/scc-lib v0.0.22
 	github.com/containerd/containerd v1.6.15
 	github.com/docker/cli v20.10.21+incompatible
-	github.com/docker/docker-credential-helpers v0.7.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/wire v0.5.0
@@ -48,6 +47,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.21+incompatible // indirect
+	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -135,3 +135,5 @@ require (
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	oras.land/oras-go v1.2.2 // indirect
 )
+
+replace oras.land/oras-go/v2 v2.0.0 => github.com/opcr-io/oras-go/v2 v2.0.0-20230321133325-634a83229a6e

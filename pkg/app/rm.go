@@ -53,10 +53,10 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	ref.Annotations = make(map[string]string)
 	ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 
-	err = c.removeFromIndex(&ref)
-	if err != nil {
-		return err
-	}
+	// err = c.removeFromIndex(&ref)
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Reload ociClient with refreshed index to update reference list.
 	ociClient, err = oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
@@ -88,7 +88,8 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	if removeBlob && !tarballStillUsed {
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
-		err := oci.RemoveBlob(&ref, c.Configuration.PoliciesRoot())
+		err := ociClient.GetStore().Delete(c.Context, ref)
+		// err := oci.RemoveBlob(&ref, c.Configuration.PoliciesRoot())
 		if err != nil {
 			return err
 		}
@@ -109,7 +110,8 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 
 	// Hack to remove the existing digest until ocistore deleter is implemented
 	// https://github.com/oras-project/oras-go/issues/454
-	err = oci.RemoveBlob(ref, c.Configuration.PoliciesRoot())
+	err = ociClient.GetStore().Delete(c.Context, *ref)
+	//err = oci.RemoveBlob(ref, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
@@ -120,13 +122,14 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 	}
 
 	if !tarballStillUsed {
-		err = oci.RemoveBlob(tarballDesc, c.Configuration.PoliciesRoot())
+		err = ociClient.GetStore().Delete(c.Context, *tarballDesc)
+		//err = oci.RemoveBlob(tarballDesc, c.Configuration.PoliciesRoot())
 		if err != nil {
 			return err
 		}
 	}
-
-	err = oci.RemoveBlob(configDesc, c.Configuration.PoliciesRoot())
+	err = ociClient.GetStore().Delete(c.Context, *configDesc)
+	//err = oci.RemoveBlob(configDesc, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
