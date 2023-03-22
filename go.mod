@@ -13,7 +13,7 @@ require (
 	github.com/aserto-dev/logger v0.0.2
 	github.com/aserto-dev/runtime v0.48.0
 	github.com/aserto-dev/scc-lib v0.0.22
-	github.com/containerd/containerd v1.6.15
+	github.com/containerd/containerd v1.6.18
 	github.com/docker/cli v20.10.21+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/mock v1.6.0
@@ -137,4 +137,3 @@ require (
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	oras.land/oras-go v1.2.2 // indirect
 )
-
