@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
@@ -54,15 +53,14 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	ref.Annotations = make(map[string]string)
 	ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 
-	err = c.removeFromIndex(&ref)
-	if err != nil {
-		return err
-	}
-
 	// Reload ociClient with refreshed index to update reference list.
 	ociClient, err = oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
+	}
+
+	if ref.MediaType != oci.MediaTypeImageLayer {
+		return c.removeBasedOnManifest(ociClient, &ref)
 	}
 
 	updatedRefs, err := ociClient.ListReferences()
@@ -77,13 +75,15 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 			break
 		}
 	}
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, &ref)
+	if err != nil {
+		return err
+	}
 	// only remove the blob if not used by another reference.
-	if removeBlob {
+	if removeBlob && !tarballStillUsed {
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
-		digestPath := filepath.Join(strings.Split(ref.Digest.String(), ":")...)
-		blob := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", digestPath)
-		err = os.Remove(blob)
+		err := ociClient.GetStore().Delete(c.Context, ref)
 		if err != nil {
 			return err
 		}
@@ -96,8 +96,38 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	return nil
 }
 
-func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
+func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor) error {
+	tarballDesc, configDesc, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, ref)
+	if err != nil {
+		return err
+	}
 
+	// Hack to remove the existing digest until ocistore deleter is implemented
+	// https://github.com/oras-project/oras-go/issues/454
+	err = ociClient.GetStore().Delete(c.Context, *ref)
+	if err != nil {
+		return err
+	}
+
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
+	if err != nil {
+		return err
+	}
+
+	if !tarballStillUsed {
+		err = ociClient.GetStore().Delete(c.Context, *tarballDesc)
+		if err != nil {
+			return err
+		}
+	}
+	err = ociClient.GetStore().Delete(c.Context, *configDesc)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *ocispec.Descriptor) (bool, error) {
 	type index struct {
 		Version   int                  `json:"schemaVersion"`
 		Manifests []ocispec.Descriptor `json:"manifests"`
@@ -107,37 +137,30 @@ func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
 	indexBytes, err := os.ReadFile(indexPath)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	err = json.Unmarshal(indexBytes, &localIndex)
 	if err != nil {
-		return err
+		return false, err
 	}
-
-	localIndex.Manifests = removeFromManifests(localIndex.Manifests, ref)
-
-	newIndexBytes, err := json.Marshal(localIndex)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec,keep same permissions
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
-	newarray := make([]ocispec.Descriptor, len(manifests)-1)
-	k := 0
-	for i := 0; i < len(manifests); i++ {
-		if manifests[i].Digest == ref.Digest && manifests[i].Annotations[ocispec.AnnotationRefName] == ref.Annotations[ocispec.AnnotationRefName] {
-			continue
+	for i := range localIndex.Manifests {
+		descriptor := localIndex.Manifests[i]
+		if descriptor.MediaType == oci.MediaTypeImageLayer && descriptor.Digest == ref.Digest {
+			return true, nil
 		}
-		newarray[k] = manifests[i]
-		k++
+		if descriptor.MediaType != oci.MediaTypeImageLayer {
+			manifest, err := ociClient.GetManifest(&descriptor)
+			if err != nil {
+				return false, err
+			}
+			for _, layer := range manifest.Layers {
+				if layer.MediaType == ocispec.MediaTypeImageLayerGzip && layer.Digest == ref.Digest {
+					return true, nil
+				}
+			}
+		}
 	}
-	return newarray
+
+	return false, nil
 }

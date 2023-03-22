@@ -7,6 +7,8 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
@@ -26,10 +28,11 @@ const (
 )
 
 type Oci struct {
-	logger    *zerolog.Logger
-	ctx       context.Context
-	hostsFunc docker.RegistryHosts
-	ociStore  *oci.Store
+	logger         *zerolog.Logger
+	ctx            context.Context
+	hostsFunc      docker.RegistryHosts
+	ociStore       *oci.Store
+	policyRootPath string
 }
 
 func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryHosts, policyRoot string) (*Oci, error) {
@@ -40,10 +43,11 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	ociStore.AutoSaveIndex = true
 
 	return &Oci{
-		logger:    log,
-		ctx:       ctx,
-		hostsFunc: hostsFunc,
-		ociStore:  ociStore,
+		logger:         log,
+		ctx:            ctx,
+		hostsFunc:      hostsFunc,
+		ociStore:       ociStore,
+		policyRootPath: policyRoot,
 	}, nil
 }
 
@@ -53,24 +57,29 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	var tarDescriptor ocispec.Descriptor
+	var manifestDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
+
+	var descriptors []ocispec.Descriptor
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
-		if strings.Contains(desc.MediaType, "tar") {
-			tarDescriptor = desc
+		if strings.Contains(desc.MediaType, "manifest") {
+			manifestDescriptor = desc
 		}
 		return nil
 	}
+
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
-		if strings.Contains(desc.MediaType, "tar") {
-			tarDescriptor = desc
+		if strings.Contains(desc.MediaType, "manifest") {
+			manifestDescriptor = desc
 		}
 		return nil
 	}
@@ -80,8 +89,23 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras pull failed")
 	}
 
-	if len(tarDescriptor.Digest) > 0 {
-		err = o.ociStore.Tag(o.ctx, tarDescriptor, ref)
+	if len(descriptors) != 3 {
+		for i := range descriptors {
+			err := RemoveBlob(&descriptors[i], o.policyRootPath)
+			if err != nil {
+				return "", err
+			}
+		}
+		if err != nil {
+			return "", err
+		}
+
+		invalidNoOfLayersErr := errors.New("the image tried to be pulled have invalid numbers of layers")
+		return "", errors.Wrapf(invalidNoOfLayersErr, " %d, required 3", len(descriptors))
+	}
+
+	if len(manifestDescriptor.Digest) > 0 {
+		err = o.ociStore.Tag(o.ctx, manifestDescriptor, ref)
 		if err != nil {
 			return "", err
 		}
@@ -91,7 +115,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return "", err
 	}
 
-	return tarDescriptor.Digest, nil
+	return manifestDescriptor.Digest, nil
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
@@ -124,21 +148,73 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref, fetcher: o.ociStore}
 
-	desc, err := o.ociStore.Resolve(o.ctx, ref)
+	descriptor, err := o.ociStore.Resolve(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
 
+	if descriptor.MediaType == MediaTypeImageLayer {
+		return o.pushBasedOnTarBall(remoteManager, &descriptor, ref)
+	}
+
+	tarBallDescriptor, configDescriptor, err := o.GetTarballAndConfigLayerDescriptor(o.ctx, &descriptor)
+	if err != nil {
+		return "", err
+	}
+
+	err = o.ociStore.Tag(o.ctx, *tarBallDescriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// copy tarball to remote first
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
+
+	err = o.ociStore.Tag(o.ctx, descriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// copy manifest to remote
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
+
+	err = o.ociStore.Tag(o.ctx, *configDescriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// copy config to remote
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
+
+	// tag the manifest back
+	err = o.ociStore.Tag(o.ctx, descriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	return descriptor.Digest, nil
+}
+
+func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Descriptor, ref string) (digest.Digest, error) {
 	memoryStore := memory.New()
 	configBytes := []byte("{}")
 	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
 
-	err = memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
+	err := memoryStore.Push(o.ctx, configDesc, bytes.NewReader(configBytes))
 	if err != nil {
 		return "", err
 	}
 
-	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{desc}, oras.PackOptions{
+	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{*desc}, oras.PackOptions{
 		PackImageManifest:   true,
 		ManifestAnnotations: desc.Annotations,
 		ConfigDescriptor:    &configDesc,
@@ -173,7 +249,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
-	return manifestDesc.Digest, nil
+	return desc.Digest, nil
 }
 
 func (o *Oci) Tag(existingRef, newRef string) error {
@@ -202,6 +278,53 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 
 func (o *Oci) GetStore() *oci.Store {
 	return o.ociStore
+}
+
+func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor *ocispec.Descriptor) (*ocispec.Descriptor, *ocispec.Descriptor, error) {
+	if descriptor == nil {
+		return nil, nil, errors.New("nil descriptor provided")
+	}
+	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
+		return nil, nil, errors.New("provided descriptor is not a manifest descriptor")
+	}
+	manifest, err := o.GetManifest(descriptor)
+	if err != nil {
+		return nil, nil, err
+	}
+	configDigest := manifest.Config.Digest
+	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest.String())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, layer := range manifest.Layers {
+		if layer.MediaType == ocispec.MediaTypeImageLayerGzip {
+			tarballDescriptor, err := o.ociStore.Resolve(ctx, layer.Digest.String())
+			if err != nil {
+				return nil, nil, err
+			}
+			return &tarballDescriptor, &configDescriptor, nil
+		}
+	}
+	return nil, nil, nil
+}
+
+func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
+	reader, err := o.GetStore().Fetch(o.ctx, *descriptor)
+	if err != nil {
+		return nil, err
+	}
+	manifestBytes := new(bytes.Buffer)
+	_, err = manifestBytes.ReadFrom(reader)
+	if err != nil {
+		return nil, err
+	}
+	var manifest ocispec.Manifest
+	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
+	if err != nil {
+		return nil, err
+	}
+	return &manifest, nil
 }
 
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
@@ -336,4 +459,15 @@ func IsAllowedMediaType(mediatype string) bool {
 		}
 	}
 	return false
+}
+
+func RemoveBlob(ref *ocispec.Descriptor, path string) error {
+	digestPath := filepath.Join(strings.Split(ref.Digest.String(), ":")...)
+	blob := filepath.Join(path, "blobs", digestPath)
+	err := os.Remove(blob)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

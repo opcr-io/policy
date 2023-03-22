@@ -10,6 +10,7 @@ import (
 	"github.com/opcr-io/policy/pkg/oci"
 	"github.com/opcr-io/policy/pkg/parser"
 	"github.com/open-policy-agent/opa/repl"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -31,6 +32,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	}
 
 	descriptor, ok := existingRefs[existingRefParsed]
+
 	if !ok {
 		err := c.Pull(ref)
 		if err != nil {
@@ -51,7 +53,13 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		}
 	}
 
-	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", descriptor.Digest.Hex())
+	// check for media type - if manifest get tarbarll digest hex.
+	bundleHex, err := c.getBundleHex(ociClient, &descriptor)
+	if err != nil {
+		return err
+	}
+
+	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", bundleHex)
 
 	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
 		InstanceID: "policy-run",
@@ -78,4 +86,23 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	loop.Loop(context.Background())
 
 	return nil
+}
+
+func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descriptor) (string, error) {
+	var bundleHex string
+	// check for media type - if manifest get tarbarll digest hex.
+	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
+		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, descriptor)
+		if err != nil {
+			return "", err
+		}
+		bundleHex = bundleDescriptor.Digest.Hex()
+		if bundleHex == "" {
+			return "", errors.New("current manifest does not contain a MediaTypeImageLayerGzip")
+		}
+	} else {
+		bundleHex = descriptor.Digest.Hex()
+	}
+
+	return bundleHex, nil
 }
