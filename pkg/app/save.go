@@ -14,7 +14,6 @@ import (
 func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	defer c.Cancel()
 	var outputFile *os.File
-
 	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
@@ -25,23 +24,10 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		return err
 	}
 
-	refs, err := ociClient.ListReferences()
+	// if the reference descriptor is the manifest get the tarball descriptor information from the manifest layers.
+	refDescriptor, err := c.getRefDescriptor(ociClient, ref)
 	if err != nil {
 		return err
-	}
-
-	refDescriptor, ok := refs[ref]
-	if !ok {
-		return errors.Errorf("policy [%s] not found in the local store", ref)
-	}
-
-	// if the reference descriptor is the manifest get the tarball descriptor information from the manifest layers.
-	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
-		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &refDescriptor)
-		if err != nil {
-			return err
-		}
-		refDescriptor = *bundleDescriptor
 	}
 
 	if outputFilePath == "-" {
@@ -64,12 +50,33 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		}()
 	}
 
-	err = c.writePolicy(ociClient, &refDescriptor, outputFile)
+	err = c.writePolicy(ociClient, refDescriptor, outputFile)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.Descriptor, error) {
+	refs, err := ociClient.ListReferences()
+	if err != nil {
+		return nil, err
+	}
+
+	refDescriptor, ok := refs[ref]
+	if !ok {
+		return nil, err
+	}
+
+	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
+		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &refDescriptor)
+		if err != nil {
+			return nil, err
+		}
+		refDescriptor = *bundleDescriptor
+	}
+	return &refDescriptor, nil
 }
 
 func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *ocispec.Descriptor, outputFile io.Writer) error {

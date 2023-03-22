@@ -30,28 +30,30 @@ func (c *PolicyApp) Inspect(userRef string) error {
 		WithIntValue("size", contentInfo.Size).
 		Do()
 
+	annotations, err := getAnnotations(&contentInfo, ociClient)
+	if err != nil {
+		return err
+	}
+	msg := c.UI.Normal().WithTable("Annotation", "Value")
+
+	for k, v := range annotations {
+		msg.WithTableRow(k, v)
+	}
+	msg.Msg("Annotations")
+	return nil
+}
+
+func getAnnotations(contentInfo *ocispec.Descriptor, ociClient *oci.Oci) (map[string]string, error) {
+	var annotations map[string]string
 	if contentInfo.MediaType == ocispec.MediaTypeImageManifest {
-		manifest, err := ociClient.GetManifest(&contentInfo)
+		manifest, err := ociClient.GetManifest(contentInfo)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if len(manifest.Annotations) > 0 {
-			msg := c.UI.Normal().WithTable("Annotation", "Value")
-
-			for k, v := range manifest.Annotations {
-				msg.WithTableRow(k, v)
-			}
-			msg.Msg("Annotations")
-		}
-
+		annotations = manifest.Annotations
 	} else if len(contentInfo.Annotations) > 0 {
-		msg := c.UI.Normal().WithTable("Annotation", "Value")
-
-		for k, v := range contentInfo.Annotations {
-			msg.WithTableRow(k, v)
-		}
-		msg.Msg("Annotations")
+		annotations = contentInfo.Annotations
 	}
 
-	return nil
+	return annotations, nil
 }

@@ -10,10 +10,18 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+type imageStruct struct {
+	familiarName string
+	tagOrNone    string
+	digest       string
+	createdAt    string
+	size         string
+}
+
 func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
-	var data [][]string
+	var data []imageStruct
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -59,33 +67,29 @@ func (c *PolicyApp) Images() error {
 		if err != nil {
 			return err
 		}
-		var arrData []string
-		if manifest != nil {
-			arrData = []string{
-				familiarName,
-				tagOrNone,
-				descr.Digest.Encoded()[:12],
-				manifest.Annotations[ocispec.AnnotationCreated],
-				strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
+		var createdAt string
+		if manifest == nil {
+			createdAt = descr.Annotations[ocispec.AnnotationCreated]
 		} else {
-			arrData = []string{
-				familiarName,
-				tagOrNone,
-				descr.Digest.Encoded()[:12],
-				descr.Annotations[ocispec.AnnotationCreated],
-				strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", "")}
+			createdAt = manifest.Annotations[ocispec.AnnotationCreated]
 		}
-		data = append(data, arrData)
+
+		data = append(data, imageStruct{
+			familiarName: familiarName,
+			tagOrNone:    tagOrNone,
+			digest:       descr.Digest.Encoded()[:12],
+			createdAt:    createdAt,
+			size:         strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", ""),
+		})
 	}
 
 	// sort data by CreatedAt DESC.
 	sort.SliceStable(data, func(i, j int) bool {
-		return data[i][3] < data[j][3] || (data[i][3] == data[j][3] && data[i][1] < data[j][1])
+		return data[i].createdAt < data[j].createdAt || (data[i].createdAt == data[j].createdAt && data[i].familiarName < data[j].familiarName)
 	})
 
 	for i := len(data) - 1; i >= 0; i-- {
-		v := data[i]
-		table.WithTableRow(v[0], v[1], v[2], v[3], v[4])
+		table.WithTableRow(data[i].familiarName, data[i].tagOrNone, data[i].digest, data[i].createdAt, data[i].size)
 	}
 
 	table.Do()

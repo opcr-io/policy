@@ -33,19 +33,6 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 
 	descriptor, ok := existingRefs[existingRefParsed]
 
-	bundleHex := descriptor.Digest.Hex()
-	// check for media type - if manifest get tarbarll digest hex.
-	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
-		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &descriptor)
-		if err != nil {
-			return err
-		}
-		bundleHex = bundleDescriptor.Digest.Hex()
-		if bundleHex == "" {
-			return errors.New("current manifest does not contain a MediaTypeImageLayerGzip")
-		}
-	}
-
 	if !ok {
 		err := c.Pull(ref)
 		if err != nil {
@@ -64,6 +51,12 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		if !ok {
 			return errors.Errorf("ref [%s] not found in the local store", ref)
 		}
+	}
+
+	// check for media type - if manifest get tarbarll digest hex.
+	bundleHex, err := c.getBundleHex(ociClient, &descriptor)
+	if err != nil {
+		return err
 	}
 
 	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", bundleHex)
@@ -93,4 +86,23 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	loop.Loop(context.Background())
 
 	return nil
+}
+
+func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descriptor) (string, error) {
+	var bundleHex string
+	// check for media type - if manifest get tarbarll digest hex.
+	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
+		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, descriptor)
+		if err != nil {
+			return "", err
+		}
+		bundleHex = bundleDescriptor.Digest.Hex()
+		if bundleHex == "" {
+			return "", errors.New("current manifest does not contain a MediaTypeImageLayerGzip")
+		}
+	} else {
+		bundleHex = descriptor.Digest.Hex()
+	}
+
+	return bundleHex, nil
 }

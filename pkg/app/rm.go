@@ -145,12 +145,12 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 		return false, err
 	}
 	for i := range localIndex.Manifests {
-		elem := localIndex.Manifests[i]
-		if elem.MediaType == oci.MediaTypeImageLayer && elem.Digest == ref.Digest {
+		descriptor := localIndex.Manifests[i]
+		if descriptor.MediaType == oci.MediaTypeImageLayer && descriptor.Digest == ref.Digest {
 			return true, nil
 		}
-		if elem.MediaType != oci.MediaTypeImageLayer {
-			manifest, err := ociClient.GetManifest(&elem)
+		if descriptor.MediaType != oci.MediaTypeImageLayer {
+			manifest, err := ociClient.GetManifest(&descriptor)
 			if err != nil {
 				return false, err
 			}
