@@ -93,8 +93,8 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	if annotations == nil {
-		annotations = map[string]string{}
+	if ref == "" {
+		ref = "default"
 	}
 
 	familiarezedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
@@ -107,9 +107,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
-	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
-	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+	annotations = buildAnnotations(annotations, parsedRef)
 
 	desc, err := c.createImage(ociStore, outfile, annotations)
 	if err != nil {
@@ -129,6 +127,18 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	}
 
 	return nil
+}
+
+func buildAnnotations(annotations map[string]string, parsedRef docker.Named) map[string]string {
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
+	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
+	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+
+	return annotations
 }
 
 func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
