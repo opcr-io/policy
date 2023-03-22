@@ -111,7 +111,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
-	desc, err := c.createImage(ociStore, outfile, parsedRef.String(), annotations)
+	desc, err := c.createImage(ociStore, outfile, annotations)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
 	fDigest, err := c.fileDigest(tarball)
@@ -178,11 +178,6 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball, ref string, an
 	reader := bufio.NewReader(tarballFile)
 
 	err = ociStore.Push(c.Context, descriptor, reader)
-	if err != nil {
-		return descriptor, err
-	}
-
-	err = ociStore.Tag(c.Context, descriptor, ref)
 	if err != nil {
 		return descriptor, err
 	}
