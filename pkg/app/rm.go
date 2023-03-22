@@ -102,14 +102,22 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return err
 	}
 
-	// Hack to remove the existing digest until ocistore deleter is implemented
-	// https://github.com/oras-project/oras-go/issues/454
-	err = ociClient.GetStore().Delete(c.Context, *ref)
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
 	if err != nil {
 		return err
 	}
 
-	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
+	anotherImagewithSameDigest, err := c.buildFromSameImage(ref)
+	if err != nil {
+		return err
+	}
+
+	if anotherImagewithSameDigest {
+		return c.removeFromIndex(ref)
+
+	}
+
+	err = ociClient.GetStore().Delete(c.Context, *ref)
 	if err != nil {
 		return err
 	}
@@ -120,10 +128,12 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 			return err
 		}
 	}
+
 	err = ociClient.GetStore().Delete(c.Context, *configDesc)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -146,9 +156,12 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 	}
 	for i := range localIndex.Manifests {
 		descriptor := localIndex.Manifests[i]
+
+		// check if an image built with v0.1 policy that has the same digest is present in index.json
 		if descriptor.MediaType == oci.MediaTypeImageLayer && descriptor.Digest == ref.Digest {
 			return true, nil
 		}
+
 		if descriptor.MediaType != oci.MediaTypeImageLayer {
 			manifest, err := ociClient.GetManifest(&descriptor)
 			if err != nil {
@@ -163,4 +176,75 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 	}
 
 	return false, nil
+}
+
+func (c *PolicyApp) buildFromSameImage(ref *ocispec.Descriptor) (bool, error) {
+	type index struct {
+		Version   int                  `json:"schemaVersion"`
+		Manifests []ocispec.Descriptor `json:"manifests"`
+	}
+	var localIndex index
+	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+	indexBytes, err := os.ReadFile(indexPath)
+	if err != nil {
+		return false, err
+	}
+	err = json.Unmarshal(indexBytes, &localIndex)
+	if err != nil {
+		return false, err
+	}
+
+	sameDigestCount := 0
+
+	for _, image := range localIndex.Manifests {
+		if image.Digest == ref.Digest {
+			sameDigestCount++
+		}
+	}
+
+	if sameDigestCount > 1 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
+	type index struct {
+		Version   int                  `json:"schemaVersion"`
+		Manifests []ocispec.Descriptor `json:"manifests"`
+	}
+	var localIndex index
+	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+	indexBytes, err := os.ReadFile(indexPath)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(indexBytes, &localIndex)
+	if err != nil {
+		return err
+	}
+	localIndex.Manifests = removeFromManifests(localIndex.Manifests, ref)
+	newIndexBytes, err := json.Marshal(localIndex)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec // Keep same permissions.
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
+	newarray := make([]ocispec.Descriptor, len(manifests)-1)
+	k := 0
+	for i := 0; i < len(manifests); i++ {
+		if manifests[i].Digest == ref.Digest && manifests[i].Annotations[ocispec.AnnotationRefName] == ref.Annotations[ocispec.AnnotationRefName] {
+			continue
+		}
+		newarray[k] = manifests[i]
+		k++
+	}
+	return newarray
 }
