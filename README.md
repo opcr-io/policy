@@ -44,6 +44,12 @@ Wanna discuss features or show your support for this tool?
   brew tap opcr-io/tap && brew install opcr-io/tap/policy
    ```
 
+  Note: if you want to try a pre-release version before the official release:
+
+  ```shell
+  brew tap opcr-io/tap && brew install opcr-io/tap/policy-rc
+   ```
+
 * Via the nix package manager on nixOS, other linux distros, and macOS
 
    At the moment the package is only available in the `unstable` channel. Below are some examples using nix to install `policy` via the shell, NixOS configuration, and home-manager configuration.
@@ -113,6 +119,21 @@ Wanna discuss features or show your support for this tool?
 $ policy --help
 Usage: policy <command>
 
+Commands:
+  build        Build policies.
+  images       List policy images.
+  push         Push policies to a registry.
+  pull         Pull policies from a registry.
+  login        Login to a registry.
+  logout       Logout from a registry.
+  save         Save a policy to a local bundle tarball.
+  tag          Create a new tag for an existing policy.
+  rm           Removes a policy from the local registry.
+  inspect      Displays information about a policy.
+  repl         Sets you up with a shell for running queries using an OPA instance with a policy loaded.
+  templates    List and apply templates
+  version      Prints version information.
+
 Flags:
   -h, --help             Show context-sensitive help.
   -c, --config="/Users/ogazitt/.policy/config.yaml"
@@ -120,58 +141,6 @@ Flags:
       --debug            Enable debug mode.
   -v, --verbosity=INT    Use to increase output verbosity.
   -k, --insecure         Do not verify TLS connections.
-
-Commands:
-  build <path> ...
-    Build policies.
-
-  images
-    List policy images.
-
-  push <policy> ...
-    Push policies to a registry.
-
-  pull <policy> ...
-    Pull policies from a registry.
-
-  login --server=STRING --username=STRING
-    Login to a registry.
-
-  logout
-    Logout from a registry.
-
-  save <policy>
-    Save a policy to a local bundle tarball.
-
-  tag <policy> <tag>
-    Create a new tag for an existing policy.
-
-  rm <policy> ...
-    Removes a policy from the local registry.
-
-  inspect <policy>
-    Displays information about a policy.
-
-  repl <policy>
-    Sets you up with a shell for running queries using an OPA instance with a policy loaded.
-
-  remote set-public <policy> [<public>]
-    Make a policy public or private.
-
-  remote images
-    Synonym for 'policy images --remote'.
-
-  init [<path>]
-    (Deprecated) Initialize policy repo
-
-  templates apply <template>
-    Create or update a policy or related artifacts from a template.
-
-  templates list
-    List all available templates.
-
-  version
-    Prints version information.
 
 Run "policy <command> --help" for more information on a command.
 ```
