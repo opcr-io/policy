@@ -3,7 +3,7 @@ package main
 import "github.com/pkg/errors"
 
 type BuildCmd struct {
-	Tag         string            `name:"tag" required:"true" short:"t" help:"Name and optionally a tag in the 'name:tag' format"`
+	Tag         string            `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format, if not provided it will be 'default:latest'"`
 	Path        []string          `arg:"" name:"path" help:"Path to the policy sources." type:"string"`
 	Annotations map[string]string `name:"annotations" short:"a" help:"Annotations to apply to the policy." type:"string:string"`
 
