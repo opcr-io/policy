@@ -173,23 +173,23 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		return "", errors.Wrap(err, "oras push failed")
 	}
 
-	err = o.ociStore.Tag(o.ctx, descriptor, ref)
-	if err != nil {
-		return "", err
-	}
-
-	// copy manifest to remote
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
-		return "", errors.Wrap(err, "oras push failed")
-	}
-
 	err = o.ociStore.Tag(o.ctx, *configDescriptor, ref)
 	if err != nil {
 		return "", err
 	}
 
 	// copy config to remote
+	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "oras push failed")
+	}
+
+	err = o.ociStore.Tag(o.ctx, descriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// copy manifest to remote
 	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "oras push failed")
