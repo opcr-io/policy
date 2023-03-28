@@ -2,7 +2,7 @@ module github.com/opcr-io/policy
 
 go 1.19
 
-replace oras.land/oras-go/v2 v2.0.0 => github.com/opcr-io/oras-go/v2 v2.0.0-20230324125320-9777c96944bf
+replace oras.land/oras-go/v2 v2.0.0 => github.com/opcr-io/oras-go/v2 v2.0.0-20230331095552-41df01dce636
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible

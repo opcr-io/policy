@@ -50,8 +50,14 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 		return errors.Errorf("ref [%s] not found in the local store", existingRef)
 	}
 	// attach ref name annotation for comparison.
-	ref.Annotations = make(map[string]string)
-	ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
+	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
+		oldAnnotations := ref.Annotations
+		ref.Annotations = make(map[string]string)
+		if oldAnnotations != nil {
+			ref.Annotations = oldAnnotations
+		}
+		ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
+	}
 
 	// Reload ociClient with refreshed index to update reference list.
 	ociClient, err = oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
@@ -60,33 +66,12 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	}
 
 	if ref.MediaType != oci.MediaTypeImageLayer {
-		return c.removeBasedOnManifest(ociClient, &ref)
+		return c.removeBasedOnManifest(ociClient, &ref, existingRefParsed)
 	}
 
-	updatedRefs, err := ociClient.ListReferences()
+	err = c.removeBasedOnTarball(ociClient, &ref, existingRefs, existingRefParsed)
 	if err != nil {
 		return err
-	}
-	// Check if existing images use same digest.
-	removeBlob := true
-	for _, v := range updatedRefs {
-		if v.Digest == ref.Digest {
-			removeBlob = false
-			break
-		}
-	}
-	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, &ref)
-	if err != nil {
-		return err
-	}
-	// only remove the blob if not used by another reference.
-	if removeBlob && !tarballStillUsed {
-		// Hack to remove the existing digest until ocistore deleter is implemented
-		// https://github.com/oras-project/oras-go/issues/454
-		err := ociClient.GetStore().Delete(c.Context, ref)
-		if err != nil {
-			return err
-		}
 	}
 
 	c.UI.Normal().
@@ -96,13 +81,8 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	return nil
 }
 
-func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor) error {
+func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor, refString string) error {
 	tarballDesc, configDesc, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, ref)
-	if err != nil {
-		return err
-	}
-
-	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
 	if err != nil {
 		return err
 	}
@@ -112,12 +92,21 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return err
 	}
 
-	if anotherImagewithSameDigest {
-		return c.removeFromIndex(ref)
+	err = ociClient.Untag(ref, refString)
+	if err != nil {
+		return err
+	}
 
+	if anotherImagewithSameDigest {
+		return nil
 	}
 
 	err = ociClient.GetStore().Delete(c.Context, *ref)
+	if err != nil {
+		return err
+	}
+
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
 	if err != nil {
 		return err
 	}
@@ -132,6 +121,37 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 	err = ociClient.GetStore().Delete(c.Context, *configDesc)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descriptor, existingRefs map[string]ocispec.Descriptor, existingRefParsed string) error {
+	err := ociClient.Untag(ref, existingRefParsed)
+	if err != nil {
+		return err
+	}
+
+	// Check if existing images use same digest.
+	removeBlob := true
+	for _, v := range existingRefs {
+		if v.Digest == ref.Digest {
+			removeBlob = false
+			break
+		}
+	}
+	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, ref)
+	if err != nil {
+		return err
+	}
+	// only remove the blob if not used by another reference.
+	if removeBlob && !tarballStillUsed {
+		// Hack to remove the existing digest until ocistore deleter is implemented
+		// https://github.com/oras-project/oras-go/issues/454
+		err := ociClient.GetStore().Delete(c.Context, *ref)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -207,44 +227,4 @@ func (c *PolicyApp) buildFromSameImage(ref *ocispec.Descriptor) (bool, error) {
 	}
 
 	return false, nil
-}
-
-func (c *PolicyApp) removeFromIndex(ref *ocispec.Descriptor) error {
-	type index struct {
-		Version   int                  `json:"schemaVersion"`
-		Manifests []ocispec.Descriptor `json:"manifests"`
-	}
-	var localIndex index
-	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
-	indexBytes, err := os.ReadFile(indexPath)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
-		return err
-	}
-	localIndex.Manifests = removeFromManifests(localIndex.Manifests, ref)
-	newIndexBytes, err := json.Marshal(localIndex)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(indexPath, newIndexBytes, 0664) //nolint:gosec // Keep same permissions.
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func removeFromManifests(manifests []ocispec.Descriptor, ref *ocispec.Descriptor) []ocispec.Descriptor {
-	newarray := make([]ocispec.Descriptor, len(manifests)-1)
-	k := 0
-	for i := 0; i < len(manifests); i++ {
-		if manifests[i].Digest == ref.Digest && manifests[i].Annotations[ocispec.AnnotationRefName] == ref.Annotations[ocispec.AnnotationRefName] {
-			continue
-		}
-		newarray[k] = manifests[i]
-		k++
-	}
-	return newarray
 }
