@@ -134,7 +134,7 @@ func buildAnnotations(annotations map[string]string, parsedRef docker.Named) map
 		annotations = map[string]string{}
 	}
 
-	annotations[ocispec.AnnotationTitle] = docker.TrimNamed(parsedRef).String()
+	annotations[ocispec.AnnotationTitle] = parsedRef.Name()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 
