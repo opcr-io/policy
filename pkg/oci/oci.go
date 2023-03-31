@@ -60,10 +60,8 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	var manifestDescriptor ocispec.Descriptor
 	opts := oras.DefaultCopyOptions
 
-	var descriptors []ocispec.Descriptor
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -74,7 +72,6 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		descriptors = append(descriptors, desc)
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -87,21 +84,6 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	_, err := oras.Copy(o.ctx, remoteManager, ref, o.ociStore, "", opts)
 	if err != nil {
 		return "", errors.Wrap(err, "oras pull failed")
-	}
-
-	if len(descriptors) != 3 {
-		for i := range descriptors {
-			err := RemoveBlob(&descriptors[i], o.policyRootPath)
-			if err != nil {
-				return "", err
-			}
-		}
-		if err != nil {
-			return "", err
-		}
-
-		invalidNoOfLayersErr := errors.New("the image tried to be pulled have invalid numbers of layers")
-		return "", errors.Wrapf(invalidNoOfLayersErr, " %d, required 3", len(descriptors))
 	}
 
 	if len(manifestDescriptor.Digest) > 0 {
@@ -162,6 +144,16 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 		return "", err
 	}
 
+	tarBallDescriptor.MediaType = MediaTypeImageLayer
+	configDescriptor.MediaType = MediaTypeConfig
+
+	// remove manifest from index
+	err = o.ociStore.Untag(o.ctx, descriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// tag tarball
 	err = o.ociStore.Tag(o.ctx, *tarBallDescriptor, ref)
 	if err != nil {
 		return "", err
@@ -170,9 +162,16 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	// copy tarball to remote first
 	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
-		return "", errors.Wrap(err, "oras push failed")
+		return "", errors.Wrap(err, "oras push tarball failed")
 	}
 
+	// remove tarball from index
+	err = o.ociStore.Untag(o.ctx, *tarBallDescriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// tag config
 	err = o.ociStore.Tag(o.ctx, *configDescriptor, ref)
 	if err != nil {
 		return "", err
@@ -181,9 +180,16 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	// copy config to remote
 	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
-		return "", errors.Wrap(err, "oras push failed")
+		return "", errors.Wrap(err, "oras push config failed")
 	}
 
+	// remove config from index
+	err = o.ociStore.Untag(o.ctx, *configDescriptor, ref)
+	if err != nil {
+		return "", err
+	}
+
+	// tag manifest
 	err = o.ociStore.Tag(o.ctx, descriptor, ref)
 	if err != nil {
 		return "", err
@@ -192,13 +198,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	// copy manifest to remote
 	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
 	if err != nil {
-		return "", errors.Wrap(err, "oras push failed")
-	}
-
-	// tag the manifest back
-	err = o.ociStore.Tag(o.ctx, descriptor, ref)
-	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
 	return descriptor.Digest, nil
@@ -276,6 +276,10 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 	return o.ociStore.SaveIndex()
 }
 
+func (o *Oci) Untag(descr *ocispec.Descriptor, ref string) error {
+	return o.ociStore.Untag(o.ctx, *descr, ref)
+}
+
 func (o *Oci) GetStore() *oci.Store {
 	return o.ociStore
 }
@@ -311,6 +315,7 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 
 func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
 	reader, err := o.GetStore().Fetch(o.ctx, *descriptor)
+
 	if err != nil {
 		return nil, err
 	}
@@ -324,6 +329,12 @@ func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, er
 	if err != nil {
 		return nil, err
 	}
+
+	err = reader.Close()
+	if err != nil {
+		return nil, err
+	}
+
 	return &manifest, nil
 }
 
