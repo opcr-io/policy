@@ -122,8 +122,8 @@ github.com/docker/cli v20.10.21+incompatible h1:qVkgyYUnOLQ98LtXBrwd/duVqPT2X4SH
 github.com/docker/cli v20.10.21+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/distribution v2.8.1+incompatible h1:Q50tZOPR6T/hjNsyc9g8/syEs6bk8XXApsHjKukMl68=
 github.com/docker/distribution v2.8.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v20.10.21+incompatible h1:UTLdBmHk3bEY+w8qeO5KttOhy6OmXWsl/FEet9Uswog=
-github.com/docker/docker v20.10.21+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
+github.com/docker/docker v20.10.24+incompatible h1:Ugvxm7a8+Gz6vqQYQQ2W7GYq5EUPaAiuPgIfVyI3dYE=
+github.com/docker/docker v20.10.24+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.7.0 h1:xtCHsjxogADNZcdv1pKUHXryefjlVRqWqIhk/uXJp0A=
 github.com/docker/docker-credential-helpers v0.7.0/go.mod h1:rETQfLdHNT3foU5kuNkFR1R1V12OJRRO5lzt2D1b5X0=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
@@ -353,8 +353,8 @@ github.com/olekukonko/tablewriter v0.0.5 h1:P2Ga83D34wi1o9J6Wh1mRuqd4mF/x/lgBS7N
 github.com/olekukonko/tablewriter v0.0.5/go.mod h1:hPp6KlRPjbx+hW8ykQs1w3UBbZlj6HuIJcUGPhkA7kY=
 github.com/onsi/ginkgo/v2 v2.6.0 h1:9t9b9vRUbFq3C4qKFCGkVuq/fIHji802N1nrtkh1mNc=
 github.com/onsi/gomega v1.24.1 h1:KORJXNNTzJXzu4ScJWssJfJMnJ+2QJqhoQSRwNlze9E=
-github.com/opcr-io/oras-go/v2 v2.0.0-20230329135723-8c251753090d h1:MCDrBJBsht6QSSnyH5KuUKx2nwRjOOiBH+6IXRJv5pk=
-github.com/opcr-io/oras-go/v2 v2.0.0-20230329135723-8c251753090d/go.mod h1:PWnWc/Kyyg7wUTUsDHshrsJkzuxXzreeMd6NrfdnFSo=
+github.com/opcr-io/oras-go/v2 v2.0.0-20230331095552-41df01dce636 h1:XSAsIlrB5jdN87lkqkItILZgJw4nqtvHFBghOoj47qs=
+github.com/opcr-io/oras-go/v2 v2.0.0-20230331095552-41df01dce636/go.mod h1:PWnWc/Kyyg7wUTUsDHshrsJkzuxXzreeMd6NrfdnFSo=
 github.com/open-policy-agent/opa v0.48.0 h1:s2K823yohAUu/HB4MOPWDhBh88JMKQv7uTr6S89fbM0=
 github.com/open-policy-agent/opa v0.48.0/go.mod h1:CsQcksP+qGBxO9oEBj1NnZqKcjgjmTJbRNTzjZB/DXQ=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
