@@ -13,3 +13,4 @@ The following table lists Open Policy Registry (OPCR) project maintainers and ar
 | Vlad Iovanov | @viovanov | vlad@pulley.com | Pulley | all repositories | 2021-09-28 |
 | Oana Tanasoiu | @oanatmaria | oana@aserto.com | Aserto | all repositories | 2023-01-18 |
 | Andrew Poland | @apoland | apoland@aserto.com | Aserto | all repositories | 2023-01-18 |
+| Noa Shavit | @noashavit | noa@aserto.com | Aserto | all repositories | 2023-04-04 |
