@@ -302,7 +302,7 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 	}
 
 	for _, layer := range manifest.Layers {
-		if layer.MediaType == ocispec.MediaTypeImageLayerGzip {
+		if layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer {
 			tarballDescriptor, err := o.ociStore.Resolve(ctx, layer.Digest.String())
 			if err != nil {
 				return nil, nil, err
@@ -310,7 +310,7 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 			return &tarballDescriptor, &configDescriptor, nil
 		}
 	}
-	return nil, nil, nil
+	return nil, nil, errors.New("could not find tarball and config descriptors")
 }
 
 func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
