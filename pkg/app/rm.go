@@ -188,7 +188,7 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 				return false, err
 			}
 			for _, layer := range manifest.Layers {
-				if layer.MediaType == ocispec.MediaTypeImageLayerGzip && layer.Digest == ref.Digest {
+				if (layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer) && layer.Digest == ref.Digest {
 					return true, nil
 				}
 			}
