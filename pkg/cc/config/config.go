@@ -118,7 +118,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 	}
 	err = cfg.LoadDefaultDomain()
 	if err != nil {
-		return nil, err
+		log.Err(err).Msg("failed to load default-domain.cfg file")
 	}
 	cfg.CredentialsStore = cf.GetCredentialsStore(cfg.DefaultDomain)
 
