@@ -78,7 +78,6 @@ func resolveTmpConfig(context *kong.Context) {
 	tmpConfig, err = config.NewConfig(
 		config.Path(configPath),
 		log,
-		nil,
 		nil)
 	if err != nil {
 		panic(err)

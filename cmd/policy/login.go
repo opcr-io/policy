@@ -71,6 +71,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 	if err != nil {
 		return err
 	}
+
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		setDefault = c.DefaultDomain
 	} else {
@@ -86,9 +87,11 @@ func (c *LoginCmd) Run(g *Globals) error {
 	if err != nil {
 		return err
 	}
+
 	if setDefault {
 		g.App.Configuration.DefaultDomain = c.Server
 	}
+
 	err = g.App.Configuration.SaveDefaultDomain()
 	if err != nil {
 		return err

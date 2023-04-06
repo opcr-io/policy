@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aserto-dev/certs"
 	"github.com/aserto-dev/logger"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
@@ -38,7 +37,7 @@ const (
 )
 
 // NewConfig creates the configuration by reading env & files.
-func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsGenerator *certs.Generator) (*Config, error) { // nolint // function will contain repeating statements for defaults
+func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Config, error) { // nolint // function will contain repeating statements for defaults
 	configLogger := log.With().Str("component", "config").Logger()
 	log = &configLogger
 
@@ -111,8 +110,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 		return nil, errors.Wrap(err, "failed to validate config file")
 	}
 
-	policyDirPath := filepath.Join(home, ".policy")
-	cf, err := config.Load(policyDirPath)
+	cf, err := config.Load(cfg.FileStoreRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +126,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider, certsG
 // NewLoggerConfig creates a new LoggerConfig.
 func NewLoggerConfig(configPath Path, overrides Overrider) (*logger.Config, error) {
 	discardLogger := zerolog.New(io.Discard)
-	cfg, err := NewConfig(configPath, &discardLogger, overrides, nil)
+	cfg, err := NewConfig(configPath, &discardLogger, overrides)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config")
 	}
@@ -144,6 +142,13 @@ func (c *Config) ReplHistoryFile() string {
 	return filepath.Join(c.FileStoreRoot, "repl_history")
 }
 func (c *Config) SaveDefaultDomain() error {
+	_, err := os.Stat(c.FileStoreRoot)
+	if err != nil {
+		err := os.Mkdir(c.FileStoreRoot, 0600)
+		if err != nil {
+			return err
+		}
+	}
 	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), 0600)
 }
 

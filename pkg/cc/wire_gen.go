@@ -29,8 +29,7 @@ func buildCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath con
 	if err != nil {
 		return nil, nil, err
 	}
-	generator := certs.NewGenerator(zerologLogger)
-	configConfig, err := config.NewConfig(configPath, zerologLogger, overrides, generator)
+	configConfig, err := config.NewConfig(configPath, zerologLogger, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -58,8 +57,7 @@ func buildTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath
 	if err != nil {
 		return nil, nil, err
 	}
-	generator := certs.NewGenerator(zerologLogger)
-	configConfig, err := config.NewConfig(configPath, zerologLogger, overrides, generator)
+	configConfig, err := config.NewConfig(configPath, zerologLogger, overrides)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,7 +77,7 @@ func buildTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath
 // wire.go:
 
 var (
-	ccSet = wire.NewSet(context.NewContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(config.Config), "Logging"), wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"), wire.Struct(new(CC), "*"))
+	ccSet = wire.NewSet(context.NewContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, wire.FieldsOf(new(config.Config), "Logging"), wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"), wire.Struct(new(CC), "*"))
 
 	ccTestSet = wire.NewSet(context.NewTestContext, config.NewConfig, config.NewLoggerConfig, logger.NewLogger, certs.NewGenerator, wire.FieldsOf(new(*context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"), wire.Struct(new(CC), "*"))
 )
