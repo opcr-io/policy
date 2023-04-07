@@ -18,7 +18,6 @@ var (
 		config.NewConfig,
 		config.NewLoggerConfig,
 		logger.NewLogger,
-		certs.NewGenerator,
 		wire.FieldsOf(new(config.Config), "Logging"),
 		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"),
 

@@ -45,9 +45,4 @@ for TAG in ${INPUT_TAGS}; do
   printf "\n"
 done
 
-if [ "${VERBOSITY}" -ge "1" ]; then
-  /app/policy images --remote
-  printf "\n"
-fi
-
 exit $e_code
