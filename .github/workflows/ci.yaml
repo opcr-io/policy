@@ -129,7 +129,7 @@ jobs:
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
 
-          go run mage.go deps release
+          go run mage.go deps release ""
 
   msi:
     needs: release
