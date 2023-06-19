@@ -51,6 +51,33 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	}, nil
 }
 
+func (o *Oci) WithDockerRegistryHosts(transport *http.Transport, user, pat string) *Oci {
+	client := &http.Client{Transport: transport}
+
+	authOpts := []docker.AuthorizerOpt{
+		docker.WithAuthClient(client),
+	}
+	if user != "" || pat != "" {
+		authOpts = append(
+			authOpts,
+			docker.WithAuthCreds(func(s string) (string, string, error) {
+				return user, pat, nil
+			}))
+	}
+
+	o.hostsFunc = func(host string) ([]docker.RegistryHost, error) {
+		config := docker.RegistryHost{
+			Host:         host,
+			Scheme:       "https",
+			Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
+			Client:       client,
+			Path:         "/v2",
+			Authorizer:   docker.NewDockerAuthorizer(authOpts...)}
+		return []docker.RegistryHost{config}, nil
+	}
+	return o
+}
+
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,

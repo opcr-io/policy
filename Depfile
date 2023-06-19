@@ -26,7 +26,7 @@ go:
     version: "v1.8.2"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    version: "v1.50.1"
+    version: "v1.53.3"
   mockgen:
     importPath: github.com/golang/mock/mockgen
     version: "v1.6.0"

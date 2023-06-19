@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/opcr-io/policy/pkg/oci"
-	"github.com/opcr-io/policy/pkg/parser"
+	"github.com/opcr-io/policy/oci"
+	"github.com/opcr-io/policy/parser"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )

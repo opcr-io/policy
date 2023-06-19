@@ -13,8 +13,8 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
 
-	"github.com/opcr-io/policy/pkg/oci"
-	"github.com/opcr-io/policy/pkg/parser"
+	"github.com/opcr-io/policy/oci"
+	"github.com/opcr-io/policy/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
