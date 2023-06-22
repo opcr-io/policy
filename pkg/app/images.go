@@ -6,7 +6,7 @@ import (
 
 	"github.com/containerd/containerd/reference/docker"
 	"github.com/dustin/go-humanize"
-	"github.com/opcr-io/policy/pkg/oci"
+	"github.com/opcr-io/policy/oci"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

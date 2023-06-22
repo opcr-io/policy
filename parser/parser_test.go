@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/opcr-io/policy/pkg/parser"
+	"github.com/opcr-io/policy/parser"
 	"github.com/stretchr/testify/require"
 )
 
