@@ -200,7 +200,12 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
-	manifestDesc, err := oras.PackManifest(c.Context, ociStore, oras.PackManifestVersion1_1_RC4, ocispec.MediaTypeImageManifest, oras.PackManifestOptions{Layers: []ocispec.Descriptor{descriptor}, ConfigDescriptor: &configDesc, ManifestAnnotations: descriptor.Annotations})
+	packVersion := oras.PackManifestVersion1_1_RC4
+	if os.Getenv("USE_PACK_MANIFEST_1_0") == "true" {
+		packVersion = oras.PackManifestVersion1_0
+	}
+
+	manifestDesc, err := oras.PackManifest(c.Context, ociStore, packVersion, ocispec.MediaTypeImageManifest, oras.PackManifestOptions{Layers: []ocispec.Descriptor{descriptor}, ConfigDescriptor: &configDesc, ManifestAnnotations: descriptor.Annotations})
 	if err != nil {
 		return manifestDesc, err
 	}

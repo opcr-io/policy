@@ -5,6 +5,11 @@
 The policy CLI is a tool for building, versioning and publishing your authorization policies.
 It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](https://github.com/open-policy-agent/opa) to compile and run.
 
+
+  > ***As of version v0.2.4 we use the OCI Image Manifest defined in image-spec v1.1.0-rc4 when building policy images.*** This can cause issues when trying to push the image to some registries (ex. Amazon ECR)
+  
+  > To set the CLI to build the policy image using the the OCI Image Manifest defined in image-spec v1.0.2 you can set the *USE_PACK_MANIFEST_1_0* environment variable to true.
+
 ---
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/opcr-io/policy?)](https://goreportcard.com/report/github.com/opcr-io/policy)
