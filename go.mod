@@ -4,10 +4,6 @@ go 1.19
 
 replace oras.land/oras-go/v2 => github.com/opcr-io/oras-go/v2 v2.0.0-20230921121537-80bf1a01f1b6
 
-replace github.com/opcr-io/policy/oci => ./oci
-
-replace github.com/opcr-io/policy/parser => ./parser
-
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.7.1
@@ -22,8 +18,6 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/magefile/mage v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/opcr-io/policy/oci v0.0.0-20230619110751-8bb4d3a5035c
-	github.com/opcr-io/policy/parser v0.0.0-00010101000000-000000000000
 	github.com/open-policy-agent/opa v0.56.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc4
