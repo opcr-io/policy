@@ -16,7 +16,7 @@ import (
 
 func init() {
 	// Set go version for docker builds
-	os.Setenv("GO_VERSION", "1.19")
+	os.Setenv("GO_VERSION", "1.20")
 	// Enable docker buildkit capabilities
 	os.Setenv("DOCKER_BUILDKIT", "1")
 }
@@ -31,6 +31,11 @@ func Generate() error {
 
 // Build builds all binaries in ./cmd.
 func Build() error {
+	version, err := common.Version("-g", "--match=v*")
+	if err != nil {
+		return errors.Wrap(err, "failed to calculate version")
+	}
+	os.Setenv("GORELEASER_CURRENT_TAG", version)
 	return common.BuildReleaser()
 }
 
@@ -45,6 +50,11 @@ func Release(releaseFilePath string) error {
 // BuildAll builds all binaries in ./cmd for
 // all configured operating systems and architectures.
 func BuildAll() error {
+	version, err := common.Version("-g", "--match=v*")
+	if err != nil {
+		return errors.Wrap(err, "failed to calculate version")
+	}
+	os.Setenv("GORELEASER_CURRENT_TAG", version)
 	return common.BuildAllReleaser()
 }
 
@@ -58,13 +68,21 @@ func Test() error {
 	return common.Test()
 }
 
-// DockerImage builds the docker image for the project.
-func DockerImage() error {
-	version, err := common.Version()
+func Version() error {
+	version, err := common.Version("--git-describe-options", "--match=v*")
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate version")
 	}
+	common.UI.Normal().Msg(version)
+	return nil
+}
 
+// DockerImage builds the docker image for the project.
+func DockerImage() error {
+	version, err := common.Version("-g", "--match=v*")
+	if err != nil {
+		return errors.Wrap(err, "failed to calculate version")
+	}
 	return common.DockerImage(fmt.Sprintf("policy:%s", version))
 }
 
