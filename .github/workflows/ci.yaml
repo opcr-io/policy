@@ -138,18 +138,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0    
       - name: Download exe
         id: download_exe
         shell: bash
         run: |
-          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_x86_64*.zip'
+          gh release download "${GITHUB_REF#refs/tags/}" -p '*windows_x86_64*.zip'
           printf "zip=%s\n" *.zip >> $GITHUB_OUTPUT
           unzip -o *.zip && rm -v *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ROOT_TOKEN }}
       - name: Install go-msi
-        run: choco install -y "go-msi"
+        run: choco install -y "go-msi"    
       - name: Prepare PATH
         shell: bash
         run: |
@@ -169,10 +169,7 @@ jobs:
         shell: bash
         run: |
           tag_name="${GITHUB_REF#refs/tags/}"
-          hub release edit "$tag_name" -m "" -a "$MSI_FILE"
-          release_url="$(gh api repos/:owner/:repo/releases -q ".[]|select(.tag_name==\"${tag_name}\")|.url")"
-          publish_args=( -F draft=false )
-          gh api -X PATCH "$release_url" "${publish_args[@]}"
+          gh release upload "$tag_name" "$MSI_FILE" --repo opcr-io/policy --clobber          
         env:
           MSI_FILE: ${{ steps.buildmsi.outputs.msi }}
           GITHUB_TOKEN: ${{ secrets.GH_ROOT_TOKEN }}
