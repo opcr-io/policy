@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/remotes"
+	"github.com/opcr-io/oras-go/v2/content"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/content"
 )
 
 type remoteManager struct {

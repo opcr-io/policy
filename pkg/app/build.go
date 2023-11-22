@@ -13,14 +13,14 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/reference/docker"
 
+	oras "github.com/opcr-io/oras-go/v2"
+	"github.com/opcr-io/oras-go/v2/content"
+	orasoci "github.com/opcr-io/oras-go/v2/content/oci"
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	oras "oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/content"
-	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -200,7 +200,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
-	manifestDesc, err := oras.PackManifest(c.Context, ociStore, oras.PackManifestVersion1_1_RC4, ocispec.MediaTypeImageManifest, oras.PackManifestOptions{Layers: []ocispec.Descriptor{descriptor}, ConfigDescriptor: &configDesc, ManifestAnnotations: descriptor.Annotations})
+	manifestDesc, err := oras.Pack(c.Context, ociStore, ocispec.MediaTypeImageManifest, []ocispec.Descriptor{descriptor}, oras.PackOptions{PackImageManifest: true, ConfigDescriptor: &configDesc, ManifestAnnotations: descriptor.Annotations})
 	if err != nil {
 		return manifestDesc, err
 	}
