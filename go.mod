@@ -2,12 +2,6 @@ module github.com/opcr-io/policy
 
 go 1.19
 
-replace oras.land/oras-go/v2 => github.com/opcr-io/oras-go/v2 v2.0.0-20230921121537-80bf1a01f1b6
-
-replace github.com/opcr-io/policy/oci => ./oci
-
-replace github.com/opcr-io/policy/parser => ./parser
-
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.7.1
@@ -22,8 +16,9 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/magefile/mage v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/opcr-io/policy/oci v0.0.0-20230619110751-8bb4d3a5035c
-	github.com/opcr-io/policy/parser v0.0.0-00010101000000-000000000000
+	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
+	github.com/opcr-io/policy/oci v0.2.5-0.20231122153628-152ef46de97b
+	github.com/opcr-io/policy/parser v0.2.5-0.20231122153628-152ef46de97b
 	github.com/open-policy-agent/opa v0.58.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc5
@@ -33,7 +28,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.4.0
 	golang.org/x/term v0.13.0
-	oras.land/oras-go/v2 v2.3.1
 	sigs.k8s.io/controller-runtime v0.14.1
 )
 
@@ -115,5 +109,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.4.0 // indirect
+	oras.land/oras-go/v2 v2.3.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )

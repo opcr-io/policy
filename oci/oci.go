@@ -12,14 +12,14 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
+	"github.com/opcr-io/oras-go/v2"
+	"github.com/opcr-io/oras-go/v2/content"
+	"github.com/opcr-io/oras-go/v2/content/memory"
+	"github.com/opcr-io/oras-go/v2/content/oci"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/content"
-	"oras.land/oras-go/v2/content/memory"
-	"oras.land/oras-go/v2/content/oci"
 )
 
 const (
