@@ -66,7 +66,7 @@ func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.D
 
 	refDescriptor, ok := refs[ref]
 	if !ok {
-		return nil, err
+		return nil, errors.Errorf("Image %s not found", ref)
 	}
 
 	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
