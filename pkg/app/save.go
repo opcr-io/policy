@@ -7,8 +7,8 @@ import (
 
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/pkg/errors"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 func (c *PolicyApp) Save(userRef, outputFilePath string) error {
@@ -16,18 +16,18 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	var outputFile *os.File
 	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
-		return err
+		return errors.SaveFailed.WithError(err)
 	}
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
-		return err
+		return errors.SaveFailed.WithError(err)
 	}
 
 	// if the reference descriptor is the manifest get the tarball descriptor information from the manifest layers.
 	refDescriptor, err := c.getRefDescriptor(ociClient, ref)
 	if err != nil {
-		return err
+		return errors.SaveFailed.WithError(err)
 	}
 
 	if outputFilePath == "-" {
@@ -39,7 +39,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 		outputFile, err = os.Create(outputFilePath)
 
 		if err != nil {
-			return errors.Wrapf(err, "failed to create output file [%s]", outputFilePath)
+			return errors.SaveFailed.WithError(err).WithMessage("failed to create output file [%s]", outputFilePath)
 		}
 
 		defer func() {
@@ -52,7 +52,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 
 	err = c.writePolicy(ociClient, refDescriptor, outputFile)
 	if err != nil {
-		return err
+		return errors.SaveFailed.WithError(err)
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.D
 
 	refDescriptor, ok := refs[ref]
 	if !ok {
-		return nil, errors.Errorf("Image %s not found", ref)
+		return nil, errors.NotFound.WithMessage("policy [%s] not in the local store", ref)
 	}
 
 	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {

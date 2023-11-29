@@ -9,9 +9,9 @@ import (
 	"github.com/aserto-dev/runtime"
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/pkg/errors"
 	"github.com/open-policy-agent/opa/repl"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
@@ -49,7 +49,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		}
 		descriptor, ok = existingRefs[existingRefParsed]
 		if !ok {
-			return errors.Errorf("ref [%s] not found in the local store", ref)
+			return errors.NotFound.WithMessage("policy [%s] not in the local store", ref)
 		}
 	}
 
@@ -68,18 +68,18 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		},
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to setup the OPA runtime")
+		return errors.ReplFailed.WithError(err)
 	}
 	defer cleanup()
 
 	err = opaRuntime.Start(c.Context)
 	if err != nil {
-		return errors.Wrap(err, "OPA runtime failed to start")
+		return errors.ReplFailed.WithError(err)
 	}
 
 	err = opaRuntime.WaitForPlugins(c.Context, time.Minute*1)
 	if err != nil {
-		return errors.Wrap(err, "plugins didn't start on time")
+		return errors.ReplFailed.WithError(err)
 	}
 
 	loop := repl.New(opaRuntime.GetPluginsManager().Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
@@ -98,7 +98,7 @@ func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descrip
 		}
 		bundleHex = bundleDescriptor.Digest.Hex()
 		if bundleHex == "" {
-			return "", errors.New("current manifest does not contain a MediaTypeImageLayerGzip")
+			return "", errors.ReplFailed.WithMessage("current manifest does not contain a MediaTypeImageLayerGzip")
 		}
 	} else {
 		bundleHex = descriptor.Digest.Hex()

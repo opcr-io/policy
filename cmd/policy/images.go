@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/pkg/errors"
+	"github.com/opcr-io/policy/pkg/errors"
 )
 
 type ImagesCmd struct {
@@ -14,7 +14,7 @@ func (c *ImagesCmd) Run(g *Globals) error {
 
 	err := g.App.Images()
 	if err != nil {
-		return errors.Wrap(err, "failed to list local policies")
+		return errors.ImagesFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

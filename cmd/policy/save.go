@@ -1,6 +1,6 @@
 package main
 
-import "github.com/pkg/errors"
+import "github.com/opcr-io/policy/pkg/errors"
 
 type SaveCmd struct {
 	Policy string `arg:"" name:"policy" help:"Policy to save."`
@@ -10,7 +10,7 @@ type SaveCmd struct {
 func (c *SaveCmd) Run(g *Globals) error {
 	err := g.App.Save(c.Policy, c.File)
 	if err != nil {
-		return errors.Wrap(err, "failed to save local bundle tarball")
+		return errors.SaveFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
