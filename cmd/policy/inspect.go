@@ -1,6 +1,6 @@
 package main
 
-import "github.com/pkg/errors"
+import "github.com/opcr-io/policy/pkg/errors"
 
 type InspectCmd struct {
 	Policy string `arg:"" name:"policy" help:"Policy to inspect."`
@@ -9,7 +9,7 @@ type InspectCmd struct {
 func (c *InspectCmd) Run(g *Globals) error {
 	err := g.App.Inspect(c.Policy)
 	if err != nil {
-		return errors.Wrap(err, "failed to inspect policy")
+		return errors.InspectFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

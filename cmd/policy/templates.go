@@ -1,6 +1,6 @@
 package main
 
-import "github.com/pkg/errors"
+import "github.com/opcr-io/policy/pkg/errors"
 
 type TemplatesCmd struct {
 	Apply ApplyCmd `cmd:"" name:"apply" help:"Create or update a policy or related artifacts from a template."`
@@ -19,7 +19,7 @@ type ListCmd struct {
 func (c *ApplyCmd) Run(g *Globals) error {
 	err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite)
 	if err != nil {
-		return errors.Wrapf(err, "failed to apply template '%s'", c.Template)
+		return errors.TemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
@@ -29,7 +29,7 @@ func (c *ApplyCmd) Run(g *Globals) error {
 func (c *ListCmd) Run(g *Globals) error {
 	err := g.App.TemplatesList()
 	if err != nil {
-		return errors.Wrap(err, "failed to list templates")
+		return errors.TemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

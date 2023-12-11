@@ -8,7 +8,7 @@ import (
 
 	"github.com/docker/cli/cli/config/types"
 
-	"github.com/pkg/errors"
+	perr "github.com/opcr-io/policy/pkg/errors"
 	"golang.org/x/term"
 )
 
@@ -25,18 +25,18 @@ func (c *LoginCmd) Run(g *Globals) error {
 		g.App.UI.Exclamation().Msg("Using --password via the CLI is insecure. Use --password-stdin.")
 
 		if c.PasswordStdin {
-			return errors.New("--password and --password-stdin are mutually exclusive")
+			return perr.LoginFailed.WithMessage("--password and --password-stdin are mutually exclusive")
 		}
 	}
 
 	if c.PasswordStdin {
 		if c.Username == "" {
-			return errors.New("Must provide --username with --password-stdin")
+			return perr.LoginFailed.WithMessage("Must provide --username with --password-stdin")
 		}
 
 		contents, err := io.ReadAll(g.App.UI.Input())
 		if err != nil {
-			return err
+			return perr.LoginFailed.WithError(err)
 		}
 
 		c.Password = strings.TrimSuffix(string(contents), "\n")
@@ -44,7 +44,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 	}
 
 	if c.Server == "" {
-		return errors.New("Must provide --server")
+		return perr.LoginFailed.WithMessage("Must provide --server")
 	}
 
 	password := c.Password
@@ -52,7 +52,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 		g.App.UI.Normal().NoNewline().Msg("Password: ")
 		bytePassword, err := term.ReadPassword(int(syscall.Stdin)) // nolint:unconvert // needed for windows
 		if err != nil {
-			return errors.Wrap(err, "failed to read password from stdin")
+			return perr.LoginFailed.WithError(err)
 		}
 
 		password = string(bytePassword)
@@ -64,12 +64,12 @@ func (c *LoginCmd) Run(g *Globals) error {
 		Msg("Logging in.")
 	err := g.App.Ping(c.Server, c.Username, password)
 	if err != nil {
-		return err
+		return perr.LoginFailed.WithError(err)
 	}
 	var setDefault bool
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		return err
+		return perr.LoginFailed.WithError(err)
 	}
 
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -85,7 +85,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 		Password:      password,
 	})
 	if err != nil {
-		return err
+		return perr.LoginFailed.WithError(err)
 	}
 
 	if setDefault {
@@ -94,7 +94,7 @@ func (c *LoginCmd) Run(g *Globals) error {
 
 	err = g.App.Configuration.SaveDefaultDomain()
 	if err != nil {
-		return err
+		return perr.LoginFailed.WithError(err)
 	}
 
 	g.App.UI.Normal().Msg("OK.")

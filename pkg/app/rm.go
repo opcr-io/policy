@@ -7,8 +7,8 @@ import (
 
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/pkg/errors"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 func (c *PolicyApp) Rm(existingRef string, force bool) error {
@@ -47,7 +47,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 
 	ref, ok := existingRefs[existingRefParsed]
 	if !ok {
-		return errors.Errorf("ref [%s] not found in the local store", existingRef)
+		return errors.NotFound.WithMessage("policy [%s] not in the local store", existingRef)
 	}
 	// attach ref name annotation for comparison.
 	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {

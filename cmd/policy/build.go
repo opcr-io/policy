@@ -1,6 +1,8 @@
 package main
 
-import "github.com/pkg/errors"
+import (
+	perr "github.com/opcr-io/policy/pkg/errors"
+)
 
 type BuildCmd struct {
 	Tag         string            `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format, if not provided it will be 'default:latest'"`
@@ -44,7 +46,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		c.ClaimsFile,
 	)
 	if err != nil {
-		return errors.Wrap(err, "build failed")
+		return perr.BuildFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
