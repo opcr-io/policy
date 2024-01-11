@@ -42,7 +42,8 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	scope string,
 	excludeVerifyFiles []string,
 	signingKey string,
-	claimsFile string) error {
+	claimsFile string,
+	regoV1 bool) error {
 	defer c.Cancel()
 
 	// Create a tmp dir where to do our work.
@@ -83,6 +84,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		PubKey:               verificationKey,
 		PubKeyID:             verificationKeyID,
 		ExcludeVerifyFiles:   excludeVerifyFiles,
+		RegoV1:               regoV1,
 	}, path)
 	if err != nil {
 		return errors.Wrap(err, "failed to build opa policy bundle")
