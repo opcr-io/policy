@@ -23,7 +23,7 @@ type BuildCmd struct {
 	ExcludeVerifyFiles []string `name:"exclude-files-verify" help:"Set file names to exclude during bundle verification."`
 	SigningKey         string   `name:"signing-key" help:"Set the secret (HMAC) or path of the PEM file containing the private key (RSA and ECDSA)."`
 	ClaimsFile         string   `name:"claims-file" help:"Set path of JSON file containing optional claims (see: https://openpolicyagent.org/docs/latest/management/#signature-format)."`
-	RegoVersion        string   `name:"rego-version" enum:"default,rego.v1" default:"default" help:"specify rego version flag (enum: default or rego.v1)"`
+	RegoVersion        string   `name:"rego-version" enum:"default,rego.v1" default:"default" help:"Set rego version flag (enum: default or rego.v1)."`
 }
 
 func (c *BuildCmd) Run(g *Globals) error {
