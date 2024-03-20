@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 		--mount=type=cache,target=/root/.cache/go-build \
 		go run mage.go deps build
 
-FROM alpine:3
+FROM alpine
 ARG VERSION
 ARG COMMIT
 LABEL org.opencontainers.image.version=$VERSION

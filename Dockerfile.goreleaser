@@ -1,0 +1,19 @@
+FROM alpine
+
+RUN apk add --no-cache bash
+
+ENV POLICY_FILE_STORE_ROOT=/github/workspace/_policy
+
+WORKDIR /app
+
+COPY --chmod=755 policy /app/
+COPY --chmod=755 scripts/build.sh /app/build.sh
+COPY --chmod=755 scripts/login.sh /app/login.sh
+COPY --chmod=755 scripts/logout.sh /app/logout.sh
+COPY --chmod=755 scripts/pull.sh /app/pull.sh
+COPY --chmod=755 scripts/push.sh /app/push.sh
+COPY --chmod=755 scripts/rm.sh /app/rm.sh
+COPY --chmod=755 scripts/save.sh /app/save.sh
+COPY --chmod=755 scripts/tag.sh /app/tag.sh
+
+ENTRYPOINT ["./policy"]

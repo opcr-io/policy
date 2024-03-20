@@ -8,25 +8,25 @@ bin:
     sha:
       linux-amd64: "88c280945db62b118435ec1bf0086a719f6b6551cba052e5f8d1e25a80884bca"
       linux-arm64: "e57e719e1eec9bce9057751e2583907210d3ac99c0a01897479506fbb2af828d"
-      darwin-amd64: "db30ea93bc9a87c37d0215515f4d28d3513f84b793c6f9958ac5dea6edd53242"
-      darwin-arm64: "18096cfdacba56a806f1b4b47ea20b3c03f062b5162c53a2b61b0b591d00aa65"
+      darwin-amd64: "6ca2c461fea2cef22266a747dad043df91d333b3ca98579e2a44230889a82aea"
+      darwin-arm64: "50c3f973effa013711abb17edbefe5435f7bc74b80cefd834dde1fba97680243"
 
 go:
   sver:
     importPath: "github.com/aserto-dev/sver/cmd/sver"
-    version: "v1.3.11"
+    version: "v1.3.13"
   wire:
     importPath: "github.com/google/wire/cmd/wire"
-    version: "v0.5.0"
+    version: "v0.6.0"
   goreleaser:
     importPath: github.com/goreleaser/goreleaser
-    version: "v1.12.3"
+    version: "v1.24.0"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
-    version: "v1.8.2"
+    version: "v1.11.0"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    version: "v1.53.3"
+    version: "v1.56.2"
   mockgen:
     importPath: github.com/golang/mock/mockgen
     version: "v1.6.0"
