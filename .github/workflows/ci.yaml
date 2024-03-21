@@ -94,14 +94,10 @@ jobs:
       - 
         name: Docker SSH Setup
         run: |
-          mkdir -p $HOME/.ssh
-          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
-          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf https://github.com/
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
           eval `ssh-agent`
-          ssh-add $HOME/.ssh/id_rsa
       -
         name: Push image to GitHub Container Registry
         uses: goreleaser/goreleaser-action@v5
@@ -140,14 +136,10 @@ jobs:
       - 
         name: Docker SSH Setup
         run: |
-          mkdir -p $HOME/.ssh
-          umask 0077 && echo -e "${SSH_PRIVATE_KEY}" > $HOME/.ssh/id_rsa
-          ssh-keyscan github.com >> $HOME/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf https://github.com/
           git config --global user.email "github-bot@aserto.com"
           git config --global user.name "Aserto Bot"
           eval `ssh-agent`
-          ssh-add $HOME/.ssh/id_rsa
       - 
         name: Pre-release
         if: github.event_name == 'push'  && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
