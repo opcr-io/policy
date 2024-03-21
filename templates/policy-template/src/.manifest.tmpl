@@ -6,71 +6,15 @@
       "required_builtins": {
         "builtin1": [
           {
-            "name": "dir.user",
+            "name": "ds.check",
             "decl": {
               "args": [
                 {
-                  "type": "string"
+                  "type": "any"
                 }
               ],
               "result": {
-                "type": "any"
-              },
-              "type": "function"
-            }
-          },
-          {
-            "name": "dir.manager_of",
-            "decl": {
-              "args": [
-                {
-                  "type": "string"
-                }
-              ],
-              "result": {
-                "type": "any"
-              },
-              "type": "function"
-            }
-          },
-          {
-            "name": "dir.management_chain",
-            "decl": {
-              "args": [
-                {
-                  "type": "string"
-                }
-              ],
-              "result": {
-                "type": "any"
-              },
-              "type": "function"
-            }
-          },
-          {
-            "name": "res.get",
-            "decl": {
-              "args": [
-                {
-                  "type": "string"
-                }
-              ],
-              "result": {
-                "type": "any"
-              },
-              "type": "function"
-            }
-          },
-          {
-            "name": "dir.identity",
-            "decl": {
-              "args": [
-                {
-                  "type": "string"
-                }
-              ],
-              "result": {
-                "type": "any"
+                "type": "boolean"
               },
               "type": "function"
             }
@@ -118,20 +62,6 @@
             }
           },
           {
-            "name": "ds.identity",
-            "decl": {
-              "args": [
-                {
-                  "type": "any"
-                }
-              ],
-              "result": {
-                "type": "any"
-              },
-              "type": "function"
-            }
-          },
-          {
             "name": "ds.object",
             "decl": {
               "args": [
@@ -160,7 +90,7 @@
             }
           },
           {
-            "name": "ds.user",
+            "name": "ds.relations",
             "decl": {
               "args": [
                 {
@@ -172,65 +102,29 @@
               },
               "type": "function"
             }
-          }
-        ],
-        "builtin2": [
+          },
           {
-            "name": "dir.is_manager_of",
+            "name": "ds.identity",
             "decl": {
               "args": [
                 {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
+                  "type": "any"
                 }
               ],
               "result": {
-                "type": "boolean"
+                "type": "any"
               },
               "type": "function"
             }
           },
           {
-            "name": "dir.works_for",
+            "name": "ds.user",
             "decl": {
               "args": [
                 {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
+                  "type": "any"
                 }
               ],
-              "result": {
-                "type": "boolean"
-              },
-              "type": "function"
-            }
-          },
-          {
-            "name": "dir.is_same_user",
-            "decl": {
-              "args": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ],
-              "result": {
-                "type": "boolean"
-              },
-              "type": "function"
-            }
-          }
-        ],
-        "builtinDyn": [
-          {
-            "name": "res.list",
-            "decl": {
               "result": {
                 "type": "any"
               },

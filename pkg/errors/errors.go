@@ -28,16 +28,18 @@ func NewPolicyError(message string) *PolicyCLIError {
 	}
 }
 
+const arrow string = " -> "
+
 func (e *PolicyCLIError) Error() string {
 	response := e.Message
 	if e.Err != nil {
-		response += " -> " + e.Err.Error()
+		response += arrow + e.Err.Error()
 	}
 	return response
 }
 
 func (e *PolicyCLIError) WithMessage(message string, args ...interface{}) *PolicyCLIError {
-	e.Message += " -> " + fmt.Sprintf(message, args...)
+	e.Message += arrow + fmt.Sprintf(message, args...)
 	return e
 }
 
