@@ -156,6 +156,7 @@ func main() {
 		&PolicyCLI,
 		kong.Name(appName),
 		kong.UsageOnError(),
+		kong.Exit(func(x int) { os.Exit(0) }),
 		kong.ConfigureHelp(kong.HelpOptions{
 			NoAppSummary:        false,
 			Summary:             false,
