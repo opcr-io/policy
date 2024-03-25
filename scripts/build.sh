@@ -4,6 +4,7 @@
 [ -z "${INPUT_REVISION}" ]   && INPUT_REVISION=${GITHUB_SHA}
 [ -z "${INPUT_VERBOSITY}" ]  && INPUT_VERBOSITY="error"
 [ -z "${INPUT_SOURCE_URL}" ] && INPUT_SOURCE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+[ -z "${INPUT_REGO_VERSION}"] && INPUT_REGO_VERSION="default"
 
 # validate if values are set
 [ -z "${INPUT_SRC}" ]        && echo "INPUT_SRC is not set exiting" && exit 2
@@ -50,6 +51,7 @@ echo "INPUT_TAG           ${INPUT_TAG}"
 echo "INPUT_REVISION      ${INPUT_REVISION}"
 echo "INPUT_VERBOSITY     ${INPUT_VERBOSITY} (${VERBOSITY})"
 echo "INPUT_SOURCE_URL    ${INPUT_SOURCE_URL}"
+echo "INPUT_REGO_VERSION  ${INPUT_REGO_VERSION}"
 echo "SRC_PATH            ${SRC_PATH}"
 printf "\n"
 
@@ -59,7 +61,7 @@ printf "\n"
 e_code=0
 
 # construct commandline arguments 
-CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --verbosity=${VERBOSITY} --annotations=org.opencontainers.image.source=${INPUT_SOURCE_URL}"
+CMD="/app/policy build ${SRC_PATH} --tag ${INPUT_TAG} --rego-version=${INPUT_REGO_VERSION} --verbosity=${VERBOSITY} --annotations=org.opencontainers.image.source=${INPUT_SOURCE_URL}"
 
 # execute command
 eval "$CMD" || e_code=1
