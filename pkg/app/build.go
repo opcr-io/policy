@@ -109,7 +109,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	annotations = buildAnnotations(annotations, parsedRef)
+	annotations = buildAnnotations(annotations, parsedRef, regoV1)
 
 	desc, err := c.createImage(ociStore, outfile, annotations)
 	if err != nil {
@@ -131,7 +131,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func buildAnnotations(annotations map[string]string, parsedRef docker.Named) map[string]string {
+func buildAnnotations(annotations map[string]string, parsedRef docker.Named, regoV1 bool) map[string]string {
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
@@ -139,6 +139,9 @@ func buildAnnotations(annotations map[string]string, parsedRef docker.Named) map
 	annotations[ocispec.AnnotationTitle] = parsedRef.Name()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+	if regoV1 {
+		annotations["rego.version"] = "rego.V1"
+	}
 
 	return annotations
 }
