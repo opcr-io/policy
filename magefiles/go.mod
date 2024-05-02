@@ -1,6 +1,6 @@
 module github.com/opcr-io/policy/magefiles
 
-go 1.19
+go 1.21
 
 require (
 	github.com/aserto-dev/mage-loot v0.8.15

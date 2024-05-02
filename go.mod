@@ -1,19 +1,17 @@
 module github.com/opcr-io/policy
 
-go 1.22
-
-toolchain go1.22.1
+go 1.21
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.9.0
-	github.com/aserto-dev/certs v0.0.5
+	github.com/aserto-dev/certs v0.0.6
 	github.com/aserto-dev/clui v0.8.3
 	github.com/aserto-dev/logger v0.0.4
-	github.com/aserto-dev/runtime v0.62.2-0.20240430071606-0821547bee58
+	github.com/aserto-dev/runtime v0.64.0
 	github.com/aserto-dev/scc-lib v0.1.2
 	github.com/containerd/containerd v1.7.16
-	github.com/docker/cli v24.0.0+incompatible
+	github.com/docker/cli v26.1.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/wire v0.6.0
 	github.com/magefile/mage v1.15.0
@@ -30,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/term v0.19.0
-	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/controller-runtime v0.17.3
 )
 
 require (
@@ -54,7 +52,6 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/subcommands v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect

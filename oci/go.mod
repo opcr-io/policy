@@ -1,6 +1,6 @@
 module github.com/opcr-io/policy/oci
 
-go 1.19
+go 1.21
 
 require (
 	github.com/containerd/containerd v1.7.11
