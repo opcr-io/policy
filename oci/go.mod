@@ -6,11 +6,11 @@ toolchain go1.22.2
 
 require (
 	github.com/containerd/containerd v1.7.16
-	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.32.0
+	oras.land/oras-go/v2 v2.5.0
 )
 
 require (

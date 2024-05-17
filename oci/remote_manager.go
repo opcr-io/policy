@@ -7,8 +7,9 @@ import (
 	"io"
 	"strings"
 
+	"oras.land/oras-go/v2/content"
+
 	"github.com/containerd/containerd/remotes"
-	"github.com/opcr-io/oras-go/v2/content"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
