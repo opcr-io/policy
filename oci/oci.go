@@ -12,14 +12,14 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
-	"github.com/opcr-io/oras-go/v2"
-	"github.com/opcr-io/oras-go/v2/content"
-	"github.com/opcr-io/oras-go/v2/content/memory"
-	"github.com/opcr-io/oras-go/v2/content/oci"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
+	"oras.land/oras-go/v2/content/memory"
+	"oras.land/oras-go/v2/content/oci"
 )
 
 const (
@@ -175,7 +175,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	configDescriptor.MediaType = MediaTypeConfig
 
 	// remove manifest from index
-	err = o.ociStore.Untag(o.ctx, descriptor, ref)
+	err = o.ociStore.Untag(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
@@ -193,7 +193,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	// remove tarball from index
-	err = o.ociStore.Untag(o.ctx, *tarBallDescriptor, ref)
+	err = o.ociStore.Untag(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
@@ -211,7 +211,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	// remove config from index
-	err = o.ociStore.Untag(o.ctx, *configDescriptor, ref)
+	err = o.ociStore.Untag(o.ctx, ref)
 	if err != nil {
 		return "", err
 	}
@@ -304,7 +304,7 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 }
 
 func (o *Oci) Untag(descr *ocispec.Descriptor, ref string) error {
-	return o.ociStore.Untag(o.ctx, *descr, ref)
+	return o.ociStore.Untag(o.ctx, ref)
 }
 
 func (o *Oci) GetStore() *oci.Store {

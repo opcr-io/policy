@@ -82,11 +82,6 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 }
 
 func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor, refString string) error {
-	tarballDesc, configDesc, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, ref)
-	if err != nil {
-		return err
-	}
-
 	anotherImagewithSameDigest, err := c.buildFromSameImage(ref)
 	if err != nil {
 		return err
@@ -102,23 +97,6 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 	}
 
 	err = ociClient.GetStore().Delete(c.Context, *ref)
-	if err != nil {
-		return err
-	}
-
-	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, tarballDesc)
-	if err != nil {
-		return err
-	}
-
-	if !tarballStillUsed {
-		err = ociClient.GetStore().Delete(c.Context, *tarballDesc)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = ociClient.GetStore().Delete(c.Context, *configDesc)
 	if err != nil {
 		return err
 	}

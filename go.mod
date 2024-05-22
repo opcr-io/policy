@@ -10,14 +10,14 @@ require (
 	github.com/aserto-dev/logger v0.0.4
 	github.com/aserto-dev/runtime v0.64.0
 	github.com/aserto-dev/scc-lib v0.1.2
-	github.com/containerd/containerd v1.7.16
+	github.com/containerd/containerd v1.7.17
 	github.com/docker/cli v26.1.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/wire v0.6.0
 	github.com/magefile/mage v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
-	github.com/opcr-io/policy/oci v0.2.5-0.20231122153628-152ef46de97b
+	github.com/opcr-io/policy/oci v0.2.7-0.20240517114530-d694cb7fb57f
 	github.com/opcr-io/policy/parser v0.2.5-0.20231122153628-152ef46de97b
 	github.com/open-policy-agent/opa v0.64.1
 	github.com/opencontainers/go-digest v1.0.0
@@ -102,13 +102,13 @@ require (
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
-	google.golang.org/grpc v1.63.2 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
+	google.golang.org/grpc v1.64.0 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
