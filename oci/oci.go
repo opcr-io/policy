@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -287,7 +288,15 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 
 	descriptor, ok := refs[existingRef]
 	if !ok {
-		return errors.Errorf("policy [%s] not found in the local store", existingRef)
+		for _, v := range refs {
+			if strings.HasPrefix(v.Digest.String(), fmt.Sprintf("sha256:%s", existingRef)) {
+				descriptor = v
+				break
+			}
+		}
+		if descriptor.Size == 0 {
+			return errors.Errorf("policy [%s] not found in the local store", existingRef)
+		}
 	}
 
 	_, err = cloneDescriptor(&descriptor)

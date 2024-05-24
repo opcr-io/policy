@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
 	"github.com/pkg/errors"
@@ -13,10 +15,12 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 	if err != nil {
 		return err
 	}
-
-	existingRefParsed, err := parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
-	if err != nil {
-		return err
+	existingRefParsed := existingRef
+	if strings.Contains(existingRef, ":") {
+		existingRefParsed, err = parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
+		if err != nil {
+			return err
+		}
 	}
 
 	parsed, err := parser.CalculatePolicyRef(newRef, c.Configuration.DefaultDomain)
