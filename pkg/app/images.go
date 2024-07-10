@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/containerd/containerd/reference/docker"
+	"github.com/distribution/reference"
 	"github.com/dustin/go-humanize"
 	"github.com/opcr-io/policy/oci"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -50,7 +50,7 @@ func (c *PolicyApp) Images() error {
 				return err
 			}
 		}
-		ref, err := docker.ParseDockerRef(tag)
+		ref, err := reference.ParseDockerRef(tag)
 		if err != nil {
 			return err
 		}
@@ -58,7 +58,7 @@ func (c *PolicyApp) Images() error {
 		refName := ref.Name()
 
 		tagOrNone := "<none>"
-		tag, okTag := ref.(docker.Tagged)
+		tag, okTag := ref.(reference.Tagged)
 		if okTag {
 			tagOrNone = tag.Tag()
 		}
@@ -98,14 +98,14 @@ func (c *PolicyApp) Images() error {
 }
 
 func (c *PolicyApp) familiarPolicyRef(userRef string) (string, error) {
-	parsed, err := docker.ParseDockerRef(userRef)
+	parsed, err := reference.ParseDockerRef(userRef)
 	if err != nil {
 		return "", err
 	}
 
-	domain := docker.Domain(parsed)
+	domain := reference.Domain(parsed)
 	if domain == c.Configuration.DefaultDomain {
-		path := docker.Path(parsed)
+		path := reference.Path(parsed)
 		return path, nil
 	}
 

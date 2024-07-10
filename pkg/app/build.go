@@ -11,7 +11,7 @@ import (
 
 	"github.com/aserto-dev/runtime"
 	"github.com/containerd/containerd/errdefs"
-	"github.com/containerd/containerd/reference/docker"
+	"github.com/distribution/reference"
 
 	oras "github.com/opcr-io/oras-go/v2"
 	"github.com/opcr-io/oras-go/v2/content"
@@ -43,16 +43,16 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	excludeVerifyFiles []string,
 	signingKey string,
 	claimsFile string,
-	regoV1 bool) error {
+	regoV1 bool,
+) error {
 	defer c.Cancel()
 
-	// Create a tmp dir where to do our work.
-	workdir, err := os.MkdirTemp("", "policy-build")
+	workDir, err := os.MkdirTemp("", "policy-build")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temporary build directory")
 	}
 	defer func() {
-		err := os.RemoveAll(workdir)
+		err := os.RemoveAll(workDir)
 		if err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to remove temporary working directory.")
 		}
@@ -66,14 +66,14 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	}
 	defer cleanup()
 
-	outfile := filepath.Join(workdir, "bundle.tgz")
+	outFile := filepath.Join(workDir, "bundle.tgz")
 
 	err = opaRuntime.Build(&runtime.BuildParams{
 		CapabilitiesJSONFile: capabilities,
 		Target:               runtime.Rego,
 		OptimizationLevel:    optimizationLevel,
 		Entrypoints:          entrypoints,
-		OutputFile:           outfile,
+		OutputFile:           outFile,
 		Revision:             revision,
 		Ignore:               ignore,
 		Debug:                c.Logger.Debug().Enabled(),
@@ -99,19 +99,19 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		ref = "default"
 	}
 
-	familiarezedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	familiarizedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
 	}
 
-	parsedRef, err := docker.ParseDockerRef(familiarezedRef)
+	parsedRef, err := reference.ParseDockerRef(familiarizedRef)
 	if err != nil {
 		return err
 	}
 
 	annotations = buildAnnotations(annotations, parsedRef, regoV1)
 
-	desc, err := c.createImage(ociStore, outfile, annotations)
+	desc, err := c.createImage(ociStore, outFile, annotations)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	return nil
 }
 
-func buildAnnotations(annotations map[string]string, parsedRef docker.Named, regoV1 bool) map[string]string {
+func buildAnnotations(annotations map[string]string, parsedRef reference.Named, regoV1 bool) map[string]string {
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
