@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/errdefs"
 	"github.com/distribution/reference"
 
 	oras "github.com/opcr-io/oras-go/v2"
