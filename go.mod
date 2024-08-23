@@ -5,12 +5,13 @@ go 1.21
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v0.9.0
-	github.com/aserto-dev/certs v0.0.6
 	github.com/aserto-dev/clui v0.8.3
-	github.com/aserto-dev/logger v0.0.4
-	github.com/aserto-dev/runtime v0.67.1
+	github.com/aserto-dev/logger v0.0.6
+	github.com/aserto-dev/runtime v0.67.2
 	github.com/aserto-dev/scc-lib v0.1.2
 	github.com/containerd/containerd v1.7.20
+	github.com/containerd/errdefs v0.1.0
+	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v27.0.3+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/wire v0.6.0
@@ -40,11 +41,9 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytecodealliance/wasmtime-go/v3 v3.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -103,7 +102,7 @@ require (
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect

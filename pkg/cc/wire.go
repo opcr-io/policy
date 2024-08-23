@@ -4,38 +4,33 @@
 package cc
 
 import (
-	"github.com/aserto-dev/certs"
 	"github.com/aserto-dev/logger"
 	"github.com/google/wire"
 
+	runtimeLogger "github.com/aserto-dev/runtime/logger"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	cc_context "github.com/opcr-io/policy/pkg/cc/context"
 )
 
 var (
-	ccSet = wire.NewSet(
-		cc_context.NewContext,
+	commonSet = wire.NewSet(
 		config.NewConfig,
 		config.NewLoggerConfig,
-		logger.NewLogger,
+		runtimeLogger.NewLogger,
 		wire.FieldsOf(new(config.Config), "Logging"),
 		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"),
 
 		wire.Struct(new(CC), "*"),
 	)
 
+	ccSet = wire.NewSet(
+		commonSet,
+		cc_context.NewContext,
+	)
+
 	ccTestSet = wire.NewSet(
-		// Test
+		commonSet,
 		cc_context.NewTestContext,
-
-		// Normal
-		config.NewConfig,
-		config.NewLoggerConfig,
-		logger.NewLogger,
-		certs.NewGenerator,
-		wire.FieldsOf(new(*cc_context.ErrGroupAndContext), "Ctx", "ErrGroup", "Cancel"),
-
-		wire.Struct(new(CC), "*"),
 	)
 )
 
