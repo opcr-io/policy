@@ -79,7 +79,7 @@ func (c *PolicyApp) Images() error {
 			tagOrNone:    tagOrNone,
 			digest:       descr.Digest.Encoded()[:12],
 			createdAt:    createdAt,
-			size:         strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", ""),
+			size:         strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", ""), //nolint: gosec
 		})
 	}
 
