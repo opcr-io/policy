@@ -16,11 +16,12 @@ EXT_DIR			:= ./.ext
 EXT_BIN_DIR		:= ${EXT_DIR}/bin
 EXT_TMP_DIR		:= ${EXT_DIR}/tmp
 
-SVU_VERSION 	:= 1.12.0
-GOTESTSUM_VERSION := 1.11.0
-GOLANGCI-LINT_VERSION := 1.56.2
-GORELEASER_VERSION := 1.24.0
-WIRE_VERSION	:= 0.6.0
+GO_VER                := 1.23
+SVU_VERSION 	      := 1.12.0
+GOTESTSUM_VERSION     := 1.11.0
+GOLANGCI-LINT_VERSION := 1.61.0
+GORELEASER_VERSION    := 2.3.2
+WIRE_VERSION          := 0.6.0
 
 RELEASE_TAG		:= $$(svu)
 
@@ -33,6 +34,7 @@ deps: info install-svu install-goreleaser install-golangci-lint install-gotestsu
 .PHONY: build
 build:
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
+	@(go env GOVERSION | grep "go${GO_VER}") || (echo "go version check failed expected go${GO_VER} got $$(go env GOVERSION)"; exit 1)
 	@${EXT_BIN_DIR}/goreleaser build --clean --snapshot --single-target
 
 .PHONY: dev-release
