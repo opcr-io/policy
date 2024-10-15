@@ -60,7 +60,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 	}
 
 	v.SetEnvPrefix("POLICY")
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// Set defaults.
 	home, err := os.UserHomeDir()
