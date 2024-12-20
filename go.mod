@@ -2,7 +2,7 @@ module github.com/opcr-io/policy
 
 go 1.22.8
 
-toolchain go1.23.2
+toolchain go1.23.4
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -114,7 +114,6 @@ require (
 	google.golang.org/grpc v1.69.0 // indirect
 	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	oras.land/oras-go/v2 v2.5.0 // indirect
