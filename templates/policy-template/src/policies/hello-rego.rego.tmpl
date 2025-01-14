@@ -7,14 +7,14 @@ default allowed = false
 default visible = false
 default enabled = false
 
-allowed {
+allowed if {
     input.role == "web-admin"
 }
 
-enabled {
+enabled if {
     visible
 }
 
-visible {
+visible if {
     input.app == "web-console"
 }
