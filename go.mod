@@ -9,7 +9,7 @@ require (
 	github.com/alecthomas/kong v1.6.0
 	github.com/aserto-dev/clui v0.8.3
 	github.com/aserto-dev/logger v0.0.6
-	github.com/aserto-dev/runtime v0.70.1-0.20250109141001-104286abb03d
+	github.com/aserto-dev/runtime v0.70.1-0.20250114143702-c0a8fd319837
 	github.com/aserto-dev/scc-lib v0.1.3
 	github.com/containerd/containerd v1.7.24
 	github.com/containerd/errdefs v1.0.0
