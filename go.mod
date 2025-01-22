@@ -1,6 +1,6 @@
 module github.com/opcr-io/policy
 
-go 1.22.8
+go 1.22.10
 
 toolchain go1.23.4
 
@@ -9,7 +9,7 @@ require (
 	github.com/alecthomas/kong v1.6.0
 	github.com/aserto-dev/clui v0.8.3
 	github.com/aserto-dev/logger v0.0.6
-	github.com/aserto-dev/runtime v0.70.0
+	github.com/aserto-dev/runtime v1.0.0
 	github.com/aserto-dev/scc-lib v0.1.3
 	github.com/containerd/containerd v1.7.24
 	github.com/containerd/errdefs v1.0.0
@@ -22,7 +22,7 @@ require (
 	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
 	github.com/opcr-io/policy/oci v0.2.16
 	github.com/opcr-io/policy/parser v0.2.16
-	github.com/open-policy-agent/opa v0.70.0
+	github.com/open-policy-agent/opa v1.0.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -111,7 +111,7 @@ require (
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241216192217-9240e9c98484 // indirect
-	google.golang.org/grpc v1.69.0 // indirect
+	google.golang.org/grpc v1.69.2 // indirect
 	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

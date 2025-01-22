@@ -8,16 +8,17 @@ type TemplatesCmd struct {
 }
 
 type ApplyCmd struct {
-	Template  string `arg:"" name:"template" required:"true" help:"name of the template to apply"`
-	Output    string `name:"output" short:"o" help:"output directory (defaults to current directory)" default:"."`
-	Overwrite bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
+	Template    string `arg:"" name:"template" required:"true" help:"name of the template to apply"`
+	Output      string `name:"output" short:"o" help:"output directory (defaults to current directory)" default:"."`
+	Overwrite   bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
+	RegoVersion string `name:"rego-version" enum:"rego.v0, rego.v1" default:"rego.v1" help:"Set rego version flag (enum: rego.v0 or rego.v1)."`
 }
 
 type ListCmd struct {
 }
 
 func (c *ApplyCmd) Run(g *Globals) error {
-	err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite)
+	err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite, c.RegoVersion)
 	if err != nil {
 		return errors.TemplateFailed.WithError(err)
 	}

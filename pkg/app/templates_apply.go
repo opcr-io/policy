@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
+func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVersion string) error {
 	defer c.Cancel()
 
 	if name == "" {
@@ -45,6 +45,9 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool) error {
 	generatorCfg, err := c.getGeneratorConfig(tmplInfo)
 	if err != nil {
 		return err
+	}
+	if name == "policy-template" {
+		name = fmt.Sprintf("%s/%s", name, regoVersion)
 	}
 
 	prog.ChangeMessage("Generating files")

@@ -4,7 +4,7 @@
 [ -z "${INPUT_REVISION}" ]   && INPUT_REVISION=${GITHUB_SHA}
 [ -z "${INPUT_VERBOSITY}" ]  && INPUT_VERBOSITY="error"
 [ -z "${INPUT_SOURCE_URL}" ] && INPUT_SOURCE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
-[ -z "${INPUT_REGO_VERSION}"] && INPUT_REGO_VERSION="default"
+[ -z "${INPUT_REGO_VERSION}"] && INPUT_REGO_VERSION="rego.v0"
 
 # validate if values are set
 [ -z "${INPUT_SRC}" ]        && echo "INPUT_SRC is not set exiting" && exit 2
