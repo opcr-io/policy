@@ -42,7 +42,7 @@ archives:
   # https://goreleaser.com/customization/archive/
   - format: zip
     builds:
-    - policy
+    - build
     files:
       - LICENSE
       - README.md
