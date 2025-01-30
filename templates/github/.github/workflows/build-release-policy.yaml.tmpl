@@ -50,11 +50,12 @@ jobs:
 
     - name: Policy Build
       id: policy-build
-      uses: opcr-io/policy-build-action@v3
+      uses: opcr-io/policy-build-action@v4
       with:
         src: src
         tag: {{`${{ steps.config.outputs.repo }}` }}
         revision: "$GITHUB_SHA"
+        rego_version: "rego.v1"
       env:
         POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}
 
@@ -65,7 +66,7 @@ jobs:
         source_tag: {{`${{ steps.config.outputs.repo }}` }}
         target_tags: {{`${{ steps.tags.outputs.target_tags }}` }}
       env:
-        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}
+        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}        
 
     - name: Policy Push
       id: policy-push
