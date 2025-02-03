@@ -19,6 +19,8 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6859/badge)](https://bestpractices.coreinfrastructure.org/projects/6859)
 ---
 
+**_Note:_** Version v0.3.x of policy CLI uses Rego V1 as default to build policy images. 
+
 ## Documentation
 
 Please refer to our [documentation](https://openpolicycontainers.com) site for installation, usage, customization and tips.
