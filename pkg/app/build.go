@@ -52,8 +52,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return errors.Wrap(err, "failed to create temporary build directory")
 	}
 	defer func() {
-		err := os.RemoveAll(workDir)
-		if err != nil {
+		if err := os.RemoveAll(workDir); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to remove temporary working directory.")
 		}
 	}()
@@ -163,8 +162,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 	defer func() {
-		err := tarballFile.Close()
-		if err != nil {
+		if err := tarballFile.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
 		}
 	}()
@@ -223,8 +221,7 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 		return "", err
 	}
 	defer func() {
-		err := fd.Close()
-		if err != nil {
+		if err := fd.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball when calculating digest.")
 		}
 	}()

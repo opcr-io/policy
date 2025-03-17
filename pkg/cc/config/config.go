@@ -79,7 +79,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 	}
 
 	if configExists {
-		if err = v.ReadInConfig(); err != nil {
+		if err := v.ReadInConfig(); err != nil {
 			return nil, errors.Wrapf(err, "failed to read config file '%s'", file)
 		}
 	}
@@ -105,7 +105,6 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 
 		return nil
 	}()
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config file")
 	}
@@ -141,15 +140,16 @@ func (c *Config) PoliciesRoot() string {
 func (c *Config) ReplHistoryFile() string {
 	return filepath.Join(c.FileStoreRoot, "repl_history")
 }
+
 func (c *Config) SaveDefaultDomain() error {
 	_, err := os.Stat(c.FileStoreRoot)
 	if err != nil {
-		err := os.Mkdir(c.FileStoreRoot, 0600)
+		err := os.Mkdir(c.FileStoreRoot, 0o600)
 		if err != nil {
 			return err
 		}
 	}
-	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), 0600)
+	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), 0o600)
 }
 
 func (c *Config) LoadDefaultDomain() error {

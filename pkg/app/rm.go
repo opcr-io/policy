@@ -7,7 +7,7 @@ import (
 
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
-	"github.com/opcr-io/policy/pkg/errors"
+	perr "github.com/opcr-io/policy/pkg/errors"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -47,7 +47,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 
 	ref, ok := existingRefs[existingRefParsed]
 	if !ok {
-		return errors.NotFound.WithMessage("policy [%s] not in the local store", existingRef)
+		return perr.NotFound.WithMessage("policy [%s] not in the local store", existingRef)
 	}
 	// attach ref name annotation for comparison.
 	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
@@ -105,8 +105,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 }
 
 func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descriptor, existingRefs map[string]ocispec.Descriptor, existingRefParsed string) error {
-	err := ociClient.Untag(ref, existingRefParsed)
-	if err != nil {
+	if err := ociClient.Untag(ref, existingRefParsed); err != nil {
 		return err
 	}
 
@@ -118,16 +117,17 @@ func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descri
 			break
 		}
 	}
+
 	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, ref)
 	if err != nil {
 		return err
 	}
+
 	// only remove the blob if not used by another reference.
 	if removeBlob && !tarballStillUsed {
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
-		err := ociClient.GetStore().Delete(c.Context, *ref)
-		if err != nil {
+		if err := ociClient.GetStore().Delete(c.Context, *ref); err != nil {
 			return err
 		}
 	}

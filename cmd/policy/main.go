@@ -70,6 +70,7 @@ func resolveTmpConfig(context *kong.Context) {
 	if err != nil {
 		panic(err)
 	}
+
 	log, err := logger.NewLogger(io.Discard, io.Discard, cfgLogger)
 	if err != nil {
 		panic(err)
@@ -135,7 +136,6 @@ func (g *Globals) setup() func() {
 			}
 			c.Insecure = g.Insecure
 		})
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, `Application setup failed: %+v.
 This might be a bug. Please open an issue here: https://github.com/opcr-io/policy\n`,
@@ -178,7 +178,7 @@ func main() {
 
 	cleanup := g.setup()
 
-	if err = ctx.Run(g); err != nil {
+	if err := ctx.Run(g); err != nil {
 		g.App.UI.Problem().Msg(err.Error())
 		cleanup()
 		os.Exit(1)

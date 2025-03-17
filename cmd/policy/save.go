@@ -1,6 +1,6 @@
 package main
 
-import "github.com/opcr-io/policy/pkg/errors"
+import perr "github.com/opcr-io/policy/pkg/errors"
 
 type SaveCmd struct {
 	Policy string `arg:"" name:"policy" help:"Policy to save."`
@@ -8,9 +8,8 @@ type SaveCmd struct {
 }
 
 func (c *SaveCmd) Run(g *Globals) error {
-	err := g.App.Save(c.Policy, c.File)
-	if err != nil {
-		return errors.SaveFailed.WithError(err)
+	if err := g.App.Save(c.Policy, c.File); err != nil {
+		return perr.SaveFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

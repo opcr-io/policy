@@ -62,10 +62,10 @@ func (c *LoginCmd) Run(g *Globals) error {
 		WithStringValue("server", c.Server).
 		WithStringValue("user", c.Username).
 		Msg("Logging in.")
-	err := g.App.Ping(c.Server, c.Username, password)
-	if err != nil {
+	if err := g.App.Ping(c.Server, c.Username, password); err != nil {
 		return perr.LoginFailed.WithError(err)
 	}
+
 	var setDefault bool
 	stat, err := os.Stdin.Stat()
 	if err != nil {

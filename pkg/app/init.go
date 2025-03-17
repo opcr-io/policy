@@ -32,8 +32,7 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		return errors.New("invalid repo name, not org/repo")
 	}
 
-	err := c.validatePath(path)
-	if err != nil {
+	if err := c.validatePath(path); err != nil {
 		return err
 	}
 
@@ -44,13 +43,11 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		User:   user,
 	}
 
-	err = c.generateContent(
+	if err := c.generateContent(
 		generatorConfig,
 		path,
 		scc,
-		overwrite)
-
-	if err != nil {
+		overwrite); err != nil {
 		return err
 	}
 
@@ -79,7 +76,6 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 		c.Logger,
 		templateRoot,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize generator")
 	}
@@ -97,7 +93,7 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 
 func (c *PolicyApp) validatePath(path string) error {
 	if exist, _ := generators.DirExist(path); !exist {
-		if err := os.MkdirAll(path, 0700); err != nil {
+		if err := os.MkdirAll(path, 0o700); err != nil {
 			return errors.Errorf("root path not a directory '%s'", path)
 		}
 	}

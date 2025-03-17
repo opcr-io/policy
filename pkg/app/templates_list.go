@@ -16,13 +16,11 @@ type templateInfo struct {
 	description string
 }
 
-var (
-	templatesDescription = map[string]string{
-		"github":          "GitHub policy CI/CD template.",
-		"gitlab":          "GitLab policy CI/CD template.",
-		"policy-template": "Minimal policy template.",
-	}
-)
+var templatesDescription = map[string]string{
+	"github":          "GitHub policy CI/CD template.",
+	"gitlab":          "GitLab policy CI/CD template.",
+	"policy-template": "Minimal policy template.",
+}
 
 func (c *PolicyApp) TemplatesList() error {
 	defer c.Cancel()
@@ -54,8 +52,8 @@ func (c *PolicyApp) TemplatesList() error {
 }
 
 func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
-
 	var list []templateInfo
+
 	err := fs.WalkDir(templates.Assets(), ".", func(path string, d fs.DirEntry, err error) error {
 		if d.Name() != "." && !strings.Contains(path, string(os.PathSeparator)) {
 			if !d.IsDir() {
@@ -69,13 +67,11 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list templates")
 	}
 
 	return list, nil
-
 }
 
 func getDescription(folderName string) string {

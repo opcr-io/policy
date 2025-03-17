@@ -9,7 +9,7 @@ import (
 	"github.com/aserto-dev/runtime"
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
-	"github.com/opcr-io/policy/pkg/errors"
+	perr "github.com/opcr-io/policy/pkg/errors"
 	"github.com/open-policy-agent/opa/v1/repl"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -26,6 +26,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	if err != nil {
 		return err
 	}
+
 	existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
@@ -34,8 +35,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	descriptor, ok := existingRefs[existingRefParsed]
 
 	if !ok {
-		err := c.Pull(ref)
-		if err != nil {
+		if err := c.Pull(ref); err != nil {
 			return err
 		}
 
@@ -43,13 +43,15 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		if err != nil {
 			return err
 		}
+
 		existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
 		}
+
 		descriptor, ok = existingRefs[existingRefParsed]
 		if !ok {
-			return errors.NotFound.WithMessage("policy [%s] not in the local store", ref)
+			return perr.NotFound.WithMessage("policy [%s] not in the local store", ref)
 		}
 	}
 
@@ -68,18 +70,18 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		},
 	})
 	if err != nil {
-		return errors.ReplFailed.WithError(err)
+		return perr.ReplFailed.WithError(err)
 	}
 	defer cleanup()
 
 	err = opaRuntime.Start(c.Context)
 	if err != nil {
-		return errors.ReplFailed.WithError(err)
+		return perr.ReplFailed.WithError(err)
 	}
 
 	err = opaRuntime.WaitForPlugins(c.Context, time.Minute*1)
 	if err != nil {
-		return errors.ReplFailed.WithError(err)
+		return perr.ReplFailed.WithError(err)
 	}
 
 	loop := repl.New(opaRuntime.GetPluginsManager().Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
@@ -98,7 +100,7 @@ func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descrip
 		}
 		bundleHex = bundleDescriptor.Digest.Hex()
 		if bundleHex == "" {
-			return "", errors.ReplFailed.WithMessage("current manifest does not contain a MediaTypeImageLayerGzip")
+			return "", perr.ReplFailed.WithMessage("current manifest does not contain a MediaTypeImageLayerGzip")
 		}
 	} else {
 		bundleHex = descriptor.Digest.Hex()

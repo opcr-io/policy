@@ -27,8 +27,7 @@ func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 		return errors.New("could not save nil credentials")
 	}
 
-	err := c.Configuration.CredentialsStore.Store(*creds)
-	if err != nil {
+	if err := c.Configuration.CredentialsStore.Store(*creds); err != nil {
 		return errors.Wrap(err, "failed to save server credentials")
 	}
 
@@ -41,8 +40,7 @@ func (c *PolicyApp) RemoveServerCreds(server string) error {
 		server = c.Configuration.DefaultDomain
 	}
 
-	err := c.Configuration.CredentialsStore.Erase(server)
-	if err != nil {
+	if err := c.Configuration.CredentialsStore.Erase(server); err != nil {
 		return errors.Wrap(err, "failed to save server credentials")
 	}
 

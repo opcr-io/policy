@@ -8,8 +8,7 @@ type ReplCmd struct {
 }
 
 func (c *ReplCmd) Run(g *Globals) error {
-	err := g.App.Repl(c.Policy, c.MaxErrors)
-	if err != nil {
+	if err := g.App.Repl(c.Policy, c.MaxErrors); err != nil {
 		return errors.Wrap(err, "there was an error running the OPA runtime")
 	}
 

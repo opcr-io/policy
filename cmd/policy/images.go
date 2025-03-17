@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/opcr-io/policy/pkg/errors"
+	perr "github.com/opcr-io/policy/pkg/errors"
 )
 
 type ImagesCmd struct {
@@ -11,10 +11,8 @@ type ImagesCmd struct {
 }
 
 func (c *ImagesCmd) Run(g *Globals) error {
-
-	err := g.App.Images()
-	if err != nil {
-		return errors.ImagesFailed.WithError(err)
+	if err := g.App.Images(); err != nil {
+		return perr.ImagesFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

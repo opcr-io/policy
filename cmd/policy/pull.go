@@ -9,8 +9,7 @@ type PullCmd struct {
 func (c *PullCmd) Run(g *Globals) error {
 	var errs error
 	for _, policyRef := range c.Policies {
-		err := g.App.Pull(policyRef)
-		if err != nil {
+		if err := g.App.Pull(policyRef); err != nil {
 			g.App.UI.Problem().WithErr(err).Msgf("Failed to pull policy: %s", policyRef)
 			errs = err
 		}

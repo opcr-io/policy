@@ -1,6 +1,6 @@
 package main
 
-import "github.com/opcr-io/policy/pkg/errors"
+import perr "github.com/opcr-io/policy/pkg/errors"
 
 type TagCmd struct {
 	Policy string `arg:"" name:"policy" help:"Source policy name." type:"string"`
@@ -8,9 +8,8 @@ type TagCmd struct {
 }
 
 func (c *TagCmd) Run(g *Globals) error {
-	err := g.App.Tag(c.Policy, c.Tag)
-	if err != nil {
-		return errors.TagFailed.WithError(err)
+	if err := g.App.Tag(c.Policy, c.Tag); err != nil {
+		return perr.TagFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
