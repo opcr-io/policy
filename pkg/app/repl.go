@@ -26,6 +26,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	if err != nil {
 		return err
 	}
+
 	existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
@@ -43,17 +44,19 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		if err != nil {
 			return err
 		}
+
 		existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
 		}
+
 		descriptor, ok = existingRefs[existingRefParsed]
 		if !ok {
-			return errors.NotFound.WithMessage("policy [%s] not in the local store", ref)
+			return errors.ErrNotFound.WithMessage("policy [%s] not in the local store", ref)
 		}
 	}
 
-	// check for media type - if manifest get tarbarll digest hex.
+	// check for media type - if manifest get tarball digest hex.
 	bundleHex, err := c.getBundleHex(ociClient, &descriptor)
 	if err != nil {
 		return err
@@ -68,21 +71,27 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		},
 	})
 	if err != nil {
-		return errors.ReplFailed.WithError(err)
+		return errors.ErrReplFailed.WithError(err)
 	}
 	defer cleanup()
 
-	err = opaRuntime.Start(c.Context)
-	if err != nil {
-		return errors.ReplFailed.WithError(err)
+	if err := opaRuntime.Start(c.Context); err != nil {
+		return errors.ErrReplFailed.WithError(err)
 	}
 
-	err = opaRuntime.WaitForPlugins(c.Context, time.Minute*1)
-	if err != nil {
-		return errors.ReplFailed.WithError(err)
+	if err := opaRuntime.WaitForPlugins(c.Context, time.Minute*1); err != nil {
+		return errors.ErrReplFailed.WithError(err)
 	}
 
-	loop := repl.New(opaRuntime.GetPluginsManager().Store, c.Configuration.ReplHistoryFile(), c.UI.Output(), "", maxErrors, fmt.Sprintf("running policy [%s]", ref))
+	loop := repl.New(
+		opaRuntime.GetPluginsManager().Store,
+		c.Configuration.ReplHistoryFile(),
+		c.UI.Output(),
+		"",
+		maxErrors,
+		fmt.Sprintf("running policy [%s]", ref),
+	)
+
 	loop.Loop(context.Background())
 
 	return nil
@@ -96,9 +105,10 @@ func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descrip
 		if err != nil {
 			return "", err
 		}
+
 		bundleHex = bundleDescriptor.Digest.Hex()
 		if bundleHex == "" {
-			return "", errors.ReplFailed.WithMessage("current manifest does not contain a MediaTypeImageLayerGzip")
+			return "", errors.ErrReplFailed.WithMessage("current manifest does not contain a MediaTypeImageLayerGzip")
 		}
 	} else {
 		bundleHex = descriptor.Digest.Hex()

@@ -16,13 +16,11 @@ type templateInfo struct {
 	description string
 }
 
-var (
-	templatesDescription = map[string]string{
-		"github":          "GitHub policy CI/CD template.",
-		"gitlab":          "GitLab policy CI/CD template.",
-		"policy-template": "Minimal policy template.",
-	}
-)
+var templatesDescription = map[string]string{
+	"github":          "GitHub policy CI/CD template.",
+	"gitlab":          "GitLab policy CI/CD template.",
+	"policy-template": "Minimal policy template.",
+}
 
 func (c *PolicyApp) TemplatesList() error {
 	defer c.Cancel()
@@ -33,6 +31,7 @@ func (c *PolicyApp) TemplatesList() error {
 	if err != nil {
 		return err
 	}
+
 	p.Stop()
 
 	sort.Slice(templateInfos, func(i, j int) bool {
@@ -45,6 +44,7 @@ func (c *PolicyApp) TemplatesList() error {
 		if tmplInfo.kind == "" {
 			continue
 		}
+
 		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
 	}
 
@@ -54,28 +54,30 @@ func (c *PolicyApp) TemplatesList() error {
 }
 
 func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
-
 	var list []templateInfo
+
 	err := fs.WalkDir(templates.Assets(), ".", func(path string, d fs.DirEntry, err error) error {
 		if d.Name() != "." && !strings.Contains(path, string(os.PathSeparator)) {
 			if !d.IsDir() {
 				return nil
 			}
+
 			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
 				list = append(list, templateInfo{name: d.Name(), kind: "cicd", description: getDescription(d.Name())})
+
 				return nil
 			}
+
 			list = append(list, templateInfo{name: d.Name(), kind: "policy", description: getDescription(d.Name())})
 		}
+
 		return nil
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list templates")
 	}
 
 	return list, nil
-
 }
 
 func getDescription(folderName string) string {
@@ -83,5 +85,6 @@ func getDescription(folderName string) string {
 	if !ok {
 		return "no description available"
 	}
+
 	return val
 }

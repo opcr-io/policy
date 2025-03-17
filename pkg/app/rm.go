@@ -47,15 +47,18 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 
 	ref, ok := existingRefs[existingRefParsed]
 	if !ok {
-		return errors.NotFound.WithMessage("policy [%s] not in the local store", existingRef)
+		return errors.ErrNotFound.WithMessage("policy [%s] not in the local store", existingRef)
 	}
+
 	// attach ref name annotation for comparison.
 	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
 		oldAnnotations := ref.Annotations
 		ref.Annotations = make(map[string]string)
+
 		if oldAnnotations != nil {
 			ref.Annotations = oldAnnotations
 		}
+
 		ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 	}
 
@@ -82,7 +85,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 }
 
 func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor, refString string) error {
-	anotherImagewithSameDigest, err := c.buildFromSameImage(ref)
+	anotherImageWithSameDigest, err := c.buildFromSameImage(ref)
 	if err != nil {
 		return err
 	}
@@ -92,7 +95,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return err
 	}
 
-	if anotherImagewithSameDigest {
+	if anotherImageWithSameDigest {
 		return nil
 	}
 
@@ -104,7 +107,12 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 	return nil
 }
 
-func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descriptor, existingRefs map[string]ocispec.Descriptor, existingRefParsed string) error {
+func (c *PolicyApp) removeBasedOnTarball(
+	ociClient *oci.Oci,
+	ref *ocispec.Descriptor,
+	existingRefs map[string]ocispec.Descriptor,
+	existingRefParsed string,
+) error {
 	err := ociClient.Untag(ref, existingRefParsed)
 	if err != nil {
 		return err
@@ -112,16 +120,19 @@ func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descri
 
 	// Check if existing images use same digest.
 	removeBlob := true
+
 	for _, v := range existingRefs {
 		if v.Digest == ref.Digest {
 			removeBlob = false
 			break
 		}
 	}
+
 	tarballStillUsed, err := c.tarballReferencedByOtherManifests(ociClient, ref)
 	if err != nil {
 		return err
 	}
+
 	// only remove the blob if not used by another reference.
 	if removeBlob && !tarballStillUsed {
 		// Hack to remove the existing digest until ocistore deleter is implemented
@@ -136,22 +147,25 @@ func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descri
 }
 
 func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *ocispec.Descriptor) (bool, error) {
+	//nolint:tagliatelle
 	type index struct {
 		Version   int                  `json:"schemaVersion"`
 		Manifests []ocispec.Descriptor `json:"manifests"`
 	}
 
 	var localIndex index
+
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+
 	indexBytes, err := os.ReadFile(indexPath)
 	if err != nil {
 		return false, err
 	}
 
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
+	if err := json.Unmarshal(indexBytes, &localIndex); err != nil {
 		return false, err
 	}
+
 	for i := range localIndex.Manifests {
 		descriptor := localIndex.Manifests[i]
 
@@ -165,6 +179,7 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 			if err != nil {
 				return false, err
 			}
+
 			for _, layer := range manifest.Layers {
 				if (layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer) && layer.Digest == ref.Digest {
 					return true, nil
@@ -177,18 +192,22 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 }
 
 func (c *PolicyApp) buildFromSameImage(ref *ocispec.Descriptor) (bool, error) {
+	//nolint:tagliatelle
 	type index struct {
 		Version   int                  `json:"schemaVersion"`
 		Manifests []ocispec.Descriptor `json:"manifests"`
 	}
+
 	var localIndex index
+
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+
 	indexBytes, err := os.ReadFile(indexPath)
 	if err != nil {
 		return false, err
 	}
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
+
+	if err := json.Unmarshal(indexBytes, &localIndex); err != nil {
 		return false, err
 	}
 

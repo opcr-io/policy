@@ -16,7 +16,10 @@ import (
 )
 
 const (
-	appName string = "policy"
+	appName        string = "policy"
+	verbosityError int    = 0
+	verbosityInfo  int    = 1
+	verbosityDebug int    = 2
 )
 
 var tmpConfig *config.Config
@@ -53,7 +56,9 @@ func resolveTmpConfig(context *kong.Context) {
 	}
 
 	allFlags := context.Flags()
+
 	var configFlag *kong.Flag
+
 	for _, f := range allFlags {
 		if f.Name == "config" {
 			configFlag = f
@@ -64,12 +69,16 @@ func resolveTmpConfig(context *kong.Context) {
 		return
 	}
 
-	configPath := context.FlagValue(configFlag).(string)
+	configPath, ok := context.FlagValue(configFlag).(string)
+	if !ok {
+		panic("config path cast failed")
+	}
 
 	cfgLogger, err := config.NewLoggerConfig(config.Path(configPath), nil)
 	if err != nil {
 		panic(err)
 	}
+
 	log, err := logger.NewLogger(io.Discard, io.Discard, cfgLogger)
 	if err != nil {
 		panic(err)
@@ -124,18 +133,18 @@ func (g *Globals) setup() func() {
 		config.Path(configFile),
 		func(c *config.Config) {
 			switch g.Verbosity {
-			case 0:
+			case verbosityError:
 				c.Logging.LogLevel = "error"
-			case 1:
+			case verbosityInfo:
 				c.Logging.LogLevel = "info"
-			case 2:
+			case verbosityDebug:
 				c.Logging.LogLevel = "debug"
 			default:
 				c.Logging.LogLevel = "trace"
 			}
+
 			c.Insecure = g.Insecure
 		})
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, `Application setup failed: %+v.
 This might be a bug. Please open an issue here: https://github.com/opcr-io/policy\n`,
@@ -143,6 +152,7 @@ This might be a bug. Please open an issue here: https://github.com/opcr-io/polic
 	}
 
 	g.App = policyAPP
+
 	return cleanup
 }
 

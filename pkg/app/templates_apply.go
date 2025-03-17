@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/aserto-dev/scc-lib/generators"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/opcr-io/policy/templates"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 )
 
 func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVersion string) error {
@@ -46,12 +48,14 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 	if err != nil {
 		return err
 	}
+
 	if name == "policy-template" {
 		name = fmt.Sprintf("%s/%s", name, regoVersion)
 	}
 
 	prog.ChangeMessage("Generating files")
 	prog.Start()
+
 	templateRoot, err := fs.Sub(templates.Assets(), name)
 	if err != nil {
 		return errors.Wrapf(err, "failed tog get sub fs %s", name)
@@ -80,7 +84,9 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 
 func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config, error) {
 	genConfig := generators.Config{}
+
 	var err error
+
 	if tmpInfo.kind == "policy" {
 		return genConfig, nil
 	}
@@ -89,6 +95,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 	if err != nil {
 		return genConfig, err
 	}
+
 	respServer := ""
 
 	c.UI.Normal().Compact().WithAskString(
@@ -135,6 +142,7 @@ func (c *PolicyApp) getGeneratorConfig(tmpInfo templateInfo) (generators.Config,
 	if !strings.Contains(respRepo, "/") {
 		return genConfig, errors.New("repo must be in the format 'org/repo'")
 	}
+
 	genConfig.Repo = strings.TrimSpace(respRepo)
 
 	return genConfig, nil
@@ -156,11 +164,11 @@ func (c *PolicyApp) getDefaultUser(server string) string {
 	if s, err := c.Configuration.CredentialsStore.Get(server); err != nil {
 		return s.Username
 	}
+
 	return ""
 }
 
 func (c *PolicyApp) getDefaultServer() (string, error) {
-
 	if c.Configuration.DefaultDomain != "" {
 		return c.Configuration.DefaultDomain, nil
 	}
@@ -169,12 +177,12 @@ func (c *PolicyApp) getDefaultServer() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var serverlist []string
-	for name := range servers {
-		serverlist = append(serverlist, name)
-	}
 
-	return c.buildTable("server", serverlist), nil
+	serverList := lo.MapToSlice(servers, func(k string, _ types.AuthConfig) string {
+		return k
+	})
+
+	return c.buildTable("server", serverList), nil
 }
 
 func (c *PolicyApp) buildTable(name string, items []string) string {
@@ -182,13 +190,16 @@ func (c *PolicyApp) buildTable(name string, items []string) string {
 
 	allowedValues := make([]int, len(items))
 	table := c.UI.Normal().WithTable("#", name)
+
 	for i, item := range items {
 		table.WithTableRow(strconv.Itoa(i+1), item)
 		allowedValues[i] = i + 1
 	}
 
 	table.Do()
+
 	var response int64
+
 	c.UI.Normal().Compact().WithAskInt(fmt.Sprintf("Select %s#", name), &response, allowedValues...).Do()
 
 	return items[response-1]

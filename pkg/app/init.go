@@ -8,6 +8,7 @@ import (
 
 	"github.com/aserto-dev/scc-lib/generators"
 	"github.com/magefile/mage/sh"
+	"github.com/opcr-io/policy/pkg/x"
 	"github.com/opcr-io/policy/templates"
 
 	"github.com/pkg/errors"
@@ -27,8 +28,8 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		return errors.Errorf("not supported source code provider '%s'", scc)
 	}
 
-	names := strings.Split(repo, "/")
-	if len(names) < 2 {
+	before, after, ok := strings.Cut(repo, "/")
+	if !ok || (before == "" || after == "") {
 		return errors.New("invalid repo name, not org/repo")
 	}
 
@@ -49,7 +50,6 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		path,
 		scc,
 		overwrite)
-
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,6 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 		c.Logger,
 		templateRoot,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize generator")
 	}
@@ -88,6 +87,7 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 	if err != nil {
 		return errors.Wrap(err, "failed to generate ci files")
 	}
+
 	prog.Stop()
 
 	c.UI.Normal().Msg("The template was generated successfully.")
@@ -97,7 +97,7 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 
 func (c *PolicyApp) validatePath(path string) error {
 	if exist, _ := generators.DirExist(path); !exist {
-		if err := os.MkdirAll(path, 0700); err != nil {
+		if err := os.MkdirAll(path, x.FileMode0700); err != nil {
 			return errors.Errorf("root path not a directory '%s'", path)
 		}
 	}
@@ -106,9 +106,11 @@ func (c *PolicyApp) validatePath(path string) error {
 		if err := sh.RunV("git", "init", "--quiet", path); err != nil {
 			return err
 		}
+
 		if err := generators.IsGitRepo(path); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

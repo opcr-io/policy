@@ -10,7 +10,7 @@ type TagCmd struct {
 func (c *TagCmd) Run(g *Globals) error {
 	err := g.App.Tag(c.Policy, c.Tag)
 	if err != nil {
-		return errors.TagFailed.WithError(err)
+		return errors.ErrTagFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

@@ -23,6 +23,7 @@ type PolicyApp struct {
 
 func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 	defer c.Cancel()
+
 	if creds == nil {
 		return errors.New("could not save nil credentials")
 	}
@@ -37,6 +38,7 @@ func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 
 func (c *PolicyApp) RemoveServerCreds(server string) error {
 	defer c.Cancel()
+
 	if server == "" {
 		server = c.Configuration.DefaultDomain
 	}

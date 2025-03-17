@@ -11,10 +11,9 @@ type ImagesCmd struct {
 }
 
 func (c *ImagesCmd) Run(g *Globals) error {
-
 	err := g.App.Images()
 	if err != nil {
-		return errors.ImagesFailed.WithError(err)
+		return errors.ErrImagesFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

@@ -15,7 +15,7 @@ before:
 
 builds:
   # https://goreleaser.com/customization/build/
-  - id: build
+  - id: policy
     main: ./cmd/policy
     binary: policy
     goos:
@@ -40,9 +40,10 @@ builds:
 
 archives:
   # https://goreleaser.com/customization/archive/
-  - format: zip
-    builds:
-    - build
+  - formats: 
+      - zip
+    ids:
+      - policy
     files:
       - LICENSE
       - README.md
