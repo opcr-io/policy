@@ -47,15 +47,17 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 
 	ref, ok := existingRefs[existingRefParsed]
 	if !ok {
-		return perr.NotFound.WithMessage("policy [%s] not in the local store", existingRef)
+		return perr.ErrPolicyNotFound.WithMessage("policy [%s] not in the local store", existingRef)
 	}
 	// attach ref name annotation for comparison.
 	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
 		oldAnnotations := ref.Annotations
 		ref.Annotations = make(map[string]string)
+
 		if oldAnnotations != nil {
 			ref.Annotations = oldAnnotations
 		}
+
 		ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
 	}
 
@@ -69,8 +71,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 		return c.removeBasedOnManifest(ociClient, &ref, existingRefParsed)
 	}
 
-	err = c.removeBasedOnTarball(ociClient, &ref, existingRefs, existingRefParsed)
-	if err != nil {
+	if err := c.removeBasedOnTarball(ociClient, &ref, existingRefs, existingRefParsed); err != nil {
 		return err
 	}
 
@@ -87,8 +88,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return err
 	}
 
-	err = ociClient.Untag(ref, refString)
-	if err != nil {
+	if err := ociClient.Untag(ref, refString); err != nil {
 		return err
 	}
 
@@ -96,8 +96,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return nil
 	}
 
-	err = ociClient.GetStore().Delete(c.Context, *ref)
-	if err != nil {
+	if err := ociClient.GetStore().Delete(c.Context, *ref); err != nil {
 		return err
 	}
 
@@ -111,6 +110,7 @@ func (c *PolicyApp) removeBasedOnTarball(ociClient *oci.Oci, ref *ocispec.Descri
 
 	// Check if existing images use same digest.
 	removeBlob := true
+
 	for _, v := range existingRefs {
 		if v.Digest == ref.Digest {
 			removeBlob = false
@@ -142,16 +142,18 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 	}
 
 	var localIndex index
+
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+
 	indexBytes, err := os.ReadFile(indexPath)
 	if err != nil {
 		return false, err
 	}
 
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
+	if err := json.Unmarshal(indexBytes, &localIndex); err != nil {
 		return false, err
 	}
+
 	for i := range localIndex.Manifests {
 		descriptor := localIndex.Manifests[i]
 
@@ -165,6 +167,7 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 			if err != nil {
 				return false, err
 			}
+
 			for _, layer := range manifest.Layers {
 				if (layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer) && layer.Digest == ref.Digest {
 					return true, nil
@@ -181,14 +184,17 @@ func (c *PolicyApp) buildFromSameImage(ref *ocispec.Descriptor) (bool, error) {
 		Version   int                  `json:"schemaVersion"`
 		Manifests []ocispec.Descriptor `json:"manifests"`
 	}
+
 	var localIndex index
+
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
+
 	indexBytes, err := os.ReadFile(indexPath)
 	if err != nil {
 		return false, err
 	}
-	err = json.Unmarshal(indexBytes, &localIndex)
-	if err != nil {
+
+	if err := json.Unmarshal(indexBytes, &localIndex); err != nil {
 		return false, err
 	}
 

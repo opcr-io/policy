@@ -31,6 +31,7 @@ func (c *PolicyApp) TemplatesList() error {
 	if err != nil {
 		return err
 	}
+
 	p.Stop()
 
 	sort.Slice(templateInfos, func(i, j int) bool {
@@ -43,6 +44,7 @@ func (c *PolicyApp) TemplatesList() error {
 		if tmplInfo.kind == "" {
 			continue
 		}
+
 		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
 	}
 
@@ -59,12 +61,15 @@ func (c *PolicyApp) listTemplates() ([]templateInfo, error) {
 			if !d.IsDir() {
 				return nil
 			}
+
 			if strings.Contains(path, "github") || strings.Contains(path, "gitlab") {
 				list = append(list, templateInfo{name: d.Name(), kind: "cicd", description: getDescription(d.Name())})
 				return nil
 			}
+
 			list = append(list, templateInfo{name: d.Name(), kind: "policy", description: getDescription(d.Name())})
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -79,5 +84,6 @@ func getDescription(folderName string) string {
 	if !ok {
 		return "no description available"
 	}
+
 	return val
 }

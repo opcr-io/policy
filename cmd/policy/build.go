@@ -27,10 +27,7 @@ type BuildCmd struct {
 }
 
 func (c *BuildCmd) Run(g *Globals) error {
-	v1build := true
-	if c.RegoVersion == "rego.v0" {
-		v1build = false
-	}
+	v1build := c.RegoVersion != "rego.v0"
 
 	err := g.App.Build(
 		c.Tag,
@@ -53,7 +50,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		v1build,
 	)
 	if err != nil {
-		return perr.BuildFailed.WithError(err)
+		return perr.ErrPolicyBuildFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

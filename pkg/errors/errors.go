@@ -3,18 +3,18 @@ package errors
 import "fmt"
 
 var (
-	NotFound       = NewPolicyError("policy not found")
-	BuildFailed    = NewPolicyError("build failed")
-	LoginFailed    = NewPolicyError("login failed")
-	LogoutFailed   = NewPolicyError("logout failed")
-	ImagesFailed   = NewPolicyError("list images failed")
-	InspectFailed  = NewPolicyError("inspect failed")
-	PullFailed     = NewPolicyError("pull failed")
-	PushFailed     = NewPolicyError("push failed")
-	SaveFailed     = NewPolicyError("save failed")
-	ReplFailed     = NewPolicyError("repl failed")
-	TagFailed      = NewPolicyError("tag failed")
-	TemplateFailed = NewPolicyError("template failed")
+	ErrPolicyNotFound       = NewPolicyError("policy not found")
+	ErrPolicyBuildFailed    = NewPolicyError("build failed")
+	ErrPolicyLoginFailed    = NewPolicyError("login failed")
+	ErrPolicyLogoutFailed   = NewPolicyError("logout failed")
+	ErrPolicyImagesFailed   = NewPolicyError("list images failed")
+	ErrPolicyInspectFailed  = NewPolicyError("inspect failed")
+	ErrPolicyPullFailed     = NewPolicyError("pull failed")
+	ErrPolicyPushFailed     = NewPolicyError("push failed")
+	ErrPolicySaveFailed     = NewPolicyError("save failed")
+	ErrPolicyReplFailed     = NewPolicyError("repl failed")
+	ErrPolicyTagFailed      = NewPolicyError("tag failed")
+	ErrPolicyTemplateFailed = NewPolicyError("template failed")
 )
 
 type PolicyCLIError struct {
@@ -35,6 +35,7 @@ func (e *PolicyCLIError) Error() string {
 	if e.Err != nil {
 		response += arrow + e.Err.Error()
 	}
+
 	return response
 }
 

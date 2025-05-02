@@ -21,33 +21,35 @@ type CC struct {
 }
 
 var (
-	once         sync.Once
-	cc           *CC
-	cleanup      func()
-	singletonErr error
+	once    sync.Once
+	cc      *CC
+	cleanup func()
+	err     error
 )
 
 // NewCC creates a singleton CC.
 func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
-		cc, cleanup, singletonErr = buildCC(logOutput, errOutput, configPath, overrides)
+		cc, cleanup, err = buildCC(logOutput, errOutput, configPath, overrides)
 	})
 
 	return cc, func() {
 		cleanup()
+
 		once = sync.Once{}
-	}, singletonErr
+	}, err
 }
 
 // NewTestCC creates a singleton CC to be used for testing.
 // It uses a fake context (context.Background).
 func NewTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
-		cc, cleanup, singletonErr = buildTestCC(logOutput, errOutput, configPath, overrides)
+		cc, cleanup, err = buildTestCC(logOutput, errOutput, configPath, overrides)
 	})
 
 	return cc, func() {
 		cleanup()
+
 		once = sync.Once{}
-	}, singletonErr
+	}, err
 }

@@ -18,16 +18,17 @@ type ListCmd struct{}
 
 func (c *ApplyCmd) Run(g *Globals) error {
 	if err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite, c.RegoVersion); err != nil {
-		return perr.TemplateFailed.WithError(err)
+		return perr.ErrPolicyTemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
+
 	return nil
 }
 
 func (c *ListCmd) Run(g *Globals) error {
 	if err := g.App.TemplatesList(); err != nil {
-		return perr.TemplateFailed.WithError(err)
+		return perr.ErrPolicyTemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

@@ -7,11 +7,13 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
-	"github.com/alecthomas/kong"
 	"github.com/aserto-dev/logger"
 	"github.com/opcr-io/policy/pkg/app"
 	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/x"
+
+	"github.com/Masterminds/sprig"
+	"github.com/alecthomas/kong"
 	"github.com/pkg/errors"
 )
 
@@ -31,17 +33,18 @@ func ConfigExpander() kong.Resolver {
 
 		t = t.Funcs(sprig.TxtFuncMap())
 		buf := &bytes.Buffer{}
-		err = t.Execute(buf, tmpConfig)
-		if err != nil {
+
+		if err := t.Execute(buf, tmpConfig); err != nil {
 			return nil, err
 		}
+
 		expanded := buf.String()
 		if expanded != flag.Default {
 			flag.Default = expanded
 			return expanded, nil
 		}
 
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	return f
@@ -52,8 +55,9 @@ func resolveTmpConfig(context *kong.Context) {
 		return
 	}
 
-	allFlags := context.Flags()
 	var configFlag *kong.Flag
+
+	allFlags := context.Flags()
 	for _, f := range allFlags {
 		if f.Name == "config" {
 			configFlag = f
@@ -64,7 +68,10 @@ func resolveTmpConfig(context *kong.Context) {
 		return
 	}
 
-	configPath := context.FlagValue(configFlag).(string)
+	configPath, ok := context.FlagValue(configFlag).(string)
+	if !ok {
+		panic("failed type assertion")
+	}
 
 	cfgLogger, err := config.NewLoggerConfig(config.Path(configPath), nil)
 	if err != nil {
@@ -125,15 +132,16 @@ func (g *Globals) setup() func() {
 		config.Path(configFile),
 		func(c *config.Config) {
 			switch g.Verbosity {
-			case 0:
+			case x.VerbosityError:
 				c.Logging.LogLevel = "error"
-			case 1:
+			case x.VerbosityInfo:
 				c.Logging.LogLevel = "info"
-			case 2:
+			case x.VerbosityDebug:
 				c.Logging.LogLevel = "debug"
 			default:
 				c.Logging.LogLevel = "trace"
 			}
+
 			c.Insecure = g.Insecure
 		})
 	if err != nil {
@@ -143,6 +151,7 @@ This might be a bug. Please open an issue here: https://github.com/opcr-io/polic
 	}
 
 	g.App = policyAPP
+
 	return cleanup
 }
 

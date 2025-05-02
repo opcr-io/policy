@@ -40,6 +40,7 @@ func (c *PolicyApp) Pull(userRef string) error {
 
 func (c *PolicyApp) getHosts(server string) ([]docker.RegistryHost, error) {
 	client := &http.Client{Transport: c.TransportWithTrustedCAs()}
+
 	return []docker.RegistryHost{
 		{
 			Host:         server,
@@ -52,7 +53,7 @@ func (c *PolicyApp) getHosts(server string) ([]docker.RegistryHost, error) {
 				docker.WithAuthCreds(func(s string) (string, string, error) {
 					creds, err := c.Configuration.CredentialsStore.Get(s)
 					if err != nil || (creds.Username == "" && creds.Password == "") {
-						return " ", " ", nil
+						return " ", " ", nil //nolint:nilerr
 					}
 
 					return creds.Username, creds.Password, nil

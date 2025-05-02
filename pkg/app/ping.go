@@ -29,17 +29,19 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 			Path:   "/v2/",
 		},
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "failed to ping server [%s]", server)
 	}
+
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("failed to close response body")
 		}
 	}()
 
-	if err = authorizer.AddResponses(c.Context, []*http.Response{resp}); err != nil {
+	if err := authorizer.AddResponses(c.Context, []*http.Response{resp}); err != nil {
 		return errors.Wrapf(err, "failed to consume response from server [%s]", server)
 	}
 
@@ -53,14 +55,16 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		},
 		Header: http.Header{},
 	}
-	err = authorizer.Authorize(c.Context, req2)
-	if err != nil {
+
+	if err := authorizer.Authorize(c.Context, req2); err != nil {
 		return errors.Wrapf(err, "failed to authorize request for server [%s]", server)
 	}
+
 	resp2, err := client.Do(req2)
 	if err != nil {
 		return errors.Wrapf(err, "failed to login to server [%s]", server)
 	}
+
 	defer func() {
 		if err := resp2.Body.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("failed to close response body")

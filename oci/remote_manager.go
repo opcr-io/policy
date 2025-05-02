@@ -1,4 +1,3 @@
-//nolint:gocritic // Big parameter linter error passing ocispec.Descriptor, needed to implement oras.ReadOnlyTarget interface.
 package oci
 
 import (
@@ -24,6 +23,7 @@ func (r *remoteManager) Resolve(ctx context.Context, ref string) (ocispec.Descri
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
+
 	return desc, nil
 }
 
@@ -32,16 +32,16 @@ func (r *remoteManager) Fetch(ctx context.Context, target ocispec.Descriptor) (i
 	if err != nil {
 		return nil, err
 	}
+
 	return fetcher.Fetch(ctx, target)
 }
 
 func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
-	_, err := r.Fetch(ctx, target)
-	if err == nil {
-		return true, nil
+	if _, err := r.Fetch(ctx, target); err != nil {
+		return false, err
 	}
 
-	return false, err
+	return true, nil
 }
 
 func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, ctn io.Reader) error {
@@ -55,31 +55,37 @@ func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, c
 		if strings.Contains(err.Error(), "already exists") {
 			return nil
 		}
+
 		return err
 	}
+
 	defer func() {
 		writer.Close()
 	}()
+
 	reader := bufio.NewReader(ctn)
 
 	size, err := reader.WriteTo(writer)
 	if err != nil {
 		return err
 	}
+
 	return writer.Commit(ctx, size, expected.Digest)
 }
 
 func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
 	originalRef := r.srcRef
+
 	reader, err := r.fetcher.Fetch(ctx, desc)
 	if err != nil {
 		return err
 	}
+
 	r.srcRef = reference
 	desc.Annotations = make(map[string]string)
 	desc.Annotations[ocispec.AnnotationRefName] = reference
-	err = r.Push(ctx, desc, reader)
-	if err != nil {
+
+	if err := r.Push(ctx, desc, reader); err != nil {
 		return err
 	}
 

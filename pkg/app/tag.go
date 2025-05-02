@@ -15,6 +15,7 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 	if err != nil {
 		return err
 	}
+
 	existingRefParsed := existingRef
 	if strings.Contains(existingRef, ":") || strings.Contains(existingRef, "/") {
 		existingRefParsed, err = parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
@@ -32,8 +33,7 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 		WithStringValue("reference", newRef).
 		Msg("Tagging image.")
 
-	err = ociClient.Tag(existingRefParsed, parsed)
-	if err != nil {
+	if err := ociClient.Tag(existingRefParsed, parsed); err != nil {
 		return err
 	}
 

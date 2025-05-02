@@ -7,7 +7,7 @@
 package app
 
 import (
-	"github.com/aserto-dev/clui"
+	"github.com/opcr-io/policy/pkg/clui"
 	"github.com/aserto-dev/logger"
 	"github.com/google/wire"
 	"github.com/opcr-io/policy/pkg/cc"

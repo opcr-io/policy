@@ -10,17 +10,18 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/containerd/errdefs"
-	"github.com/distribution/reference"
-
-	oras "github.com/opcr-io/oras-go/v2"
 	"github.com/opcr-io/oras-go/v2/content"
 	orasoci "github.com/opcr-io/oras-go/v2/content/oci"
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+
+	"github.com/containerd/errdefs"
+	"github.com/distribution/reference"
+	oras "github.com/opcr-io/oras-go/v2"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 	PolicyTypePolicy             = "policy"
 )
 
+//nolint:funlen
 func (c *PolicyApp) Build(ref string, path []string, annotations map[string]string,
 	runConfigFile string,
 	target string,
@@ -51,6 +53,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 	if err != nil {
 		return errors.Wrap(err, "failed to create temporary build directory")
 	}
+
 	defer func() {
 		if err := os.RemoveAll(workDir); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to remove temporary working directory.")
@@ -67,7 +70,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 
 	outFile := filepath.Join(workDir, "bundle.tgz")
 
-	err = opaRuntime.Build(&runtime.BuildParams{
+	if err := opaRuntime.Build(&runtime.BuildParams{
 		CapabilitiesJSONFile: capabilities,
 		Target:               runtime.Rego,
 		OptimizationLevel:    optimizationLevel,
@@ -75,7 +78,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		OutputFile:           outFile,
 		Revision:             revision,
 		Ignore:               ignore,
-		Debug:                c.Logger.Debug().Enabled(),
+		Debug:                c.Logger.GetLevel() == zerolog.DebugLevel,
 		Algorithm:            algorithm,
 		Key:                  signingKey,
 		Scope:                scope,
@@ -84,8 +87,7 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		PubKeyID:             verificationKeyID,
 		ExcludeVerifyFiles:   excludeVerifyFiles,
 		RegoV1:               regoV1,
-	}, path)
-	if err != nil {
+	}, path); err != nil {
 		return errors.Wrap(err, "failed to build opa policy bundle")
 	}
 
@@ -115,15 +117,13 @@ func (c *PolicyApp) Build(ref string, path []string, annotations map[string]stri
 		return err
 	}
 
-	err = ociStore.Tag(c.Context, desc, parsedRef.String())
-	if err != nil {
+	if err := ociStore.Tag(c.Context, desc, parsedRef.String()); err != nil {
 		return err
 	}
 
 	c.UI.Normal().WithStringValue("reference", parsedRef.String()).Msg("Tagging image.")
 
-	err = ociStore.SaveIndex()
-	if err != nil {
+	if err := ociStore.SaveIndex(); err != nil {
 		return err
 	}
 
@@ -138,6 +138,7 @@ func buildAnnotations(annotations map[string]string, parsedRef reference.Named, 
 	annotations[ocispec.AnnotationTitle] = parsedRef.Name()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+
 	if regoV1 {
 		annotations["rego.version"] = "rego.V1"
 	}
@@ -148,6 +149,7 @@ func buildAnnotations(annotations map[string]string, parsedRef reference.Named, 
 func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
+
 	fDigest, err := c.fileDigest(tarball)
 	if err != nil {
 		return descriptor, err
@@ -157,10 +159,12 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 	if err != nil {
 		return descriptor, err
 	}
+
 	fileInfo, err := tarballFile.Stat()
 	if err != nil {
 		return descriptor, err
 	}
+
 	defer func() {
 		if err := tarballFile.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
@@ -181,25 +185,23 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		// Hack to remove the existing digest until ocistore deleter is implemented
 		// https://github.com/oras-project/oras-go/issues/454
 		digestPath := filepath.Join(strings.Split(descriptor.Digest.String(), ":")...)
+
 		blob := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", digestPath)
-		err = os.Remove(blob)
-		if err != nil {
+		if err := os.Remove(blob); err != nil {
 			return descriptor, err
 		}
 	}
 
 	reader := bufio.NewReader(tarballFile)
 
-	err = ociStore.Push(c.Context, descriptor, reader)
-	if err != nil {
+	if err := ociStore.Push(c.Context, descriptor, reader); err != nil {
 		return descriptor, err
 	}
 
 	configBytes := []byte(fmt.Sprintf("{\"created\":%q}", time.Now().UTC().Format(time.RFC3339)))
 	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
 
-	err = ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes))
-	if err != nil {
+	if err := ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes)); err != nil {
 		return descriptor, err
 	}
 
@@ -220,6 +222,7 @@ func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer func() {
 		if err := fd.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball when calculating digest.")

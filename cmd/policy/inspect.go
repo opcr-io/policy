@@ -8,7 +8,7 @@ type InspectCmd struct {
 
 func (c *InspectCmd) Run(g *Globals) error {
 	if err := g.App.Inspect(c.Policy); err != nil {
-		return perr.InspectFailed.WithError(err)
+		return perr.ErrPolicyInspectFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

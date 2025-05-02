@@ -2,8 +2,7 @@ package main
 
 import "github.com/opcr-io/policy/pkg/version"
 
-type VersionCmd struct {
-}
+type VersionCmd struct{}
 
 func (c *VersionCmd) Run(g *Globals) error { //nolint:unparam
 	v := version.GetInfo()

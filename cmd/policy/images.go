@@ -12,7 +12,7 @@ type ImagesCmd struct {
 
 func (c *ImagesCmd) Run(g *Globals) error {
 	if err := g.App.Images(); err != nil {
-		return perr.ImagesFailed.WithError(err)
+		return perr.ErrPolicyImagesFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

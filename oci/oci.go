@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -41,6 +40,7 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	if err != nil {
 		return nil, err
 	}
+
 	ociStore.AutoSaveIndex = true
 
 	return &Oci{
@@ -73,9 +73,12 @@ func (o *Oci) WithDockerRegistryHosts(transport *http.Transport, user, pat strin
 			Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
 			Client:       client,
 			Path:         "/v2",
-			Authorizer:   docker.NewDockerAuthorizer(authOpts...)}
+			Authorizer:   docker.NewDockerAuthorizer(authOpts...),
+		}
+
 		return []docker.RegistryHost{config}, nil
 	}
+
 	return o
 }
 
@@ -86,6 +89,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
 	var manifestDescriptor ocispec.Descriptor
+
 	opts := oras.DefaultCopyOptions
 
 	// Get tarball descriptor digest
@@ -93,9 +97,11 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
+
 		if strings.Contains(desc.MediaType, "manifest") {
 			manifestDescriptor = desc
 		}
+
 		return nil
 	}
 
@@ -103,9 +109,11 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
+
 		if strings.Contains(desc.MediaType, "manifest") {
 			manifestDescriptor = desc
 		}
+
 		return nil
 	}
 
@@ -115,13 +123,12 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 
 	if len(manifestDescriptor.Digest) > 0 {
-		err = o.ociStore.Tag(o.ctx, manifestDescriptor, ref)
-		if err != nil {
+		if err := o.ociStore.Tag(o.ctx, manifestDescriptor, ref); err != nil {
 			return "", err
 		}
 	}
-	err = o.ociStore.SaveIndex()
-	if err != nil {
+
+	if err := o.ociStore.SaveIndex(); err != nil {
 		return "", err
 	}
 
@@ -129,24 +136,24 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 }
 
 func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
-	var tgs []string
 	refs := make(map[string]ocispec.Descriptor, 0)
-	err := o.ociStore.Tags(o.ctx, "", func(tags []string) error {
+
+	var tgs []string
+
+	if err := o.ociStore.Tags(o.ctx, "", func(tags []string) error {
 		tgs = append(tgs, tags...)
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
 	for _, tag := range tgs {
-		descr, err := o.ociStore.Resolve(o.ctx, tag)
+		desc, err := o.ociStore.Resolve(o.ctx, tag)
 		if err != nil {
 			return nil, err
 		}
 
-		refs[tag] = descr
+		refs[tag] = desc
 	}
 
 	return refs, nil
@@ -176,56 +183,47 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	configDescriptor.MediaType = MediaTypeConfig
 
 	// remove manifest from index
-	err = o.ociStore.Untag(o.ctx, ref)
-	if err != nil {
+	if err := o.ociStore.Untag(o.ctx, ref); err != nil {
 		return "", err
 	}
 
 	// tag tarball
-	err = o.ociStore.Tag(o.ctx, *tarBallDescriptor, ref)
-	if err != nil {
+	if err := o.ociStore.Tag(o.ctx, *tarBallDescriptor, ref); err != nil {
 		return "", err
 	}
 
 	// copy tarball to remote first
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push tarball failed")
 	}
 
 	// remove tarball from index
-	err = o.ociStore.Untag(o.ctx, ref)
-	if err != nil {
+	if err := o.ociStore.Untag(o.ctx, ref); err != nil {
 		return "", err
 	}
 
 	// tag config
-	err = o.ociStore.Tag(o.ctx, *configDescriptor, ref)
-	if err != nil {
+	if err := o.ociStore.Tag(o.ctx, *configDescriptor, ref); err != nil {
 		return "", err
 	}
 
 	// copy config to remote
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push config failed")
 	}
 
 	// remove config from index
-	err = o.ociStore.Untag(o.ctx, ref)
-	if err != nil {
+	if err := o.ociStore.Untag(o.ctx, ref); err != nil {
 		return "", err
 	}
 
 	// tag manifest
-	err = o.ociStore.Tag(o.ctx, descriptor, ref)
-	if err != nil {
+	if err := o.ociStore.Tag(o.ctx, descriptor, ref); err != nil {
 		return "", err
 	}
 
 	// copy manifest to remote
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
@@ -251,29 +249,24 @@ func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Des
 		return "", err
 	}
 
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push failed")
 	}
 
-	err = memoryStore.Tag(o.ctx, manifestDesc, ref)
-	if err != nil {
+	if err := memoryStore.Tag(o.ctx, manifestDesc, ref); err != nil {
 		return "", err
 	}
 
 	remoteManager.fetcher = memoryStore
-	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
-	err = memoryStore.Tag(o.ctx, configDesc, ref)
-	if err != nil {
+	if err := memoryStore.Tag(o.ctx, configDesc, ref); err != nil {
 		return "", err
 	}
 
-	_, err = oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, memoryStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
@@ -289,30 +282,29 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 	descriptor, ok := refs[existingRef]
 	if !ok {
 		for _, v := range refs {
-			if strings.HasPrefix(v.Digest.String(), fmt.Sprintf("sha256:%s", existingRef)) {
+			if strings.HasPrefix(v.Digest.String(), "sha256:"+existingRef) {
 				descriptor = v
 				break
 			}
 		}
+
 		if descriptor.Size == 0 {
 			return errors.Errorf("policy [%s] not found in the local store", existingRef)
 		}
 	}
 
-	_, err = cloneDescriptor(&descriptor)
-	if err != nil {
+	if _, err := cloneDescriptor(&descriptor); err != nil {
 		return err
 	}
 
-	err = o.ociStore.Tag(o.ctx, descriptor, newRef)
-	if err != nil {
+	if err := o.ociStore.Tag(o.ctx, descriptor, newRef); err != nil {
 		return err
 	}
 
 	return o.ociStore.SaveIndex()
 }
 
-func (o *Oci) Untag(descr *ocispec.Descriptor, ref string) error {
+func (o *Oci) Untag(desc *ocispec.Descriptor, ref string) error {
 	return o.ociStore.Untag(o.ctx, ref)
 }
 
@@ -324,14 +316,18 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 	if descriptor == nil {
 		return nil, nil, errors.New("nil descriptor provided")
 	}
+
 	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
 		return nil, nil, errors.New("provided descriptor is not a manifest descriptor")
 	}
+
 	manifest, err := o.GetManifest(descriptor)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	configDigest := manifest.Config.Digest
+
 	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest.String())
 	if err != nil {
 		return nil, nil, err
@@ -343,31 +339,31 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(ctx context.Context, descriptor
 			if err != nil {
 				return nil, nil, err
 			}
+
 			return &tarballDescriptor, &configDescriptor, nil
 		}
 	}
+
 	return nil, nil, errors.New("could not find tarball and config descriptors")
 }
 
 func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
 	reader, err := o.GetStore().Fetch(o.ctx, *descriptor)
-
 	if err != nil {
 		return nil, err
 	}
+
 	manifestBytes := new(bytes.Buffer)
-	_, err = manifestBytes.ReadFrom(reader)
-	if err != nil {
-		return nil, err
-	}
-	var manifest ocispec.Manifest
-	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
-	if err != nil {
+	if _, err := manifestBytes.ReadFrom(reader); err != nil {
 		return nil, err
 	}
 
-	err = reader.Close()
-	if err != nil {
+	var manifest ocispec.Manifest
+	if err := json.Unmarshal(manifestBytes.Bytes(), &manifest); err != nil {
+		return nil, err
+	}
+
+	if err := reader.Close(); err != nil {
 		return nil, err
 	}
 
@@ -377,14 +373,14 @@ func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, er
 func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 	sourceRef, sourceUser, sourcePassword,
 	destinationRef, destinationUser, destinationPassword,
-	ociStore string) error {
-
+	ociStore string,
+) error {
 	transport, err := getTransport(log)
 	if err != nil {
 		return errors.Wrap(err, "failed to create transport")
 	}
 
-	ociClient, err := NewOCI(ctx,
+	ociPullClient, err := NewOCI(ctx,
 		log,
 		func(server string) ([]docker.RegistryHost, error) {
 			client := &http.Client{Transport: transport}
@@ -405,22 +401,19 @@ func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 			}, nil
 		},
 		ociStore)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to create oci client")
 	}
 
-	_, err = ociClient.Pull(sourceRef)
-	if err != nil {
+	if _, err := ociPullClient.Pull(sourceRef); err != nil {
 		return errors.Wrap(err, "failed to pull image")
 	}
 
-	err = ociClient.Tag(sourceRef, destinationRef)
-	if err != nil {
+	if err := ociPullClient.Tag(sourceRef, destinationRef); err != nil {
 		return errors.Wrap(err, "failed to tag image")
 	}
 
-	ociClient, err = NewOCI(ctx,
+	ociPushClient, err := NewOCI(ctx,
 		log,
 		func(server string) ([]docker.RegistryHost, error) {
 			client := &http.Client{Transport: transport}
@@ -445,8 +438,7 @@ func CopyPolicy(ctx context.Context, log *zerolog.Logger,
 		return errors.Wrap(err, "failed to create oci client")
 	}
 
-	_, err = ociClient.Push(destinationRef)
-	if err != nil {
+	if _, err := ociPushClient.Push(destinationRef); err != nil {
 		return errors.Wrap(err, "failed to push image")
 	}
 
@@ -460,8 +452,7 @@ func cloneDescriptor(desc *ocispec.Descriptor) (ocispec.Descriptor, error) {
 	}
 
 	result := ocispec.Descriptor{}
-	err = json.Unmarshal(b, &result)
-	if err != nil {
+	if err := json.Unmarshal(b, &result); err != nil {
 		return ocispec.Descriptor{}, errors.Wrap(err, "failed to create descriptor clone")
 	}
 
@@ -479,6 +470,7 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 
 	if rootCAs == nil {
 		log.Warn().Err(err).Msg("failed to load system ca certs")
+
 		rootCAs = x509.NewCertPool()
 	}
 
@@ -487,6 +479,7 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 		RootCAs:    rootCAs,
 		MinVersion: tls.VersionTLS12,
 	}
+
 	return &http.Transport{TLSClientConfig: conf}, nil
 }
 
@@ -505,14 +498,15 @@ func IsAllowedMediaType(mediatype string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 func RemoveBlob(ref *ocispec.Descriptor, path string) error {
 	digestPath := filepath.Join(strings.Split(ref.Digest.String(), ":")...)
 	blob := filepath.Join(path, "blobs", digestPath)
-	err := os.Remove(blob)
-	if err != nil {
+
+	if err := os.Remove(blob); err != nil {
 		return err
 	}
 

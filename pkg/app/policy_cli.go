@@ -3,13 +3,12 @@ package app
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
-
-	"github.com/aserto-dev/clui"
 	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/clui"
 
 	"github.com/docker/cli/cli/config/types"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
 // PolicyApp represents the policy CLI.
@@ -23,6 +22,7 @@ type PolicyApp struct {
 
 func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 	defer c.Cancel()
+
 	if creds == nil {
 		return errors.New("could not save nil credentials")
 	}
@@ -36,6 +36,7 @@ func (c *PolicyApp) SaveServerCreds(creds *types.AuthConfig) error {
 
 func (c *PolicyApp) RemoveServerCreds(server string) error {
 	defer c.Cancel()
+
 	if server == "" {
 		server = c.Configuration.DefaultDomain
 	}

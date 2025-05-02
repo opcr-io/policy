@@ -92,11 +92,11 @@ Wanna discuss features or show your support for this tool?
 
  `policy` is currently using go v1.16 or above. In order to build `policy` from source you must:
 
- 1. Install [mage](https://magefile.org/)
- 2. Clone the repo
- 3. Build and run the executable
+ 1. Clone the repo
+ 2. Build and run the executable
 
       ```shell
+      make build && ./dist/build_linux_amd64/policy
       mage build && ./dist/build_linux_amd64/policy
       ```
 
