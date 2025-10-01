@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/containerd/containerd/remotes/docker"
+	"github.com/containerd/containerd/v2/core/remotes/docker"
 	"github.com/pkg/errors"
 )
 
@@ -22,31 +22,33 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 
 	// Request #1 for login.
 	req := &http.Request{
-		Method: "GET",
+		Method: http.MethodGet,
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   server,
 			Path:   "/v2/",
 		},
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "failed to ping server [%s]", server)
 	}
+
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
 			c.UI.Problem().WithErr(err).Msg("failed to close response body")
 		}
 	}()
-	err = authorizer.AddResponses(c.Context, []*http.Response{resp})
-	if err != nil {
+
+	if err := authorizer.AddResponses(c.Context, []*http.Response{resp}); err != nil {
 		return errors.Wrapf(err, "failed to consume response from server [%s]", server)
 	}
 
 	// Request #2 (with authentication).
 	req2 := &http.Request{
-		Method: "GET",
+		Method: http.MethodGet,
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   server,
@@ -54,20 +56,23 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		},
 		Header: http.Header{},
 	}
-	err = authorizer.Authorize(c.Context, req2)
-	if err != nil {
+
+	if err := authorizer.Authorize(c.Context, req2); err != nil {
 		return errors.Wrapf(err, "failed to authorize request for server [%s]", server)
 	}
+
 	resp2, err := client.Do(req2)
 	if err != nil {
 		return errors.Wrapf(err, "failed to login to server [%s]", server)
 	}
+
 	defer func() {
 		err := resp2.Body.Close()
 		if err != nil {
 			c.UI.Problem().WithErr(err).Msg("failed to close response body")
 		}
 	}()
+
 	if resp2.StatusCode != http.StatusOK {
 		return errors.Errorf("authentication to server [%s] failed, status [%s]", server, resp.Status)
 	}

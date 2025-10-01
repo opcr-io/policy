@@ -9,7 +9,7 @@ type InspectCmd struct {
 func (c *InspectCmd) Run(g *Globals) error {
 	err := g.App.Inspect(c.Policy)
 	if err != nil {
-		return errors.InspectFailed.WithError(err)
+		return errors.ErrInspectFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

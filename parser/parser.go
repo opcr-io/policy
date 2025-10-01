@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/containerd/containerd/reference/docker"
+	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 )
 
@@ -11,20 +11,21 @@ const (
 
 // Calculates the docker reference from string.
 func CalculatePolicyRef(userRef, defaultDomain string) (string, error) {
-	parsed, err := docker.ParseDockerRef(userRef)
+	parsed, err := reference.ParseDockerRef(userRef)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse reference [%s]", userRef)
 	}
 
-	familiarized := docker.FamiliarString(parsed)
+	familiarized := reference.FamiliarString(parsed)
 
-	domain := docker.Domain(parsed)
+	domain := reference.Domain(parsed)
 
 	if (familiarized == userRef || familiarized == userRef+":latest") && domain == DefaultCanonicalDomain {
 		if defaultDomain == "" {
 			defaultDomain = DefaultCanonicalDomain
 		}
-		parsedWithDomain, err := docker.ParseDockerRef(defaultDomain + "/" + userRef)
+
+		parsedWithDomain, err := reference.ParseDockerRef(defaultDomain + "/" + userRef)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to parse normalized reference [%s]", defaultDomain+"/"+userRef)
 		}

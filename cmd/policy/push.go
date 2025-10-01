@@ -8,6 +8,7 @@ type PushCmd struct {
 
 func (c *PushCmd) Run(g *Globals) error {
 	var errs error
+
 	for _, policyRef := range c.Policies {
 		err := g.App.Push(policyRef)
 		if err != nil {

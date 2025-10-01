@@ -19,6 +19,8 @@ const (
 	ciTemplateTag          = "latest"
 )
 
+const orgRepo int = 2
+
 // Init: path is rootpath of project.
 func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite, noSrc bool) error {
 	defer c.Cancel()
@@ -28,7 +30,7 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 	}
 
 	names := strings.Split(repo, "/")
-	if len(names) < 2 {
+	if len(names) < orgRepo {
 		return errors.New("invalid repo name, not org/repo")
 	}
 
@@ -49,7 +51,6 @@ func (c *PolicyApp) Init(path, user, server, repo, scc, token string, overwrite,
 		path,
 		scc,
 		overwrite)
-
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,6 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 		c.Logger,
 		templateRoot,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize generator")
 	}
@@ -88,6 +88,7 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 	if err != nil {
 		return errors.Wrap(err, "failed to generate ci files")
 	}
+
 	prog.Stop()
 
 	c.UI.Normal().Msg("The template was generated successfully.")
@@ -95,9 +96,11 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 	return nil
 }
 
+const ownerReadWriteExecute os.FileMode = 0o700
+
 func (c *PolicyApp) validatePath(path string) error {
 	if exist, _ := generators.DirExist(path); !exist {
-		if err := os.MkdirAll(path, 0700); err != nil {
+		if err := os.MkdirAll(path, ownerReadWriteExecute); err != nil {
 			return errors.Errorf("root path not a directory '%s'", path)
 		}
 	}
@@ -106,9 +109,11 @@ func (c *PolicyApp) validatePath(path string) error {
 		if err := sh.RunV("git", "init", "--quiet", path); err != nil {
 			return err
 		}
+
 		if err := generators.IsGitRepo(path); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

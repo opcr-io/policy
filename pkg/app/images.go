@@ -21,7 +21,7 @@ type imageStruct struct {
 func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
-	var data []imageStruct
+	var data []imageStruct //nolint:prealloc
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -29,27 +29,30 @@ func (c *PolicyApp) Images() error {
 	}
 
 	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Created", "Size")
+
 	var tgs []string
-	err = ociClient.GetStore().Tags(c.Context, "", func(tags []string) error {
+
+	if err := ociClient.GetStore().Tags(c.Context, "", func(tags []string) error {
 		tgs = append(tgs, tags...)
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
 	for _, tag := range tgs {
-		descr, err := ociClient.GetStore().Resolve(c.Context, tag)
+		desc, err := ociClient.GetStore().Resolve(c.Context, tag)
 		if err != nil {
 			return err
 		}
+
 		var manifest *ocispec.Manifest
-		if descr.MediaType == ocispec.MediaTypeImageManifest {
-			manifest, err = ociClient.GetManifest(&descr)
+		if desc.MediaType == ocispec.MediaTypeImageManifest {
+			manifest, err = ociClient.GetManifest(&desc)
 			if err != nil {
 				return err
 			}
 		}
+
 		ref, err := reference.ParseDockerRef(tag)
 		if err != nil {
 			return err
@@ -58,6 +61,7 @@ func (c *PolicyApp) Images() error {
 		refName := ref.Name()
 
 		tagOrNone := "<none>"
+
 		tag, okTag := ref.(reference.Tagged)
 		if okTag {
 			tagOrNone = tag.Tag()
@@ -67,9 +71,10 @@ func (c *PolicyApp) Images() error {
 		if err != nil {
 			return err
 		}
+
 		var createdAt string
 		if manifest == nil {
-			createdAt = descr.Annotations[ocispec.AnnotationCreated]
+			createdAt = desc.Annotations[ocispec.AnnotationCreated]
 		} else {
 			createdAt = manifest.Annotations[ocispec.AnnotationCreated]
 		}
@@ -77,9 +82,9 @@ func (c *PolicyApp) Images() error {
 		data = append(data, imageStruct{
 			familiarName: familiarName,
 			tagOrNone:    tagOrNone,
-			digest:       descr.Digest.Encoded()[:12],
+			digest:       desc.Digest.Encoded()[:12],
 			createdAt:    createdAt,
-			size:         strings.ReplaceAll(humanize.Bytes(uint64(descr.Size)), " ", ""), //nolint: gosec
+			size:         strings.ReplaceAll(humanize.Bytes(uint64(desc.Size)), " ", ""), //nolint: gosec
 		})
 	}
 

@@ -10,15 +10,16 @@ type RmCmd struct {
 
 func (c *RmCmd) Run(g *Globals) error {
 	var errs error
+
 	for _, policyRef := range c.Policies {
-		err := g.App.Rm(policyRef, c.Force)
-		if err != nil {
+		if err := g.App.Rm(policyRef, c.Force); err != nil {
 			g.App.UI.Problem().WithErr(err).Msgf("Failed to remove policy: %s", policyRef)
 			errs = err
 		}
 	}
 
 	<-g.App.Context.Done()
+
 	if errs != nil {
 		return errors.Wrap(errs, "failed to remove one or more policies")
 	}
