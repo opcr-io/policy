@@ -24,17 +24,20 @@ var tmpConfig *config.Config
 func ConfigExpander() kong.Resolver {
 	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
 		resolveTmpConfig(context)
+
 		t, err := template.New("value").Parse(flag.Default)
 		if err != nil {
 			return nil, err
 		}
 
 		t = t.Funcs(sprig.TxtFuncMap())
+
 		buf := &bytes.Buffer{}
-		err = t.Execute(buf, tmpConfig)
-		if err != nil {
+
+		if err := t.Execute(buf, tmpConfig); err != nil {
 			return nil, err
 		}
+
 		expanded := buf.String()
 		if expanded != flag.Default {
 			flag.Default = expanded
@@ -53,7 +56,9 @@ func resolveTmpConfig(context *kong.Context) {
 	}
 
 	allFlags := context.Flags()
+
 	var configFlag *kong.Flag
+
 	for _, f := range allFlags {
 		if f.Name == "config" {
 			configFlag = f
@@ -64,12 +69,13 @@ func resolveTmpConfig(context *kong.Context) {
 		return
 	}
 
-	configPath := context.FlagValue(configFlag).(string)
+	configPath, _ := context.FlagValue(configFlag).(string)
 
 	cfgLogger, err := config.NewLoggerConfig(config.Path(configPath), nil)
 	if err != nil {
 		panic(err)
 	}
+
 	log, err := logger.NewLogger(io.Discard, io.Discard, cfgLogger)
 	if err != nil {
 		panic(err)
@@ -115,6 +121,12 @@ var PolicyCLI struct {
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
 
+const (
+	logLevelError int = 0
+	logLevelInfo  int = 1
+	logLevelDebug int = 2
+)
+
 func (g *Globals) setup() func() {
 	configFile := g.Config
 
@@ -124,18 +136,18 @@ func (g *Globals) setup() func() {
 		config.Path(configFile),
 		func(c *config.Config) {
 			switch g.Verbosity {
-			case 0:
+			case logLevelError:
 				c.Logging.LogLevel = "error"
-			case 1:
+			case logLevelInfo:
 				c.Logging.LogLevel = "info"
-			case 2:
+			case logLevelDebug:
 				c.Logging.LogLevel = "debug"
 			default:
 				c.Logging.LogLevel = "trace"
 			}
+
 			c.Insecure = g.Insecure
 		})
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, `Application setup failed: %+v.
 This might be a bug. Please open an issue here: https://github.com/opcr-io/policy\n`,
@@ -143,6 +155,7 @@ This might be a bug. Please open an issue here: https://github.com/opcr-io/polic
 	}
 
 	g.App = policyAPP
+
 	return cleanup
 }
 
@@ -178,7 +191,7 @@ func main() {
 
 	cleanup := g.setup()
 
-	if err = ctx.Run(g); err != nil {
+	if err := ctx.Run(g); err != nil {
 		g.App.UI.Problem().Msg(err.Error())
 		cleanup()
 		os.Exit(1)

@@ -9,10 +9,14 @@ import (
 	"github.com/aserto-dev/logger"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
+)
+
+const (
+	OwnerReadWrite os.FileMode = 0o600
 )
 
 // Overrider is a func that mutates configuration.
@@ -37,7 +41,7 @@ const (
 )
 
 // NewConfig creates the configuration by reading env & files.
-func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Config, error) { // nolint // function will contain repeating statements for defaults
+func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Config, error) { //nolint // function will contain repeating statements for defaults
 	configLogger := log.With().Str("component", "config").Logger()
 	log = &configLogger
 
@@ -79,16 +83,16 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 	}
 
 	if configExists {
-		if err = v.ReadInConfig(); err != nil {
+		if err := v.ReadInConfig(); err != nil {
 			return nil, errors.Wrapf(err, "failed to read config file '%s'", file)
 		}
 	}
+
 	v.AutomaticEnv()
 
-	err = v.UnmarshalExact(cfg, func(dc *mapstructure.DecoderConfig) {
+	if err := v.UnmarshalExact(cfg, func(dc *mapstructure.DecoderConfig) {
 		dc.TagName = "json"
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal config file")
 	}
 
@@ -105,7 +109,6 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 
 		return nil
 	}()
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config file")
 	}
@@ -114,10 +117,12 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 	if err != nil {
 		return nil, err
 	}
+
 	err = cfg.LoadDefaultDomain()
 	if err != nil {
 		log.Err(err).Msg("failed to load default-domain.cfg file")
 	}
+
 	cfg.CredentialsStore = cf.GetCredentialsStore(cfg.DefaultDomain)
 
 	return cfg, nil
@@ -126,6 +131,7 @@ func NewConfig(configPath Path, log *zerolog.Logger, overrides Overrider) (*Conf
 // NewLoggerConfig creates a new LoggerConfig.
 func NewLoggerConfig(configPath Path, overrides Overrider) (*logger.Config, error) {
 	discardLogger := zerolog.New(io.Discard)
+
 	cfg, err := NewConfig(configPath, &discardLogger, overrides)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config")
@@ -141,30 +147,34 @@ func (c *Config) PoliciesRoot() string {
 func (c *Config) ReplHistoryFile() string {
 	return filepath.Join(c.FileStoreRoot, "repl_history")
 }
+
 func (c *Config) SaveDefaultDomain() error {
-	_, err := os.Stat(c.FileStoreRoot)
-	if err != nil {
-		err := os.Mkdir(c.FileStoreRoot, 0600)
-		if err != nil {
+	if _, err := os.Stat(c.FileStoreRoot); err != nil {
+		if err := os.Mkdir(c.FileStoreRoot, OwnerReadWrite); err != nil {
 			return err
 		}
 	}
-	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), 0600)
+
+	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), OwnerReadWrite)
 }
 
 func (c *Config) LoadDefaultDomain() error {
 	defaultPath := filepath.Join(c.FileStoreRoot, defaultDomain)
+
 	ok, err := fileExists(defaultPath)
 	if err != nil {
 		return err
 	}
+
 	if ok {
 		domain, err := os.ReadFile(defaultPath)
 		if err != nil {
 			return err
 		}
+
 		c.DefaultDomain = string(domain)
 	}
+
 	return nil
 }
 

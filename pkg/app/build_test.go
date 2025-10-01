@@ -30,5 +30,4 @@ func TestRefCalculation(t *testing.T) {
 			assert.Equal(expectedInternalRef, calculatedRef)
 		})
 	}
-
 }

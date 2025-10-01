@@ -18,17 +18,17 @@ on:
       - release-*
 env:
   PRE_RELEASE: ${{ github.ref == 'refs/heads/main' && 'development' || '' }}
-  GO_VERSION: "1.23"
-  GO_RELEASER_VERSION: "v2.3.2"
-  GO_LANGCI_LINT_VERSION: "v1.61.0"
-  GO_TESTSUM_VERSION: "1.11.0"
+  GO_VERSION: "1.25"
+  GO_RELEASER_VERSION: "v2.8.2"
+  GO_LANGCI_LINT_VERSION: "v2.4.0"
+  GO_TESTSUM_VERSION: "1.12.3"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - 
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - 
         name: Setup Go
         uses: actions/setup-go@v5
@@ -36,7 +36,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       -
         name: Build
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -45,7 +45,7 @@ jobs:
           args: build --clean --snapshot --single-target
       -
         name: Lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v8
         with:
           version: ${{ env.GO_LANGCI_LINT_VERSION }}
           args: --timeout=30m
@@ -58,6 +58,8 @@ jobs:
         name: Test
         run: |
           gotestsum --format short-verbose -- -count=1 -parallel=1 -v -timeout=240s -coverprofile=cover.out -coverpkg=./... ./...
+          gotestsum --format short-verbose -- -count=1 -parallel=1 -v -timeout=240s -coverprofile=cover.out -coverpkg=./oci/... ./oci/...
+          gotestsum --format short-verbose -- -count=1 -parallel=1 -v -timeout=240s -coverprofile=cover.out -coverpkg=./parser/... ./parser/...
       -
         name: Upload code coverage
         uses: shogo82148/actions-goveralls@v1
@@ -73,7 +75,7 @@ jobs:
     if: github.event_name == 'push' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') )
     steps:
       - 
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - 
@@ -100,7 +102,7 @@ jobs:
           eval `ssh-agent`
       -
         name: Push image to GitHub Container Registry
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -115,7 +117,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - 
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - 
@@ -143,7 +145,7 @@ jobs:
       - 
         name: Pre-release
         if: github.event_name == 'push'  && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ROOT_TOKEN }}
           ASERTO_TAP: ${{ secrets.GH_ASERTO_TAP_TOKEN }}
@@ -154,7 +156,7 @@ jobs:
       - 
         name: Release
         if: github.event_name == 'push'  && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-rc')
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ROOT_TOKEN }}
           ASERTO_TAP: ${{ secrets.GH_ASERTO_TAP_TOKEN }}
@@ -169,7 +171,7 @@ jobs:
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0    
       - 

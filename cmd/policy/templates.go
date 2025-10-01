@@ -14,23 +14,21 @@ type ApplyCmd struct {
 	RegoVersion string `name:"rego-version" enum:"rego.v0, rego.v1" default:"rego.v1" help:"Set rego version flag (enum: rego.v0 or rego.v1)."`
 }
 
-type ListCmd struct {
-}
+type ListCmd struct{}
 
 func (c *ApplyCmd) Run(g *Globals) error {
-	err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite, c.RegoVersion)
-	if err != nil {
-		return errors.TemplateFailed.WithError(err)
+	if err := g.App.TemplateApply(c.Template, c.Output, c.Overwrite, c.RegoVersion); err != nil {
+		return errors.ErrTemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()
+
 	return nil
 }
 
 func (c *ListCmd) Run(g *Globals) error {
-	err := g.App.TemplatesList()
-	if err != nil {
-		return errors.TemplateFailed.WithError(err)
+	if err := g.App.TemplatesList(); err != nil {
+		return errors.ErrTemplateFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

@@ -20,23 +20,24 @@ type LoginCmd struct {
 	DefaultDomain bool   `name:"default-domain" short:"d" help:"Do not ask for setting default domain"`
 }
 
+//nolint:funlen
 func (c *LoginCmd) Run(g *Globals) error {
 	if c.Password != "" {
 		g.App.UI.Exclamation().Msg("Using --password via the CLI is insecure. Use --password-stdin.")
 
 		if c.PasswordStdin {
-			return perr.LoginFailed.WithMessage("--password and --password-stdin are mutually exclusive")
+			return perr.ErrLoginFailed.WithMessage("--password and --password-stdin are mutually exclusive")
 		}
 	}
 
 	if c.PasswordStdin {
 		if c.Username == "" {
-			return perr.LoginFailed.WithMessage("Must provide --username with --password-stdin")
+			return perr.ErrLoginFailed.WithMessage("Must provide --username with --password-stdin")
 		}
 
 		contents, err := io.ReadAll(g.App.UI.Input())
 		if err != nil {
-			return perr.LoginFailed.WithError(err)
+			return perr.ErrLoginFailed.WithError(err)
 		}
 
 		c.Password = strings.TrimSuffix(string(contents), "\n")
@@ -44,15 +45,16 @@ func (c *LoginCmd) Run(g *Globals) error {
 	}
 
 	if c.Server == "" {
-		return perr.LoginFailed.WithMessage("Must provide --server")
+		return perr.ErrLoginFailed.WithMessage("Must provide --server")
 	}
 
 	password := c.Password
 	if c.Password == "" {
 		g.App.UI.Normal().NoNewline().Msg("Password: ")
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin)) // nolint:unconvert // needed for windows
+
+		bytePassword, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert // needed for windows
 		if err != nil {
-			return perr.LoginFailed.WithError(err)
+			return perr.ErrLoginFailed.WithError(err)
 		}
 
 		password = string(bytePassword)
@@ -62,14 +64,16 @@ func (c *LoginCmd) Run(g *Globals) error {
 		WithStringValue("server", c.Server).
 		WithStringValue("user", c.Username).
 		Msg("Logging in.")
-	err := g.App.Ping(c.Server, c.Username, password)
-	if err != nil {
-		return perr.LoginFailed.WithError(err)
+
+	if err := g.App.Ping(c.Server, c.Username, password); err != nil {
+		return perr.ErrLoginFailed.WithError(err)
 	}
+
 	var setDefault bool
+
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		return perr.LoginFailed.WithError(err)
+		return perr.ErrLoginFailed.WithError(err)
 	}
 
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -78,28 +82,27 @@ func (c *LoginCmd) Run(g *Globals) error {
 		setDefault = checkDefault(g, c)
 	}
 
-	err = g.App.SaveServerCreds(&types.AuthConfig{
+	if err := g.App.SaveServerCreds(&types.AuthConfig{
 		ServerAddress: c.Server,
 		Auth:          "basic",
 		Username:      c.Username,
 		Password:      password,
-	})
-	if err != nil {
-		return perr.LoginFailed.WithError(err)
+	}); err != nil {
+		return perr.ErrLoginFailed.WithError(err)
 	}
 
 	if setDefault {
 		g.App.Configuration.DefaultDomain = c.Server
 	}
 
-	err = g.App.Configuration.SaveDefaultDomain()
-	if err != nil {
-		return perr.LoginFailed.WithError(err)
+	if err := g.App.Configuration.SaveDefaultDomain(); err != nil {
+		return perr.ErrLoginFailed.WithError(err)
 	}
 
 	g.App.UI.Normal().Msg("OK.")
 
 	<-g.App.Context.Done()
+
 	return nil
 }
 

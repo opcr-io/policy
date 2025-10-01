@@ -40,8 +40,9 @@ builds:
 
 archives:
   # https://goreleaser.com/customization/archive/
-  - format: zip
-    builds:
+  - formats: 
+      - zip
+    ids:
     - build
     files:
       - LICENSE

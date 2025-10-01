@@ -11,7 +11,7 @@ import (
 
 func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 	if c.Configuration.Insecure {
-		return &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}} // nolint:gosec // feature used for debugging
+		return &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}} //nolint:gosec // feature used for debugging
 	}
 	// Get the SystemCertPool, continue with an empty pool on error
 	var (
@@ -24,11 +24,12 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 			c.UI.Problem().WithErr(err).WithEnd(1).Msg("Failed to load system cert pool.")
 		}
 	} else {
-		// TODO: Remove runtime check when updating to go1.18 https://github.com/deviceinsight/kafkactl/issues/108
+		// remove runtime check when updating to go1.18 https://github.com/deviceinsight/kafkactl/issues/108.
 		if len(c.Configuration.CA) > 0 {
 			c.UI.Exclamation().Msg("Cannot use custom CAs on Windows. Please configure your system store to trust your CAs.")
 		}
-		return http.DefaultTransport.(*http.Transport)
+
+		return http.DefaultTransport.(*http.Transport) //nolint:forcetypeassert
 	}
 
 	if rootCAs == nil {
@@ -54,5 +55,6 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 		RootCAs:    rootCAs,
 		MinVersion: tls.VersionTLS12,
 	}
+
 	return &http.Transport{TLSClientConfig: config}
 }

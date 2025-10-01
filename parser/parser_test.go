@@ -22,7 +22,7 @@ func TestCalculatePolicyRef(t *testing.T) {
 		if err != nil {
 			assert.FailNow(err.Error())
 		}
+
 		assert.Equal(ref, computedRef)
 	}
-
 }

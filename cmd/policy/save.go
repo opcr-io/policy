@@ -10,7 +10,7 @@ type SaveCmd struct {
 func (c *SaveCmd) Run(g *Globals) error {
 	err := g.App.Save(c.Policy, c.File)
 	if err != nil {
-		return errors.SaveFailed.WithError(err)
+		return errors.ErrSaveFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

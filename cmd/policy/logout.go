@@ -11,13 +11,13 @@ func (c *LogoutCmd) Run(g *Globals) error {
 		WithStringValue("server", c.Server).
 		Msg("Logging out.")
 
-	err := g.App.RemoveServerCreds(c.Server)
-	if err != nil {
-		return errors.LogoutFailed.WithError(err)
+	if err := g.App.RemoveServerCreds(c.Server); err != nil {
+		return errors.ErrLogoutFailed.WithError(err)
 	}
 
 	g.App.UI.Normal().Msg("OK.")
 
 	<-g.App.Context.Done()
+
 	return nil
 }

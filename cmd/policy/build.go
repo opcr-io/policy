@@ -4,6 +4,7 @@ import (
 	perr "github.com/opcr-io/policy/pkg/errors"
 )
 
+//nolint:lll
 type BuildCmd struct {
 	Tag         string            `name:"tag" short:"t" help:"Name and optionally a tag in the 'name:tag' format, if not provided it will be 'default:latest'"`
 	Path        []string          `arg:"" name:"path" help:"Path to the policy sources." type:"string"`
@@ -27,10 +28,7 @@ type BuildCmd struct {
 }
 
 func (c *BuildCmd) Run(g *Globals) error {
-	v1build := true
-	if c.RegoVersion == "rego.v0" {
-		v1build = false
-	}
+	v1build := c.RegoVersion == "rego.v1"
 
 	err := g.App.Build(
 		c.Tag,
@@ -53,7 +51,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		v1build,
 	)
 	if err != nil {
-		return perr.BuildFailed.WithError(err)
+		return perr.ErrBuildFailed.WithError(err)
 	}
 
 	<-g.App.Context.Done()

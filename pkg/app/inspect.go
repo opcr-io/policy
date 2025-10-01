@@ -24,6 +24,7 @@ func (c *PolicyApp) Inspect(userRef string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to read content info for policy [%s]", ref)
 	}
+
 	c.UI.Normal().
 		WithStringValue("media type", contentInfo.MediaType).
 		WithStringValue("digest", contentInfo.Digest.String()).
@@ -34,22 +35,27 @@ func (c *PolicyApp) Inspect(userRef string) error {
 	if err != nil {
 		return err
 	}
+
 	msg := c.UI.Normal().WithTable("Annotation", "Value")
 
 	for k, v := range annotations {
 		msg.WithTableRow(k, v)
 	}
+
 	msg.Msg("Annotations")
+
 	return nil
 }
 
 func getAnnotations(contentInfo *ocispec.Descriptor, ociClient *oci.Oci) (map[string]string, error) {
 	var annotations map[string]string
+
 	if contentInfo.MediaType == ocispec.MediaTypeImageManifest {
 		manifest, err := ociClient.GetManifest(contentInfo)
 		if err != nil {
 			return nil, err
 		}
+
 		annotations = manifest.Annotations
 	} else if len(contentInfo.Annotations) > 0 {
 		annotations = contentInfo.Annotations
