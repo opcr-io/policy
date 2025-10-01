@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "accnt",
+    "alecthomas",
     "anypb",
     "Aona",
     "aonaupdater",
@@ -15,6 +16,7 @@
     "CFLAGS",
     "clui",
     "codebeat",
+    "containerd",
     "cookiecutter",
     "ctxtags",
     "Deps",
@@ -75,6 +77,7 @@
     "ocispec",
     "opcr",
     "openapi",
+    "opencontainers",
     "openid",
     "oras",
     "Orgs",
