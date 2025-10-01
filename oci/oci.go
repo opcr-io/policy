@@ -194,8 +194,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	// copy tarball to remote first
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push tarball failed")
 	}
 
@@ -212,8 +211,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	// copy config to remote
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push config failed")
 	}
 
@@ -230,8 +228,7 @@ func (o *Oci) Push(ref string) (digest.Digest, error) {
 	}
 
 	// copy manifest to remote
-	_, err = oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions)
-	if err != nil {
+	if _, err := oras.Copy(o.ctx, o.ociStore, ref, remoteManager, "", oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "oras push manifest failed")
 	}
 
@@ -258,8 +255,7 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 		}
 	}
 
-	_, err = cloneDescriptor(&descriptor)
-	if err != nil {
+	if _, err := cloneDescriptor(&descriptor); err != nil {
 		return err
 	}
 
@@ -328,7 +324,7 @@ func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, er
 	}
 
 	manifestBytes := new(bytes.Buffer)
-	if _, err = manifestBytes.ReadFrom(reader); err != nil {
+	if _, err := manifestBytes.ReadFrom(reader); err != nil {
 		return nil, err
 	}
 
@@ -426,8 +422,7 @@ func CopyPolicy(
 		return errors.Wrap(err, "failed to create oci client")
 	}
 
-	_, err = ociClient.Pull(sourceRef)
-	if err != nil {
+	if _, err := ociClient.Pull(sourceRef); err != nil {
 		return errors.Wrap(err, "failed to pull image")
 	}
 
@@ -461,8 +456,7 @@ func CopyPolicy(
 		return errors.Wrap(err, "failed to create oci client")
 	}
 
-	_, err = ociClient.Push(destinationRef)
-	if err != nil {
+	if _, err := ociClient.Push(destinationRef); err != nil {
 		return errors.Wrap(err, "failed to push image")
 	}
 
