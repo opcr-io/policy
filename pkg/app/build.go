@@ -12,8 +12,6 @@ import (
 	"github.com/aserto-dev/runtime"
 	"github.com/containerd/errdefs"
 	"github.com/distribution/reference"
-	"github.com/rs/zerolog"
-
 	oras "github.com/opcr-io/oras-go/v2"
 	"github.com/opcr-io/oras-go/v2/content"
 	orasoci "github.com/opcr-io/oras-go/v2/content/oci"
@@ -22,6 +20,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -30,7 +29,10 @@ const (
 )
 
 //nolint:funlen
-func (c *PolicyApp) Build(ref string, path []string, annotations map[string]string,
+func (c *PolicyApp) Build(
+	ref string,
+	path []string,
+	annotations map[string]string,
 	runConfigFile string,
 	target string,
 	optimizationLevel int,

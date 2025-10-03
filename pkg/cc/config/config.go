@@ -10,13 +10,10 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/opcr-io/policy/pkg/x"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
-)
-
-const (
-	OwnerReadWrite os.FileMode = 0o600
 )
 
 // Overrider is a func that mutates configuration.
@@ -150,12 +147,12 @@ func (c *Config) ReplHistoryFile() string {
 
 func (c *Config) SaveDefaultDomain() error {
 	if _, err := os.Stat(c.FileStoreRoot); err != nil {
-		if err := os.Mkdir(c.FileStoreRoot, OwnerReadWrite); err != nil {
+		if err := os.Mkdir(c.FileStoreRoot, x.OwnerReadWrite); err != nil {
 			return err
 		}
 	}
 
-	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), OwnerReadWrite)
+	return os.WriteFile(filepath.Join(c.FileStoreRoot, defaultDomain), []byte(c.DefaultDomain), x.OwnerReadWrite)
 }
 
 func (c *Config) LoadDefaultDomain() error {

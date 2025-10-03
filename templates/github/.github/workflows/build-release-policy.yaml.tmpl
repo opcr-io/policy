@@ -12,72 +12,69 @@ jobs:
     name: build
 
     steps:
-    - uses: actions/checkout@v3
+    - 
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-
-    - name: Read config
+    - 
+      name: Read .github/config.yaml
       id: config
-      uses: opcr-io/ga-yaml-parser@v0.1
+      uses: gertd/yaml-reader-action@v1
       with:
         file: .github/config.yaml
-
-    - name: List Sver Tags
-      uses: aserto-dev/sver-action@v0
-      id: "sver"
+    -
+      name: Calc Tags
+      id: meta
+      uses: docker/metadata-action@v5
       with:
-        docker_image:{{ ` ${{ steps.config.outputs.repo }}` }}
-        docker_registry:{{` ${{ steps.config.outputs.server }}` }}
-        docker_username:{{` ${{ steps.config.outputs.username }}` }}
-        docker_password:{{` ${{ secrets.` }}{{ pushkey}} }}
-
-    - name: Calculate image tags
-      id: "tags"
-      run: |
-        while read -r tag; do
-          tags="$tags {{`${{ steps.config.outputs.repo }}` }}:$tag"
-        done < <(echo "{{`${{ steps.sver.outputs.version }}` }}")
-
-        echo target_tags=${tags} >> $GITHUB_OUTPUT
-
-    - name: Policy Login
+        images: |
+          {{`${{ steps.config.outputs.server }}/${{ steps.config.outputs.repo }}`}}
+        flavor: |
+          latest=auto
+        tags: |
+          type=semver,pattern={{`{{version}}`}}
+          type=semver,pattern={{`{{major}}.{{minor}}`}}
+          type=semver,pattern={{`{{major}}`}}
+          # type=sha
+    - 
+      name: Policy Login
       id: policy-login
       uses: opcr-io/policy-login-action@v3
       with:
-        username: {{`${{ steps.config.outputs.username }}` }}
+        username: {{`${{ steps.config.outputs.username }}`}}
         password: {{`${{ secrets.`}}{{ pushkey }} }}
-        server: {{`${{ steps.config.outputs.server }}` }}
-
-    - name: Policy Build
+        server: {{`${{ steps.config.outputs.server }}`}}
+    - 
+      name: Policy Build
       id: policy-build
       uses: opcr-io/policy-build-action@v4
       with:
         src: src
-        tag: {{`${{ steps.config.outputs.repo }}` }}
+        tag: {{`${{ steps.config.outputs.repo }}`}}
         revision: "$GITHUB_SHA"
         rego_version: "rego.v1"
       env:
-        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}
-
-    - name: Policy Tag
+        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}`}}
+    - 
+      name: Policy Tag
       id: policy-tag
       uses: opcr-io/policy-tag-action@v3
       with:
-        source_tag: {{`${{ steps.config.outputs.repo }}` }}
-        target_tags: {{`${{ steps.tags.outputs.target_tags }}` }}
+        source_tag: {{`${{ steps.config.outputs.repo }}`}}
+        target_tags: {{`${{ steps.meta.outputs.tags }}`}}
       env:
-        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}        
-
-    - name: Policy Push
+        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}`}}
+    - 
+      name: Policy Push
       id: policy-push
       uses: opcr-io/policy-push-action@v3
       with:
-        tags: {{`${{ steps.tags.outputs.target_tags }}` }}
+        tags: {{`${{ steps.meta.outputs.tags }}`}}
       env:
-        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}` }}
-
-    - name: Policy Logout
+        POLICY_DEFAULT_DOMAIN: {{`${{ steps.config.outputs.server }}`}}
+    - 
+      name: Policy Logout
       id: policy-logout
       uses: opcr-io/policy-logout-action@v3
       with:
-        server: {{`${{ steps.config.outputs.server }}` }}
+        server: {{`${{ steps.config.outputs.server }}`}}
