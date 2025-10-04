@@ -49,11 +49,12 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	if !ok {
 		return errors.ErrNotFound.WithMessage("policy [%s] not in the local store", existingRef)
 	}
+
 	// attach ref name annotation for comparison.
 	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
 		oldAnnotations := ref.Annotations
-
 		ref.Annotations = make(map[string]string)
+
 		if oldAnnotations != nil {
 			ref.Annotations = oldAnnotations
 		}
@@ -84,7 +85,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 }
 
 func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor, refString string) error {
-	anotherImagewithSameDigest, err := c.buildFromSameImage(ref)
+	anotherImageWithSameDigest, err := c.buildFromSameImage(ref)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 		return err
 	}
 
-	if anotherImagewithSameDigest {
+	if anotherImageWithSameDigest {
 		return nil
 	}
 

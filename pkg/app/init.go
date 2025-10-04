@@ -8,6 +8,7 @@ import (
 
 	"github.com/aserto-dev/scc-lib/generators"
 	"github.com/magefile/mage/sh"
+	"github.com/opcr-io/policy/pkg/x"
 	"github.com/opcr-io/policy/templates"
 
 	"github.com/pkg/errors"
@@ -96,11 +97,9 @@ func (c *PolicyApp) generateContent(generatorConf *generators.Config, outPath, s
 	return nil
 }
 
-const ownerReadWriteExecute os.FileMode = 0o700
-
 func (c *PolicyApp) validatePath(path string) error {
 	if exist, _ := generators.DirExist(path); !exist {
-		if err := os.MkdirAll(path, ownerReadWriteExecute); err != nil {
+		if err := os.MkdirAll(path, x.OwnerReadWriteExecute); err != nil {
 			return errors.Errorf("root path not a directory '%s'", path)
 		}
 	}

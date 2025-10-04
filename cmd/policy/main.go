@@ -16,7 +16,10 @@ import (
 )
 
 const (
-	appName string = "policy"
+	appName        string = "policy"
+	verbosityError int    = 0
+	verbosityInfo  int    = 1
+	verbosityDebug int    = 2
 )
 
 var tmpConfig *config.Config
@@ -69,7 +72,10 @@ func resolveTmpConfig(context *kong.Context) {
 		return
 	}
 
-	configPath, _ := context.FlagValue(configFlag).(string)
+	configPath, ok := context.FlagValue(configFlag).(string)
+	if !ok {
+		panic("config path cast failed")
+	}
 
 	cfgLogger, err := config.NewLoggerConfig(config.Path(configPath), nil)
 	if err != nil {
@@ -121,12 +127,6 @@ var PolicyCLI struct {
 	Version   VersionCmd   `cmd:"" help:"Prints version information."`
 }
 
-const (
-	logLevelError int = 0
-	logLevelInfo  int = 1
-	logLevelDebug int = 2
-)
-
 func (g *Globals) setup() func() {
 	configFile := g.Config
 
@@ -136,11 +136,11 @@ func (g *Globals) setup() func() {
 		config.Path(configFile),
 		func(c *config.Config) {
 			switch g.Verbosity {
-			case logLevelError:
+			case verbosityError:
 				c.Logging.LogLevel = "error"
-			case logLevelInfo:
+			case verbosityInfo:
 				c.Logging.LogLevel = "info"
-			case logLevelDebug:
+			case verbosityDebug:
 				c.Logging.LogLevel = "debug"
 			default:
 				c.Logging.LogLevel = "trace"

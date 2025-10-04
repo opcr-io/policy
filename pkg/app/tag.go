@@ -17,6 +17,7 @@ func (c *PolicyApp) Tag(existingRef, newRef string) error {
 	}
 
 	existingRefParsed := existingRef
+
 	if strings.Contains(existingRef, ":") || strings.Contains(existingRef, "/") {
 		existingRefParsed, err = parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
 		if err != nil {

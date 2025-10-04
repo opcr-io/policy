@@ -18,13 +18,14 @@ func (c *PolicyApp) TransportWithTrustedCAs() *http.Transport {
 		rootCAs *x509.CertPool
 		err     error
 	)
+
 	if runtime.GOOS != `windows` {
 		rootCAs, err = x509.SystemCertPool()
 		if err != nil {
 			c.UI.Problem().WithErr(err).WithEnd(1).Msg("Failed to load system cert pool.")
 		}
 	} else {
-		// remove runtime check when updating to go1.18 https://github.com/deviceinsight/kafkactl/issues/108.
+		// CLEANUP: Remove runtime check when updating to go1.18 https://github.com/deviceinsight/kafkactl/issues/108
 		if len(c.Configuration.CA) > 0 {
 			c.UI.Exclamation().Msg("Cannot use custom CAs on Windows. Please configure your system store to trust your CAs.")
 		}
