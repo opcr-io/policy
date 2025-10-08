@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *PolicyApp) Pull(userRef string) error {
+func (c *PolicyApp) Pull(userRef string, untar bool, untarDir string) error {
 	defer c.Cancel()
 
 	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
@@ -34,6 +34,22 @@ func (c *PolicyApp) Pull(userRef string) error {
 	c.UI.Normal().
 		WithStringValue("digest", digest.String()).
 		Msgf("Pulled ref [%s].", ref)
+
+	// If untar flag is set, extract the policy bundle
+	if untar {
+		c.UI.Normal().
+			WithStringValue("directory", untarDir).
+			Msg("Extracting policy bundle.")
+
+		err = c.ExtractPolicyBundle(ociClient, ref, untarDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to extract policy bundle")
+		}
+
+		c.UI.Normal().
+			WithStringValue("directory", untarDir).
+			Msgf("Extracted policy bundle to directory.")
+	}
 
 	return nil
 }
