@@ -35,7 +35,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	descriptor, ok := existingRefs[existingRefParsed]
 
 	if !ok {
-		err := c.Pull(ref, false, "")
+		err := c.Pull(ref, "")
 		if err != nil {
 			return err
 		}

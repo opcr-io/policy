@@ -10,6 +10,7 @@ import (
 
 	"github.com/opcr-io/policy/oci"
 	perr "github.com/opcr-io/policy/pkg/errors"
+	"github.com/opcr-io/policy/pkg/x"
 )
 
 // ExtractPolicyBundle extracts a policy bundle from OCI store to the specified directory
@@ -42,15 +43,19 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		}
 	}()
 
-	// Create destination directory if it doesn't exist
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create destination directory [%s]", destDir)
-	}
-
 	// Get absolute path for security checks
 	absDestDir, err := filepath.Abs(destDir)
 	if err != nil {
 		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to get absolute path")
+	}
+
+	// Validate that the destination directory exists
+	stat, err := os.Stat(absDestDir)
+	if err != nil {
+		return perr.ErrExtractFailed.WithError(err).WithMessage("destination directory [%s] does not exist", absDestDir)
+	}
+	if !stat.IsDir() {
+		return perr.ErrExtractFailed.WithMessage("[%s] is not a directory", absDestDir)
 	}
 
 	// Extract tar archive
@@ -68,25 +73,24 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		// Security check: prevent path traversal attacks
 		targetPath := filepath.Join(absDestDir, header.Name)
 		if !isPathSafe(targetPath, absDestDir) {
-			c.UI.Problem().Msgf("Skipping unsafe path: %s", header.Name)
-			continue
+			return perr.ErrExtractFailed.WithMessage("unsafe path detected: %s", header.Name)
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			// Create directory
-			if err := os.MkdirAll(targetPath, 0755); err != nil {
+			if err := os.MkdirAll(targetPath, x.OwnerReadWriteExecute); err != nil {
 				return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create directory [%s]", targetPath)
 			}
 
 		case tar.TypeReg:
 			// Create parent directory if needed
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(targetPath), x.OwnerReadWriteExecute); err != nil {
 				return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create parent directory")
 			}
 
 			// Create and write file
-			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(header.Mode))
+			outFile, err := os.Create(targetPath)
 			if err != nil {
 				return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create file [%s]", targetPath)
 			}
@@ -111,8 +115,7 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 
 			// Security check for symlink target
 			if !isPathSafe(resolvedTarget, absDestDir) {
-				c.UI.Problem().Msgf("Skipping unsafe symlink: %s -> %s", header.Name, linkTarget)
-				continue
+				return perr.ErrExtractFailed.WithMessage("unsafe symlink detected: %s -> %s", header.Name, linkTarget)
 			}
 
 			// Create symlink

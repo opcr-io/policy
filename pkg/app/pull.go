@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *PolicyApp) Pull(userRef string, untar bool, untarDir string) error {
+func (c *PolicyApp) Pull(userRef string, untarDir string) error {
 	defer c.Cancel()
 
 	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
@@ -35,8 +35,8 @@ func (c *PolicyApp) Pull(userRef string, untar bool, untarDir string) error {
 		WithStringValue("digest", digest.String()).
 		Msgf("Pulled ref [%s].", ref)
 
-	// If untar flag is set, extract the policy bundle
-	if untar {
+	// If untarDir is set, extract the policy bundle
+	if untarDir != "" {
 		c.UI.Normal().
 			WithStringValue("directory", untarDir).
 			Msg("Extracting policy bundle.")
