@@ -206,7 +206,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
-	configBytes := []byte(fmt.Sprintf("{\"created\":%q}", time.Now().UTC().Format(time.RFC3339)))
+	configBytes := fmt.Appendf([]byte{}, "{\"created\":%q}", time.Now().UTC().Format(time.RFC3339))
 	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
 
 	if err := ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes)); err != nil {

@@ -9,7 +9,7 @@ const (
 	DefaultCanonicalDomain = "docker.io"
 )
 
-// Calculates the docker reference from string.
+// CalculatePolicyRef calculates the docker reference from string.
 func CalculatePolicyRef(userRef, defaultDomain string) (string, error) {
 	parsed, err := reference.ParseDockerRef(userRef)
 	if err != nil {
