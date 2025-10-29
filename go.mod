@@ -1,8 +1,8 @@
 module github.com/opcr-io/policy
 
-go 1.24.7
+go 1.24.9
 
-toolchain go1.25.1
+toolchain go1.25.3
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -20,8 +20,6 @@ require (
 	github.com/google/wire v0.7.0
 	github.com/magefile/mage v1.15.0
 	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
-	github.com/opcr-io/policy/oci v0.2.16
-	github.com/opcr-io/policy/parser v0.2.16
 	github.com/open-policy-agent/opa v1.9.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -32,18 +30,17 @@ require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.17.0
 	golang.org/x/term v0.35.0
+	oras.land/oras-go/v2 v2.6.0
 	sigs.k8s.io/controller-runtime v0.19.3
 )
 
 require (
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytecodealliance/wasmtime-go/v3 v3.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/containerd/containerd v1.7.19 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v1.0.0-rc.1 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
@@ -128,6 +125,5 @@ require (
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
-	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )

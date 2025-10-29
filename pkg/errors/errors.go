@@ -39,7 +39,7 @@ func (e *PolicyCLIError) Error() string {
 	return response
 }
 
-func (e *PolicyCLIError) WithMessage(message string, args ...interface{}) *PolicyCLIError {
+func (e *PolicyCLIError) WithMessage(message string, args ...any) *PolicyCLIError {
 	e.Message += arrow + fmt.Sprintf(message, args...)
 	return e
 }
