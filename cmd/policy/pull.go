@@ -4,7 +4,7 @@ import "github.com/pkg/errors"
 
 type PullCmd struct {
 	Policies []string `arg:"" name:"policy" help:"Policies to pull from the remote registry."`
-	UntarDir string   `name:"untardir" help:"Directory to extract the policy bundle to (when set, bundle will be automatically extracted)." type:"existingdir"`
+	UntarDir string   `name:"untardir" type:"existingdir" help:"Directory to extract the policy bundle to (automatically extracts when set)."`
 }
 
 func (c *PullCmd) Run(g *Globals) error {

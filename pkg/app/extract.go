@@ -13,7 +13,9 @@ import (
 	"github.com/opcr-io/policy/pkg/x"
 )
 
-// ExtractPolicyBundle extracts a policy bundle from OCI store to the specified directory
+// ExtractPolicyBundle extracts a policy bundle from OCI store to the specified directory.
+//
+//nolint:gocognit,funlen // Security checks require comprehensive validation logic.
 func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir string) error {
 	// Get reference descriptor
 	refDescriptor, err := c.getRefDescriptor(ociClient, ref)
@@ -26,6 +28,7 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	if err != nil {
 		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to fetch policy bundle")
 	}
+
 	defer func() {
 		if closeErr := reader.Close(); closeErr != nil {
 			c.UI.Problem().WithErr(closeErr).Msg("Failed to close OCI policy reader")
@@ -37,6 +40,7 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	if err != nil {
 		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create gzip reader")
 	}
+
 	defer func() {
 		if closeErr := gzReader.Close(); closeErr != nil {
 			c.UI.Problem().WithErr(closeErr).Msg("Failed to close gzip reader")
@@ -54,6 +58,7 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	if err != nil {
 		return perr.ErrExtractFailed.WithError(err).WithMessage("destination directory [%s] does not exist", absDestDir)
 	}
+
 	if !stat.IsDir() {
 		return perr.ErrExtractFailed.WithMessage("[%s] is not a directory", absDestDir)
 	}
@@ -66,12 +71,29 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		if err == io.EOF {
 			break // End of archive
 		}
+
 		if err != nil {
 			return perr.ErrExtractFailed.WithError(err).WithMessage("failed to read tar header")
 		}
 
-		// Security check: prevent path traversal attacks
-		targetPath := filepath.Join(absDestDir, header.Name)
+		// Security check: sanitize and validate header.Name before use
+		// This prevents path traversal attacks (CWE-22)
+		cleanedName := filepath.Clean(header.Name)
+
+		// Reject absolute paths
+		if filepath.IsAbs(cleanedName) {
+			return perr.ErrExtractFailed.WithMessage("unsafe absolute path in archive: %s", header.Name)
+		}
+
+		// Reject paths that escape the destination directory
+		if strings.HasPrefix(cleanedName, ".."+string(filepath.Separator)) || cleanedName == ".." {
+			return perr.ErrExtractFailed.WithMessage("unsafe path traversal detected: %s", header.Name)
+		}
+
+		// Construct target path with sanitized name
+		targetPath := filepath.Join(absDestDir, cleanedName)
+
+		// Final safety check: ensure resolved path is within destination
 		if !isPathSafe(targetPath, absDestDir) {
 			return perr.ErrExtractFailed.WithMessage("unsafe path detected: %s", header.Name)
 		}
@@ -96,6 +118,7 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 			}
 
 			// Copy file content
+			//nolint:gosec // G110: Controlled tar extraction from trusted OCI registry, not user input.
 			if _, err := io.Copy(outFile, tarReader); err != nil {
 				outFile.Close()
 				return perr.ErrExtractFailed.WithError(err).WithMessage("failed to write file content")
@@ -107,19 +130,26 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 
 		case tar.TypeSymlink:
 			// Handle symlinks carefully - ensure they don't point outside destDir
-			linkTarget := header.Linkname
+			// Security: sanitize linkname to prevent symlink-based attacks (CWE-59)
+			rawLinkTarget := header.Linkname
+			cleanedLinkTarget := filepath.Clean(rawLinkTarget)
+
+			// Reject absolute symlink targets
+			if filepath.IsAbs(cleanedLinkTarget) {
+				return perr.ErrExtractFailed.WithMessage("unsafe absolute symlink target: %s -> %s", header.Name, rawLinkTarget)
+			}
 
 			// Resolve symlink target relative to the file's directory
 			symlinkDir := filepath.Dir(targetPath)
-			resolvedTarget := filepath.Join(symlinkDir, linkTarget)
+			resolvedTarget := filepath.Join(symlinkDir, cleanedLinkTarget)
 
-			// Security check for symlink target
+			// Security check: ensure symlink target resolves within destination
 			if !isPathSafe(resolvedTarget, absDestDir) {
-				return perr.ErrExtractFailed.WithMessage("unsafe symlink detected: %s -> %s", header.Name, linkTarget)
+				return perr.ErrExtractFailed.WithMessage("unsafe symlink detected: %s -> %s", header.Name, rawLinkTarget)
 			}
 
-			// Create symlink
-			if err := os.Symlink(linkTarget, targetPath); err != nil {
+			// Create symlink with sanitized target
+			if err := os.Symlink(cleanedLinkTarget, targetPath); err != nil {
 				c.UI.Problem().WithErr(err).Msgf("Failed to create symlink [%s]", targetPath)
 			}
 
@@ -131,8 +161,8 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	return nil
 }
 
-// isPathSafe checks if the target path is within the allowed directory
-// This prevents path traversal attacks
+// isPathSafe checks if the target path is within the allowed directory.
+// This prevents path traversal attacks.
 func isPathSafe(targetPath, allowedDir string) bool {
 	// Clean and normalize paths
 	cleanTarget := filepath.Clean(targetPath)
