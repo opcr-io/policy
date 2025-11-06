@@ -11,7 +11,7 @@ require (
 	github.com/aserto-dev/logger v0.0.9
 	github.com/aserto-dev/runtime v1.9.0
 	github.com/aserto-dev/scc-lib v0.1.4
-	github.com/containerd/containerd/v2 v2.1.4
+	github.com/containerd/containerd/v2 v2.1.5
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.4.0+incompatible
