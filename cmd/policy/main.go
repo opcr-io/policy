@@ -101,6 +101,7 @@ type Globals struct {
 	Config    string
 	Verbosity int
 	Insecure  bool
+	Plaintext bool
 	App       *app.PolicyApp
 }
 
@@ -111,6 +112,7 @@ var PolicyCLI struct {
 	Debug     bool   `help:"Enable debug mode."`
 	Verbosity int    `short:"v" type:"counter" help:"Use to increase output verbosity."`
 	Insecure  bool   `short:"k" help:"Do not verify TLS connections."`
+	Plaintext bool   `help:"Use HTTP instead of HTTPS to connect to a registry."`
 
 	Build     BuildCmd     `cmd:"" help:"Build policies."`
 	Images    ImagesCmd    `cmd:"" help:"List policy images."`
@@ -147,6 +149,7 @@ func (g *Globals) setup() func() {
 			}
 
 			c.Insecure = g.Insecure
+			c.Plaintext = g.Plaintext
 		})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, `Application setup failed: %+v.
@@ -187,6 +190,7 @@ func main() {
 		Config:    PolicyCLI.Config,
 		Verbosity: PolicyCLI.Verbosity,
 		Insecure:  PolicyCLI.Insecure,
+		Plaintext: PolicyCLI.Plaintext,
 	}
 
 	cleanup := g.setup()
