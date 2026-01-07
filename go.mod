@@ -1,8 +1,8 @@
 module github.com/opcr-io/policy
 
-go 1.24.9
+go 1.24.11
 
-toolchain go1.25.3
+toolchain go1.25.5
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -17,7 +17,6 @@ require (
 	github.com/docker/cli v28.5.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/go-viper/mapstructure/v2 v2.4.0
-	github.com/google/wire v0.7.0
 	github.com/magefile/mage v1.15.0
 	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
 	github.com/open-policy-agent/opa v1.9.0

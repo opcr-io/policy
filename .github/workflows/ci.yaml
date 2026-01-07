@@ -19,8 +19,8 @@ on:
 env:
   PRE_RELEASE: ${{ github.ref == 'refs/heads/main' && 'development' || '' }}
   GO_VERSION: "1.25"
-  GO_RELEASER_VERSION: "v2.8.2"
-  GO_LANGCI_LINT_VERSION: "v2.6.0"
+  GO_RELEASER_VERSION: "v2.9.0"
+  GO_LANGCI_LINT_VERSION: "v2.6.2"
   GO_TESTSUM_VERSION: "1.13.0"
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - 
         name: Setup Go
         uses: actions/setup-go@v6
@@ -45,7 +45,7 @@ jobs:
           args: build --clean --snapshot --single-target
       -
         name: Lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: ${{ env.GO_LANGCI_LINT_VERSION }}
           args: --timeout=30m
@@ -75,7 +75,7 @@ jobs:
     if: github.event_name == 'push' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') )
     steps:
       - 
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - 
@@ -117,7 +117,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - 
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - 
@@ -171,7 +171,7 @@ jobs:
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0    
       - 
