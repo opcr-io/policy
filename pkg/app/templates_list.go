@@ -6,7 +6,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/opcr-io/policy/pkg/table"
 	"github.com/opcr-io/policy/templates"
+
 	"github.com/pkg/errors"
 )
 
@@ -40,17 +42,24 @@ func (c *PolicyApp) TemplatesList() error {
 		return templateInfos[i].name < templateInfos[j].name
 	})
 
-	table := c.UI.Normal().WithTable("Name", "Kind", "Description")
+	data := [][]any{}
 
 	for _, tmplInfo := range templateInfos {
 		if tmplInfo.kind == "" {
 			continue
 		}
 
-		table.WithTableRow(tmplInfo.name, tmplInfo.kind, tmplInfo.description)
+		data = append(data, []any{
+			tmplInfo.name,
+			tmplInfo.kind,
+			tmplInfo.description,
+		})
 	}
 
-	table.WithTableNoAutoWrapText().Do()
+	t := table.New(os.Stdout)
+	t.Header("Name", "Kind", "Description")
+	t.Bulk(data)
+	t.Render()
 
 	return nil
 }

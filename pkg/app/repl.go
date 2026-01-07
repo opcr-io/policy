@@ -64,7 +64,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 
 	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", bundleHex)
 
-	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
+	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context), &runtime.Config{
 		InstanceID: "policy-run",
 		LocalBundles: runtime.LocalBundlesConfig{
 			Paths: []string{bundleFile},
@@ -73,7 +73,6 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	if err != nil {
 		return errors.ErrReplFailed.WithError(err)
 	}
-	defer cleanup()
 
 	if err := opaRuntime.Start(c.Context); err != nil {
 		return errors.ErrReplFailed.WithError(err)

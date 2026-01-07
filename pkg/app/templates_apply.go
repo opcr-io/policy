@@ -3,12 +3,15 @@ package app
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/aserto-dev/scc-lib/generators"
+	"github.com/opcr-io/policy/pkg/table"
 	"github.com/opcr-io/policy/templates"
+
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 )
@@ -187,13 +190,19 @@ func (c *PolicyApp) buildTable(name string, items []string) string {
 
 	allowedValues := make([]int, len(items))
 
-	table := c.UI.Normal().WithTable("#", name)
+	data := [][]any{}
+
 	for i, item := range items {
-		table.WithTableRow(strconv.Itoa(i+1), item)
+		data = append(data, []any{
+			strconv.Itoa(i + 1), item,
+		})
 		allowedValues[i] = i + 1
 	}
 
-	table.Do()
+	t := table.New(os.Stdout)
+	t.Header("#", name)
+	t.Bulk(data)
+	t.Render()
 
 	var response int64
 	c.UI.Normal().Compact().WithAskInt(fmt.Sprintf("Select %s#", name), &response, allowedValues...).Do()

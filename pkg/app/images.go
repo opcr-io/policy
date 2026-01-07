@@ -1,12 +1,15 @@
 package app
 
 import (
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/dustin/go-humanize"
 	"github.com/opcr-io/policy/oci"
+	"github.com/opcr-io/policy/pkg/table"
+
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -18,17 +21,16 @@ type imageStruct struct {
 	size         string
 }
 
+//nolint:funlen
 func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
-	var data []imageStruct //nolint:prealloc
+	var images []imageStruct //nolint:prealloc
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
 		return err
 	}
-
-	table := c.UI.Normal().WithTable("Repository", "Tag", "Image ID", "Created", "Size")
 
 	var tgs []string
 
@@ -79,7 +81,7 @@ func (c *PolicyApp) Images() error {
 			createdAt = manifest.Annotations[ocispec.AnnotationCreated]
 		}
 
-		data = append(data, imageStruct{
+		images = append(images, imageStruct{
 			familiarName: familiarName,
 			tagOrNone:    tagOrNone,
 			digest:       desc.Digest.Encoded()[:12],
@@ -89,15 +91,25 @@ func (c *PolicyApp) Images() error {
 	}
 
 	// sort data by CreatedAt DESC.
-	sort.SliceStable(data, func(i, j int) bool {
-		return data[i].createdAt < data[j].createdAt || (data[i].createdAt == data[j].createdAt && data[i].familiarName < data[j].familiarName)
+	sort.SliceStable(images, func(i, j int) bool {
+		return images[i].createdAt < images[j].createdAt || (images[i].createdAt == images[j].createdAt && images[i].familiarName < images[j].familiarName)
 	})
 
-	for i := len(data) - 1; i >= 0; i-- {
-		table.WithTableRow(data[i].familiarName, data[i].tagOrNone, data[i].digest, data[i].createdAt, data[i].size)
+	data := [][]any{}
+	for i := len(images) - 1; i >= 0; i-- {
+		data = append(data, []any{
+			images[i].familiarName,
+			images[i].tagOrNone,
+			images[i].digest,
+			images[i].createdAt,
+			images[i].size,
+		})
 	}
 
-	table.Do()
+	t := table.New(os.Stdout)
+	t.Header("Repository", "Tag", "Image ID", "Created", "Size")
+	t.Bulk(data)
+	t.Render()
 
 	return nil
 }

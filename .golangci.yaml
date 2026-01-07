@@ -62,6 +62,7 @@ linters:
         - stdlib
         - generic
         - kong.Resolver
+        - clui.Progress
 
     lll:
       line-length: 150
