@@ -64,6 +64,7 @@ func NewLogger(logOutput Writer, errorOutput ErrWriter, cfg *Config) (*zerolog.L
 
 	once.Do(func() {
 		zerolog.SetGlobalLevel(cfg.LogLevelParsed)
+
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack //nolint:reassign
 
 		// Override standard log output with zerolog.

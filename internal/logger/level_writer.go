@@ -8,6 +8,7 @@ import (
 
 type LevelWriter struct {
 	io.Writer
+
 	ErrorWriter io.Writer
 }
 

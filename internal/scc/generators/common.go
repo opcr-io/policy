@@ -23,9 +23,11 @@ func IsGitRepo(path string) error {
 	if exist, err := DirExist(filepath.Join(path, gitDir)); !exist {
 		return errors.Wrapf(err, "root path does not contain .git directory '%s'", path)
 	}
+
 	if exist, err := FileExist(filepath.Join(path, gitDir, gitConfig)); !exist {
 		return errors.Wrapf(err, ".git directory does not contain config file '%s'", path)
 	}
+
 	return nil
 }
 

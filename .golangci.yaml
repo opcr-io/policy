@@ -65,6 +65,7 @@ linters:
         - generic
         - kong.Resolver
         - clui.Progress
+        - generators.Generator
 
     lll:
       line-length: 150

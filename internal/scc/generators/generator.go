@@ -2,16 +2,20 @@ package generators
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
-	"io/fs"
-
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+)
+
+const (
+	fileModeOwnerRW     os.FileMode = 0o600 // drw-------
+	fileModeDirectoryRW os.FileMode = 0o750 // drwxr-xr--
 )
 
 type GeneratedFilesContent map[string]string
@@ -34,14 +38,17 @@ func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (Generator, error
 	}
 
 	var files []string
+
 	_ = fs.WalkDir(dfs, ".", func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			return nil
 		}
 
 		files = append(files, path)
+
 		return nil
 	})
+
 	return &generatorImpl{
 		cfg:    cfg,
 		files:  files,
@@ -59,13 +66,17 @@ func (c *generatorImpl) GenerateFilesContent() (GeneratedFilesContent, error) {
 			if err != nil {
 				return result, err
 			}
+
 			result[file] = string(content)
+
 			continue
 		}
+
 		content, err := c.interpolateTemplate(file)
 		if err != nil {
 			return result, err
 		}
+
 		fileName := strings.TrimSuffix(file, ".tmpl")
 		result[fileName] = content
 	}
@@ -82,6 +93,7 @@ func (c *generatorImpl) Generate(pathToTemplates string, overwrite bool) error {
 		if err != nil {
 			return err
 		}
+
 		if exist && !overwrite {
 			c.logger.Debug().Msgf("file '%s' already exists, skipping", fileName)
 			continue
@@ -89,7 +101,8 @@ func (c *generatorImpl) Generate(pathToTemplates string, overwrite bool) error {
 
 		// create directories path
 		baseDir := filepath.Dir(fileName)
-		err = os.MkdirAll(baseDir, 0755)
+
+		err = os.MkdirAll(baseDir, fileModeDirectoryRW)
 		if err != nil {
 			return errors.Wrapf(err, "create directory '%s'", baseDir)
 		}
@@ -105,6 +118,7 @@ func (c *generatorImpl) Generate(pathToTemplates string, overwrite bool) error {
 			if err != nil {
 				return err
 			}
+
 			content = string(cnt)
 		}
 
@@ -118,7 +132,7 @@ func (c *generatorImpl) Generate(pathToTemplates string, overwrite bool) error {
 }
 
 func (c *generatorImpl) writeContentToFile(filePath, content string) error {
-	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, fileModeOwnerRW)
 	if err != nil {
 		return errors.Wrapf(err, "open file '%s'", filePath)
 	}
