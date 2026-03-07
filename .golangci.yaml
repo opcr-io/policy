@@ -18,9 +18,9 @@ linters:
     - exhaustruct
     - exhaustive
     - forbidigo
-    - gochecknoglobals  # no configuration options
+    - gochecknoglobals # no configuration options
     - nilnil
-    - nlreturn          # redundant with wsl
+    - nlreturn # redundant with wsl
     - noinlineerr
     - paralleltest
     - revive
@@ -46,14 +46,16 @@ linters:
       statements: 60
       ignore-comments: true
 
-    gomoddirectives:
-      replace-allow-list:
-        - github.com/slok/go-http-metrics
+    gocritic:
+      enable-all: false
+      disable-all: true
+      enabled-checks:
+        - commentedOutCode
 
     gosec:
       excludes:
-        - G104  # Errors unhandled
-        - G304  # Potential file inclusion via variable (see https://github.com/golang/go/issues/67002)
+        - G104 # Errors unhandled
+        - G304 # Potential file inclusion via variable (see https://github.com/golang/go/issues/67002)
 
     ireturn:
       allow:

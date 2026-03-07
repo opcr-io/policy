@@ -1,15 +1,16 @@
 package app
 
 import (
-	"github.com/aserto-dev/logger"
+	"io"
+
 	"github.com/opcr-io/policy/pkg/cc"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/clui"
 )
 
 func BuildPolicyApp(
-	logOutput logger.Writer,
-	errOutput logger.ErrWriter,
+	logOutput io.Writer,
+	errOutput io.Writer,
 	configPath config.Path,
 	overrides config.Overrider,
 ) (

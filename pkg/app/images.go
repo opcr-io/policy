@@ -25,7 +25,7 @@ type imageStruct struct {
 func (c *PolicyApp) Images() error {
 	defer c.Cancel()
 
-	var images []imageStruct //nolint:prealloc
+	var images []imageStruct
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {

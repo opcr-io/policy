@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/kyokomi/emoji"
@@ -192,7 +192,7 @@ func (u *Message) readPassword(message string, stdin bool) string {
 	if value == "" {
 		fmt.Fprintf(u.ui.Output(), "> [%s] %s ", color.GreenString("password"), emoji.Sprint(message))
 
-		byteValue, err := term.ReadPassword(syscall.Stdin)
+		byteValue, err := term.ReadPassword(int(os.Stdin.Fd())) //nolint:gosec // G115 no overflow
 		if err != nil {
 			u.ui.Problem().WithStringValue("  input", err.Error()).Msg("failed to read password")
 			return ""

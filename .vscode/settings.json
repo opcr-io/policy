@@ -3,6 +3,9 @@
   "gopls": {
     "formatting.gofumpt": true
   },
+  "go.testFlags": [
+    "-race"
+  ],
   "cSpell.words": [
     "accnt",
     "alecthomas",

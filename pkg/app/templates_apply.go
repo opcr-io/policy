@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aserto-dev/scc-lib/generators"
+	"github.com/opcr-io/policy/internal/scc/generators"
 	"github.com/opcr-io/policy/pkg/table"
 	"github.com/opcr-io/policy/templates"
 
@@ -190,7 +190,7 @@ func (c *PolicyApp) buildTable(name string, items []string) string {
 
 	allowedValues := make([]int, len(items))
 
-	data := [][]any{}
+	data := [][]any{} //nolint:prealloc
 
 	for i, item := range items {
 		data = append(data, []any{

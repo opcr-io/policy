@@ -2,14 +2,15 @@ package cc
 
 import (
 	"context"
+	"io"
+	"os/signal"
 	"sync"
+	"syscall"
 
-	"github.com/aserto-dev/logger"
-	logger2 "github.com/aserto-dev/runtime/logger"
+	"github.com/opcr-io/policy/internal/logger"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 // CC contains dependencies that are cross cutting and are needed in most
@@ -38,8 +39,8 @@ type ErrGroupAndContext struct {
 
 // NewContext creates a context that responds to user signals.
 func NewContext() *ErrGroupAndContext {
-	errGroup, ctxErr := errgroup.WithContext(signals.SetupSignalHandler())
-	ctx, cancelFunc := context.WithCancel(ctxErr)
+	ctxNotify, cancelFunc := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	errGroup, ctx := errgroup.WithContext(ctxNotify)
 
 	return &ErrGroupAndContext{
 		Ctx:      ctx,
@@ -49,7 +50,7 @@ func NewContext() *ErrGroupAndContext {
 }
 
 // NewCC creates a singleton CC.
-func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func NewCC(logOutput io.Writer, errOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
 		cc, cleanup, errSingleton = buildCC(logOutput, errOutput, configPath, overrides)
 	})
@@ -62,8 +63,8 @@ func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath confi
 }
 
 func buildCC(
-	logOutput logger.Writer,
-	errOutput logger.ErrWriter,
+	logOutput io.Writer,
+	errOutput io.Writer,
 	configPath config.Path,
 	overrides config.Overrider,
 ) (
@@ -77,7 +78,7 @@ func buildCC(
 		return nil, nil, err
 	}
 
-	zerologLogger, err := logger2.NewLogger(logOutput, errOutput, loggerConfig)
+	zerologLogger, err := logger.NewLogger(logOutput, errOutput, loggerConfig)
 	if err != nil {
 		return nil, nil, err
 	}
