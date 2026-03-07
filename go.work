@@ -1,5 +1,0 @@
-go 1.24.9
-
-toolchain go1.25.3
-
-use .

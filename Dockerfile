@@ -1,36 +1,29 @@
-# Build Stage
-ARG GO_VERSION
-FROM golang:$GO_VERSION-alpine AS build
-RUN apk add --no-cache bash build-base git tree curl protobuf openssh
-WORKDIR /src
-
-ENV GOBIN=/bin
-ENV ROOT_DIR=/src
-
-# generate & build
-ARG VERSION
-ARG COMMIT
-COPY . .
-RUN --mount=type=cache,target=/go/pkg/mod \
-		--mount=type=cache,target=/root/.cache/go-build \
-		go run mage.go deps build
-
 FROM alpine
-ARG VERSION
-ARG COMMIT
-LABEL org.opencontainers.image.version=$VERSION
-LABEL org.opencontainers.image.source=https://github.com/opcr-io/policy
-LABEL org.opencontainers.image.title="policy"
-LABEL org.opencontainers.image.revision=$COMMIT
-LABEL org.opencontainers.image.url="https://openpolicyregistry.io"
 
-RUN apk add --no-cache bash
-WORKDIR /app
-COPY --from=build /src/dist/policy_linux_amd64_v1/policy /app/
-
-COPY --from=build /src/scripts /app/
-RUN  chmod +x /app/*.sh
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG BUILDPLATFORM
 
 ENV POLICY_FILE_STORE_ROOT=/github/workspace/_policy
+
+RUN echo "BUILDPLATFORM=$BUILDPLATFORM" \
+ && echo "TARGETPLATFORM=$TARGETPLATFORM" \
+ && echo "TARGETOS=$TARGETOS" \
+ && echo "TARGETARCH=$TARGETARCH"
+
+RUN apk add --no-cache bash tzdata ca-certificates
+
+WORKDIR /app
+
+COPY --chmod=755 ${TARGETPLATFORM}/policy /app/
+COPY --chmod=755 scripts/build.sh /app/build.sh
+COPY --chmod=755 scripts/login.sh /app/login.sh
+COPY --chmod=755 scripts/logout.sh /app/logout.sh
+COPY --chmod=755 scripts/pull.sh /app/pull.sh
+COPY --chmod=755 scripts/push.sh /app/push.sh
+COPY --chmod=755 scripts/rm.sh /app/rm.sh
+COPY --chmod=755 scripts/save.sh /app/save.sh
+COPY --chmod=755 scripts/tag.sh /app/tag.sh
 
 ENTRYPOINT ["./policy"]

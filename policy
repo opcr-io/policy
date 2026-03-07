@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+BIN_PATH=${PWD}/dist/policy_$(go env GOOS)_$(go env GOARCH)
+
+if [[ -n $(go env GOARM64) ]] then 
+  BIN_PATH+="_"$(go env GOARM64)
+fi 
+
+BIN_PATH+="/policy"
+
+if [ ! -f $BIN_PATH ]; then
+    echo "local binary \"${BI_PATH}\" not found!"
+fi
+
+${BIN_PATH} $*

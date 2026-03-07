@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aserto-dev/logger"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/opcr-io/policy/internal/logger"
 	"github.com/opcr-io/policy/pkg/x"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"

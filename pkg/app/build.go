@@ -63,14 +63,13 @@ func (c *PolicyApp) Build(
 		}
 	}()
 
-	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
-		InstanceID: "policy-build",
-	})
+	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context),
+		&runtime.Config{
+			InstanceID: "policy-build",
+		})
 	if err != nil {
 		return errors.Wrap(err, "failed to setup the OPA runtime")
 	}
-
-	defer cleanup()
 
 	outFile := filepath.Join(workDir, "bundle.tgz")
 

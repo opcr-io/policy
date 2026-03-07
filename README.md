@@ -43,13 +43,7 @@ Wanna discuss features or show your support for this tool?
 * Via Homebrew for macOS or LinuxBrew for Linux
 
    ```shell
-  brew tap opcr-io/tap && brew install opcr-io/tap/policy
-   ```
-
-  Note: if you want to try a pre-release version before the official release:
-
-  ```shell
-  brew tap opcr-io/tap && brew install opcr-io/tap/policy-rc
+  brew install --cask policy
    ```
 
 * Via the nix package manager on nixOS, other linux distros, and macOS
@@ -90,14 +84,16 @@ Wanna discuss features or show your support for this tool?
 
 ## Building From Source
 
- `policy` is currently using go v1.16 or above. In order to build `policy` from source you must:
+ `policy` uses the latest golang compiler to build. In order to build `policy` from source you must:
 
- 1. Install [mage](https://magefile.org/)
+ 1. Install the latest golang compiler
+ 2. Install `make`
  2. Clone the repo
  3. Build and run the executable
 
       ```shell
-      mage build && ./dist/build_linux_amd64/policy
+      make build
+      make build-container
       ```
 
 ---
@@ -138,7 +134,7 @@ Commands:
 
 Flags:
   -h, --help             Show context-sensitive help.
-  -c, --config="/Users/ogazitt/.policy/config.yaml"
+  -c, --config="/Users/gertd/.policy/config.yaml"
                          Path to the policy CLI config file.
       --debug            Enable debug mode.
   -v, --verbosity=INT    Use to increase output verbosity.

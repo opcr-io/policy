@@ -2,9 +2,12 @@ package cc
 
 import (
 	"context"
+	"io"
+	"os/signal"
 	"sync"
+	"syscall"
 
-	"github.com/aserto-dev/logger"
+	"github.com/opcr-io/policy/internal/logger"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -27,8 +30,27 @@ var (
 	errSingleton error
 )
 
+// ErrGroupAndContext wraps a context and an error group.
+type ErrGroupAndContext struct {
+	Ctx      context.Context
+	ErrGroup *errgroup.Group
+	Cancel   context.CancelFunc
+}
+
+// NewContext creates a context that responds to user signals.
+func NewContext() *ErrGroupAndContext {
+	ctxNotify, cancelFunc := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	errGroup, ctx := errgroup.WithContext(ctxNotify)
+
+	return &ErrGroupAndContext{
+		Ctx:      ctx,
+		ErrGroup: errGroup,
+		Cancel:   cancelFunc,
+	}
+}
+
 // NewCC creates a singleton CC.
-func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
+func NewCC(logOutput io.Writer, errOutput io.Writer, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
 	once.Do(func() {
 		cc, cleanup, errSingleton = buildCC(logOutput, errOutput, configPath, overrides)
 	})
@@ -40,16 +62,44 @@ func NewCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath confi
 	}, errSingleton
 }
 
-// NewTestCC creates a singleton CC to be used for testing.
-// It uses a fake context (context.Background).
-func NewTestCC(logOutput logger.Writer, errOutput logger.ErrWriter, configPath config.Path, overrides config.Overrider) (*CC, func(), error) {
-	once.Do(func() {
-		cc, cleanup, errSingleton = buildTestCC(logOutput, errOutput, configPath, overrides)
-	})
+func buildCC(
+	logOutput io.Writer,
+	errOutput io.Writer,
+	configPath config.Path,
+	overrides config.Overrider,
+) (
+	*CC, func(), error,
+) {
+	errGroupAndContext := NewContext()
+	contextContext := errGroupAndContext.Ctx
 
-	return cc, func() {
-		cleanup()
+	loggerConfig, err := config.NewLoggerConfig(configPath, overrides)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		once = sync.Once{}
-	}, errSingleton
+	zerologLogger, err := logger.NewLogger(logOutput, errOutput, loggerConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	configConfig, err := config.NewConfig(configPath, zerologLogger, overrides)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	group := errGroupAndContext.ErrGroup
+
+	cancelFunc := errGroupAndContext.Cancel
+
+	ccCC := &CC{
+		Context:    contextContext,
+		Config:     configConfig,
+		Log:        zerologLogger,
+		ErrGroup:   group,
+		CancelFunc: cancelFunc,
+	}
+
+	return ccCC, func() {
+	}, nil
 }
