@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aserto-dev/logger"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/opcr-io/policy/internal/logger"
 	"github.com/opcr-io/policy/pkg/x"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -26,6 +26,7 @@ type Config struct {
 	Logging          logger.Config     `json:"logging" yaml:"logging"`
 	CA               []string          `json:"ca" yaml:"ca"`
 	Insecure         bool              `json:"insecure" yaml:"insecure"`
+	Plaintext        bool              `json:"plaintext" yaml:"plaintext"`
 	TokenDefaults    map[string]string `json:"token_defaults" yaml:"token_defaults"`
 	CredentialsStore credentials.Store `json:"-"`
 }

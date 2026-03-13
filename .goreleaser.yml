@@ -49,7 +49,7 @@ archives:
       - LICENSE
       - README.md
     name_template: >-
-      policy{{ .Version }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+      policy_{{ .Os }}_{{ .Arch }}
 
 checksum:
   # https://goreleaser.com/customization/checksum/
@@ -57,7 +57,7 @@ checksum:
 
 snapshot:
   # https://goreleaser.com/customization/snapshots/
-  version_template: "{{ .Tag }}"
+  version_template: "{{ incpatch .Version }}-{{ .ShortCommit }}{{ if .IsGitDirty }}-dirty{{ end }}"
 
 source:
   # https://goreleaser.com/customization/source/
@@ -81,82 +81,95 @@ release:
   prerelease: "false"
   name_template: "{{.ProjectName}} {{.Tag}}"
 
-brews:
-  # https://goreleaser.com/customization/homebrew/
+blobs:
+  # https://goreleaser.com/customization/blob/
+
+homebrew_casks:
+  # https://goreleaser.com/customization/homebrew_casks/
   - name: policy
 
     repository:
       owner: "{{ .Env.ORG }}"
       name: homebrew-tap
-      token: "{{ .Env.ASERTO_TAP }}"
+      token: "{{ .Env.HOMEBREW_TAP }}"
 
-    url_template: "https://github.com/{{ .Env.ORG }}/{{ .Env.REPO}}/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url:
+      verified: "github.com/{{ .Env.ORG }}/{{ .ProjectName }}"
 
     commit_author:
-      name: Aserto Bot
-      email: github-bot@aserto.com
+      name: Policy Bot
+      email: info@openpolicycontainers.com
 
-    homepage: "https://opcr.io/"
+    homepage: "https://openpolicycontainers.com"
+    description: "Policy CLI"
+    license: "{{ .Env.LICENSE }}"
 
-    description: "policy CLI for building and managing authorization policies"
-
-    license: "Apache License Version 2.0"
+    binaries:
+      - policy
 
     skip_upload: false
 
-    test: |
-      system "#{bin}/policy version"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/policy"]
+          end
 
-    install: |
-      bin.install "policy"
+dockers_v2:
+  # https://goreleaser.com/customization/dockers_v2
+  - dockerfile: "Dockerfile"
 
-dockers:
-  # https://goreleaser.com/customization/docker/
-  - use: buildx
-    goos: linux
-    goarch: amd64
-    image_templates:
-      - &amd64-image "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:{{ .Version }}-amd64"
-    skip_push: false
-    dockerfile: Dockerfile.goreleaser
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source=https://github.com/{{ .Env.ORG }}/{{ .Env.REPO }}"
-      - "--label=org.opencontainers.image.description={{ .Env.DESCRIPTION }}"
-      - "--label=org.opencontainers.image.licenses={{ .Env.LICENSE }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+    ids:
+      - policy
+
+    images:
+      - "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}"
+
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .IsSnapshot }}latest{{ end }}"
+      - "{{ if .IsSnapshot }}test{{ end }}"
+
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "https://github.com/{{ .Env.ORG }}/{{ .Env.REPO }}"
+      "org.opencontainers.image.description": "{{ .Env.DESCRIPTION }}"
+      "org.opencontainers.image.licenses": "{{ .Env.LICENSE }}"
+
+    sbom: false # Attestation is not supported for the docker driver.
+
+    retry:
+      attempts: 10
+      delay: 10s
+      max_delay: 2m
+
     extra_files:
       - scripts
+      
+    annotations:
+    build_args:
+    flags:
 
-  - use: buildx
-    goos: linux
-    goarch: arm64
-    image_templates:
-      - &arm64-image "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:{{ .Version }}-arm64"
-    skip_push: false
-    dockerfile: Dockerfile.goreleaser
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source=https://github.com/{{ .Env.ORG }}/{{ .Env.REPO }}"
-      - "--label=org.opencontainers.image.description={{ .Env.DESCRIPTION }}"
-      - "--label=org.opencontainers.image.licenses={{ .Env.LICENSE }}"
-    extra_files:
-      - scripts
-
-docker_manifests:
-  # https://goreleaser.com/customization/docker_manifest/
-  - name_template: "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:latest"
-    image_templates: [*amd64-image, *arm64-image]
-  - name_template: "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:{{ .Major }}"
-    image_templates: [*amd64-image, *arm64-image]
-  - name_template: "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:{{ .Major }}.{{ .Minor }}"
-    image_templates: [*amd64-image, *arm64-image]
-  - name_template: "{{ .Env.REGISTRY }}/{{ .Env.ORG }}/{{ .Env.REPO }}:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-    image_templates: [*amd64-image, *arm64-image]
+sboms:
+  # https://goreleaser.com/customization/sbom/
+  - id: default
+    documents:
+      - "${artifact}-{{.Os}}-{{.Arch}}.spdx.sbom.json"
+    cmd: syft
+    args:
+      - "$artifact"
+      - "--output"
+      - "spdx-json=$document"
+    env:
+      - SYFT_FILE_METADATA_CATALOGER_ENABLED=true
+    artifacts: binary
+    ids:
+      - policy

@@ -30,7 +30,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		},
 	}
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:gosec // G704
 	if err != nil {
 		return errors.Wrapf(err, "failed to ping server [%s]", server)
 	}
@@ -61,7 +61,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 		return errors.Wrapf(err, "failed to authorize request for server [%s]", server)
 	}
 
-	resp2, err := client.Do(req2)
+	resp2, err := client.Do(req2) //nolint:gosec // G704
 	if err != nil {
 		return errors.Wrapf(err, "failed to login to server [%s]", server)
 	}

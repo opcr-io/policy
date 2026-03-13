@@ -1,8 +1,11 @@
 package app
 
 import (
+	"os"
+
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/pkg/table"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
@@ -31,18 +34,23 @@ func (c *PolicyApp) Inspect(userRef string) error {
 		WithIntValue("size", contentInfo.Size).
 		Do()
 
+	c.UI.Normal().
+		Msg("Annotations")
+
 	annotations, err := getAnnotations(&contentInfo, ociClient)
 	if err != nil {
 		return err
 	}
 
-	msg := c.UI.Normal().WithTable("Annotation", "Value")
-
+	data := [][]any{}
 	for k, v := range annotations {
-		msg.WithTableRow(k, v)
+		data = append(data, []any{k, v})
 	}
 
-	msg.Msg("Annotations")
+	t := table.New(os.Stdout)
+	t.Header("Annotation", "Value")
+	t.Bulk(data)
+	t.Render()
 
 	return nil
 }

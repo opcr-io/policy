@@ -57,10 +57,15 @@ func (c *PolicyApp) Pull(userRef string, untarDir string) error {
 func (c *PolicyApp) getHosts(server string) ([]docker.RegistryHost, error) {
 	client := &http.Client{Transport: c.TransportWithTrustedCAs()}
 
+	scheme := "https"
+	if c.Configuration.Plaintext {
+		scheme = "http"
+	}
+
 	return []docker.RegistryHost{
 		{
 			Host:         server,
-			Scheme:       "https",
+			Scheme:       scheme,
 			Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
 			Client:       client,
 			Path:         "/v2",

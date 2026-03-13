@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/containerd/containerd/v2/core/remotes/docker"
@@ -502,7 +503,7 @@ func getTransport(log *zerolog.Logger) (*http.Transport, error) {
 	return &http.Transport{TLSClientConfig: conf}, nil
 }
 
-func IsAllowedMediaType(mediatype string) bool {
+func IsAllowedMediaType(mediaType string) bool {
 	allowedMediaTypes := []string{
 		"application/vnd.oci.image.manifest.v1+json",
 		"application/octet-stream",
@@ -512,13 +513,7 @@ func IsAllowedMediaType(mediatype string) bool {
 		"application/vnd.oci.image.layer.v1.tar",
 	}
 
-	for i := range allowedMediaTypes {
-		if allowedMediaTypes[i] == mediatype {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(allowedMediaTypes, mediaType)
 }
 
 func RemoveBlob(ref *ocispec.Descriptor, path string) error {

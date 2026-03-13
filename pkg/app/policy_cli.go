@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	"github.com/aserto-dev/clui"
 	"github.com/opcr-io/policy/pkg/cc/config"
+	"github.com/opcr-io/policy/pkg/clui"
 
 	"github.com/docker/cli/cli/config/types"
 )

@@ -63,14 +63,13 @@ func (c *PolicyApp) Build(
 		}
 	}()
 
-	opaRuntime, cleanup, err := runtime.NewRuntime(c.Context, c.Logger, &runtime.Config{
-		InstanceID: "policy-build",
-	})
+	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context),
+		&runtime.Config{
+			InstanceID: "policy-build",
+		})
 	if err != nil {
 		return errors.Wrap(err, "failed to setup the OPA runtime")
 	}
-
-	defer cleanup()
 
 	outFile := filepath.Join(workDir, "bundle.tgz")
 
@@ -206,7 +205,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
-	configBytes := []byte(fmt.Sprintf("{\"created\":%q}", time.Now().UTC().Format(time.RFC3339)))
+	configBytes := fmt.Appendf([]byte{}, "{\"created\":%q}", time.Now().UTC().Format(time.RFC3339))
 	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
 
 	if err := ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes)); err != nil {
