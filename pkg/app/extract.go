@@ -3,6 +3,7 @@ package app
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"github.com/opcr-io/policy/oci"
 	perr "github.com/opcr-io/policy/pkg/errors"
 	"github.com/opcr-io/policy/pkg/x"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // ExtractPolicyBundle extracts a policy bundle from OCI store to the specified directory.
@@ -29,29 +31,30 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to fetch policy bundle")
 	}
 
-	defer func() {
-		if closeErr := reader.Close(); closeErr != nil {
-			c.UI.Problem().WithErr(closeErr).Msg("Failed to close OCI policy reader")
-		}
-	}()
-
 	// Wrap the reader depending on media type: gzip-compressed layers use a gzip reader,
 	// while plain tar layers are passed through directly.
-	isGzip := strings.Contains(refDescriptor.MediaType, "gzip")
+	// isGzip := strings.Contains(refDescriptor.MediaType, "gzip")
 
 	var gzReader io.ReadCloser
-	if isGzip {
+	if refDescriptor.MediaType == v1.MediaTypeImageLayerGzip {
 		gzReader, err = gzip.NewReader(reader)
 		if err != nil {
+			reader.Close() //nolint:errcheck
 			return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create gzip reader")
 		}
+
+		defer func() {
+			if closeErr := reader.Close(); closeErr != nil {
+				c.UI.Problem().WithErr(closeErr).Msg("Failed to close OCI policy reader")
+			}
+		}()
 	} else {
 		gzReader = reader
 	}
 
 	defer func() {
 		if closeErr := gzReader.Close(); closeErr != nil {
-			c.UI.Problem().WithErr(closeErr).Msg("Failed to close gzip reader")
+			c.UI.Problem().WithErr(closeErr).Msg("Failed to close policy reader")
 		}
 	}()
 
@@ -76,8 +79,8 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF {
-			break // End of archive
+		if errors.Is(err, io.EOF) {
+			break
 		}
 
 		if err != nil {
@@ -169,31 +172,14 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	return nil
 }
 
-// isPathSafe checks if the target path is within the allowed directory.
+// isPathSafe checks if absTarget is within absAllowed.
+// Both arguments must already be absolute, clean paths (as produced by filepath.Join or filepath.Abs).
 // This prevents path traversal attacks.
-func isPathSafe(targetPath, allowedDir string) bool {
-	// Clean and normalize paths
-	cleanTarget := filepath.Clean(targetPath)
-	cleanAllowed := filepath.Clean(allowedDir)
-
-	// Get absolute paths
-	absTarget, err := filepath.Abs(cleanTarget)
-	if err != nil {
-		return false
-	}
-
-	absAllowed, err := filepath.Abs(cleanAllowed)
-	if err != nil {
-		return false
-	}
-
-	// Check if target is within allowed directory
-	// Use filepath.Rel to check if target is a subdirectory of allowed
+func isPathSafe(absTarget, absAllowed string) bool {
 	rel, err := filepath.Rel(absAllowed, absTarget)
 	if err != nil {
 		return false
 	}
 
-	// If rel starts with "..", it's outside the allowed directory
 	return !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != ".."
 }

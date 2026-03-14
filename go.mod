@@ -16,7 +16,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/kyokomi/emoji v2.2.4+incompatible
-	github.com/olekukonko/tablewriter v1.1.3
+	github.com/olekukonko/tablewriter v1.1.4
 	github.com/opcr-io/oras-go/v2 v2.0.0-20231122155130-eb4260d8a0ae
 	github.com/open-policy-agent/opa v1.14.1
 	github.com/opencontainers/go-digest v1.0.0
@@ -27,7 +27,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.20.0
-	golang.org/x/term v0.40.0
+	golang.org/x/term v0.41.0
 	google.golang.org/grpc v1.79.2
 	oras.land/oras-go/v2 v2.6.0
 )
@@ -57,7 +57,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -124,13 +124,13 @@ require (
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
+	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260311181403-84a4fc48630c // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260311181403-84a4fc48630c // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

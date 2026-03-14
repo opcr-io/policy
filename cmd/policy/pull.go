@@ -9,6 +9,10 @@ import (
 type untarDir string
 
 func (d untarDir) AfterApply() error {
+	if d == "" {
+		return nil
+	}
+
 	if fi, err := os.Stat(string(d)); err == nil && fi.IsDir() {
 		return nil
 	}
@@ -22,8 +26,6 @@ type PullCmd struct {
 }
 
 func (c *PullCmd) Run(g *Globals) error {
-	defer g.App.Context.Done()
-
 	var errs error
 
 	for _, policyRef := range c.Policies {
@@ -32,6 +34,8 @@ func (c *PullCmd) Run(g *Globals) error {
 			errs = err
 		}
 	}
+
+	<-g.App.Context.Done()
 
 	if errs != nil {
 		return errors.Wrap(errs, "failed to pull one or more policies")
