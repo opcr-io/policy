@@ -35,10 +35,18 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		}
 	}()
 
-	// Create gzip reader
-	gzReader, err := gzip.NewReader(reader)
-	if err != nil {
-		return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create gzip reader")
+	// Wrap the reader depending on media type: gzip-compressed layers use a gzip reader,
+	// while plain tar layers are passed through directly.
+	isGzip := strings.Contains(refDescriptor.MediaType, "gzip")
+
+	var gzReader io.ReadCloser
+	if isGzip {
+		gzReader, err = gzip.NewReader(reader)
+		if err != nil {
+			return perr.ErrExtractFailed.WithError(err).WithMessage("failed to create gzip reader")
+		}
+	} else {
+		gzReader = reader
 	}
 
 	defer func() {
