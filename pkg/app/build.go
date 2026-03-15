@@ -214,12 +214,12 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
-	manifestDesc, err := oras.Pack(
+	manifestDesc, err := oras.Pack( //nolint:staticcheck // TODO replace oras.Pack with oras.PackManifest.
 		c.Context,
 		ociStore,
 		ocispec.MediaTypeImageManifest,
 		[]ocispec.Descriptor{descriptor},
-		oras.PackOptions{
+		oras.PackOptions{ //nolint:staticcheck // TODO replace oras.PackOptions with oras.PackManifestOptions.
 			PackImageManifest:   true,
 			ConfigDescriptor:    &configDesc,
 			ManifestAnnotations: descriptor.Annotations,
