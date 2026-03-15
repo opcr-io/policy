@@ -241,7 +241,7 @@ func TestExtractPolicyBundle_GzipTar(t *testing.T) {
 	require.Equal(t, "package bundle", string(got))
 }
 
-func TestExtractPolicyBundle_Symlink(t *testing.T) {
+func TestExtractPolicyBundle_SymlinkSkipped(t *testing.T) {
 	app, cancel := newTestApp(t)
 	defer cancel()
 
@@ -256,13 +256,14 @@ func TestExtractPolicyBundle_Symlink(t *testing.T) {
 	ref := "test/policy:symlink"
 	pushBlob(t, app.Context, ociClient, tarData, ocispec.MediaTypeImageLayer, ref)
 
+	// Symlinks should be skipped, not created
 	require.NoError(t, app.ExtractPolicyBundle(ociClient, ref, destDir))
 
 	require.FileExists(t, filepath.Join(destDir, "real.rego"))
 
-	target, err := os.Readlink(filepath.Join(destDir, "link.rego"))
-	require.NoError(t, err)
-	require.Equal(t, "real.rego", target)
+	// Symlink should NOT exist — symlinks are skipped in policy bundles
+	_, err := os.Lstat(filepath.Join(destDir, "link.rego"))
+	require.True(t, os.IsNotExist(err), "symlink should not be created")
 }
 
 func TestExtractPolicyBundle_RefNotFound(t *testing.T) {
@@ -350,13 +351,13 @@ func TestExtractPolicyBundle_PathTraversalInArchive(t *testing.T) {
 	require.Contains(t, err.Error(), "unsafe")
 }
 
-func TestExtractPolicyBundle_SymlinkEscape(t *testing.T) {
+func TestExtractPolicyBundle_SymlinkEscapeSkipped(t *testing.T) {
 	app, cancel := newTestApp(t)
 	defer cancel()
 
 	ociClient, destDir := newTestOCI(t, app.Context)
 
-	// Symlink that would point outside destDir
+	// Symlink that would point outside destDir — should be skipped
 	var buf bytes.Buffer
 
 	tw := tar.NewWriter(&buf)
@@ -370,12 +371,15 @@ func TestExtractPolicyBundle_SymlinkEscape(t *testing.T) {
 	ref := "test/policy:symlinkescape"
 	pushBlob(t, app.Context, ociClient, buf.Bytes(), ocispec.MediaTypeImageLayer, ref)
 
-	err := app.ExtractPolicyBundle(ociClient, ref, destDir)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "unsafe")
+	// Should succeed — symlinks are skipped, not rejected
+	require.NoError(t, app.ExtractPolicyBundle(ociClient, ref, destDir))
+
+	// Symlink should NOT exist
+	_, err := os.Lstat(filepath.Join(destDir, "escape.txt"))
+	require.True(t, os.IsNotExist(err), "symlink should not be created")
 }
 
-func TestExtractPolicyBundle_AbsoluteSymlinkTarget(t *testing.T) {
+func TestExtractPolicyBundle_AbsoluteSymlinkTargetSkipped(t *testing.T) {
 	app, cancel := newTestApp(t)
 	defer cancel()
 
@@ -394,7 +398,66 @@ func TestExtractPolicyBundle_AbsoluteSymlinkTarget(t *testing.T) {
 	ref := "test/policy:abssymlink"
 	pushBlob(t, app.Context, ociClient, buf.Bytes(), ocispec.MediaTypeImageLayer, ref)
 
-	err := app.ExtractPolicyBundle(ociClient, ref, destDir)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "unsafe")
+	// Should succeed — symlinks are skipped, not rejected
+	require.NoError(t, app.ExtractPolicyBundle(ociClient, ref, destDir))
+
+	// Symlink should NOT exist
+	_, err := os.Lstat(filepath.Join(destDir, "badlink"))
+	require.True(t, os.IsNotExist(err), "symlink should not be created")
+}
+
+func TestExtractPolicyBundle_HardlinkSkipped(t *testing.T) {
+	app, cancel := newTestApp(t)
+	defer cancel()
+
+	ociClient, destDir := newTestOCI(t, app.Context)
+
+	// Hardlinks (TypeLink) are not a supported file type and should be skipped
+	var buf bytes.Buffer
+
+	tw := tar.NewWriter(&buf)
+	require.NoError(t, tw.WriteHeader(&tar.Header{
+		Name:     "real.rego",
+		Typeflag: tar.TypeReg,
+		Mode:     0o600,
+		Size:     10,
+	}))
+	_, err := io.WriteString(tw, "package ok")
+	require.NoError(t, err)
+	require.NoError(t, tw.WriteHeader(&tar.Header{
+		Name:     "hardlink.rego",
+		Typeflag: tar.TypeLink,
+		Linkname: "real.rego",
+	}))
+	require.NoError(t, tw.Close())
+
+	ref := "test/policy:hardlink"
+	pushBlob(t, app.Context, ociClient, buf.Bytes(), ocispec.MediaTypeImageLayer, ref)
+
+	// Should succeed — hardlinks fall into default case and are skipped
+	require.NoError(t, app.ExtractPolicyBundle(ociClient, ref, destDir))
+
+	require.FileExists(t, filepath.Join(destDir, "real.rego"))
+
+	// Hardlink should NOT exist
+	_, err = os.Lstat(filepath.Join(destDir, "hardlink.rego"))
+	require.True(t, os.IsNotExist(err), "hardlink should not be created")
+}
+
+func TestExtractPolicyBundle_EmptyTar(t *testing.T) {
+	app, cancel := newTestApp(t)
+	defer cancel()
+
+	ociClient, destDir := newTestOCI(t, app.Context)
+
+	// Empty tar archive — should succeed without extracting anything
+	var buf bytes.Buffer
+
+	tw := tar.NewWriter(&buf)
+	require.NoError(t, tw.Close())
+
+	ref := "test/policy:empty"
+	pushBlob(t, app.Context, ociClient, buf.Bytes(), ocispec.MediaTypeImageLayer, ref)
+
+	require.NoError(t, app.ExtractPolicyBundle(ociClient, ref, destDir))
 }

@@ -33,8 +33,6 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 
 	// Wrap the reader depending on media type: gzip-compressed layers use a gzip reader,
 	// while plain tar layers are passed through directly.
-	// isGzip := strings.Contains(refDescriptor.MediaType, "gzip")
-
 	var gzReader io.ReadCloser
 	if refDescriptor.MediaType == v1.MediaTypeImageLayerGzip {
 		gzReader, err = gzip.NewReader(reader)
@@ -91,8 +89,8 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 		// This prevents path traversal attacks (CWE-22)
 		cleanedName := filepath.Clean(header.Name)
 
-		// Reject absolute paths
-		if filepath.IsAbs(cleanedName) {
+		// Reject absolute paths (check both platform-native and Unix-style for tar archives)
+		if filepath.IsAbs(cleanedName) || strings.HasPrefix(header.Name, "/") {
 			return perr.ErrExtractFailed.WithMessage("unsafe absolute path in archive: %s", header.Name)
 		}
 
@@ -140,29 +138,10 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 			}
 
 		case tar.TypeSymlink:
-			// Handle symlinks carefully - ensure they don't point outside destDir
-			// Security: sanitize linkname to prevent symlink-based attacks (CWE-59)
-			rawLinkTarget := header.Linkname
-			cleanedLinkTarget := filepath.Clean(rawLinkTarget)
-
-			// Reject absolute symlink targets
-			if filepath.IsAbs(cleanedLinkTarget) {
-				return perr.ErrExtractFailed.WithMessage("unsafe absolute symlink target: %s -> %s", header.Name, rawLinkTarget)
-			}
-
-			// Resolve symlink target relative to the file's directory
-			symlinkDir := filepath.Dir(targetPath)
-			resolvedTarget := filepath.Join(symlinkDir, cleanedLinkTarget)
-
-			// Security check: ensure symlink target resolves within destination
-			if !isPathSafe(resolvedTarget, absDestDir) {
-				return perr.ErrExtractFailed.WithMessage("unsafe symlink detected: %s -> %s", header.Name, rawLinkTarget)
-			}
-
-			// Create symlink with sanitized target
-			if err := os.Symlink(cleanedLinkTarget, targetPath); err != nil {
-				c.UI.Problem().WithErr(err).Msgf("Failed to create symlink [%s]", targetPath)
-			}
+			// Policy bundles do not use symlinks. Skip them to avoid symlink-based
+			// path traversal attacks (CWE-22, CWE-59).
+			c.UI.Problem().Msgf("Skipping symlink [%s] -> [%s]: symlinks are not supported in policy bundles",
+				header.Name, header.Linkname)
 
 		default:
 			c.UI.Problem().Msgf("Skipping unknown file type %v for [%s]", header.Typeflag, header.Name)
