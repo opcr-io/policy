@@ -10,15 +10,17 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/containerd/errdefs"
-	"github.com/distribution/reference"
-	oras "github.com/opcr-io/oras-go/v2"
-	"github.com/opcr-io/oras-go/v2/content"
-	orasoci "github.com/opcr-io/oras-go/v2/content/oci"
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
+
+	"github.com/containerd/errdefs"
+	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
+	orasoci "oras.land/oras-go/v2/content/oci"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
