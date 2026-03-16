@@ -20,8 +20,6 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/aserto-dev/logger v0.0.9 h1:QH11l8937Sw+GAe2yvgpoLg70fqQvPrEufkXAmDUk0g=
 github.com/aserto-dev/logger v0.0.9/go.mod h1:mMXq/bhdIKoOVsIZ2zJOqgjcc/jR2x14FhU0St/8AVQ=
-github.com/aserto-dev/runtime v1.14.2-0.20260316093245-b50223c4134e h1:ELVD6Fh/yF37a9+Hiq8R393060rm7PkM7GFwips8OUw=
-github.com/aserto-dev/runtime v1.14.2-0.20260316093245-b50223c4134e/go.mod h1:jRdbfMG02HQ1vEPKnIUEJ3FVTw9FJ4QmDtGkL+FYMnU=
 github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28 h1:c07KxGQIzOxVCQ/IwE0SQ+2RKqDn707CMAL56wMNo3c=
 github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28/go.mod h1:jRdbfMG02HQ1vEPKnIUEJ3FVTw9FJ4QmDtGkL+FYMnU=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -63,6 +61,8 @@ github.com/distribution/reference v0.6.0 h1:0IXCQ5g4/QMHHkarYzh5l+u8T3t73zM5Qvfr
 github.com/distribution/reference v0.6.0/go.mod h1:BbU0aIcezP1/5jX/8MP0YiH4SdvB5Y4f/wlDRiLyi3E=
 github.com/docker/cli v29.1.3+incompatible h1:+kz9uDWgs+mAaIZojWfFt4d53/jv0ZUOOoSh5ZnH36c=
 github.com/docker/cli v29.1.3+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
+github.com/docker/cli v29.3.0+incompatible h1:z3iWveU7h19Pqx7alZES8j+IeFQZ1lhTwb2F+V9SVvk=
+github.com/docker/cli v29.3.0+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/docker-credential-helpers v0.9.4 h1:76ItO69/AP/V4yT9V4uuuItG0B1N8hvt0T0c0NN/DzI=
 github.com/docker/docker-credential-helpers v0.9.4/go.mod h1:v1S+hepowrQXITkEfw6o4+BMbGot02wiKpzWhGUZK6c=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=

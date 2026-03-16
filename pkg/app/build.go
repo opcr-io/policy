@@ -2,11 +2,8 @@ package app
 
 import (
 	"bufio"
-	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aserto-dev/runtime"
@@ -18,7 +15,6 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/content"
 	orasoci "oras.land/oras-go/v2/content/oci"
 
 	"github.com/pkg/errors"
@@ -151,65 +147,51 @@ func buildAnnotations(annotations map[string]string, parsedRef reference.Named, 
 	return annotations
 }
 
-//nolint:funlen
 func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
-	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
+	ociStore.AutoGC = true
 
 	fDigest, err := c.fileDigest(tarball)
 	if err != nil {
-		return descriptor, err
+		return ocispec.Descriptor{}, err
 	}
 
 	tarballFile, err := os.Open(tarball)
 	if err != nil {
-		return descriptor, err
+		return ocispec.Descriptor{}, err
 	}
 
 	fileInfo, err := tarballFile.Stat()
 	if err != nil {
-		return descriptor, err
+		return ocispec.Descriptor{}, err
 	}
 
 	defer func() {
-		err := tarballFile.Close()
-		if err != nil {
+		if err := tarballFile.Close(); err != nil {
 			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
 		}
 	}()
 
-	descriptor.Digest = fDigest
-	descriptor.Size = fileInfo.Size()
-	descriptor.Annotations = annotations
-	descriptor.MediaType = oci.MediaTypeImageLayer
+	descriptor := ocispec.Descriptor{
+		Digest:      fDigest,
+		Size:        fileInfo.Size(),
+		Annotations: annotations,
+		MediaType:   oci.MediaTypeImageLayer,
+	}
 
 	exists, err := ociStore.Exists(c.Context, descriptor)
 	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
-		return descriptor, err
+		return ocispec.Descriptor{}, err
 	}
 
-	if exists {
-		// Hack to remove the existing digest until ocistore deleter is implemented
-		// https://github.com/oras-project/oras-go/issues/454
-		digestPath := filepath.Join(strings.Split(descriptor.Digest.String(), ":")...)
-		blob := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", digestPath)
-
-		if err := os.Remove(blob); err != nil {
-			return descriptor, err
-		}
+	if err := ociStore.Delete(c.Context, descriptor); exists && err != nil {
+		return ocispec.Descriptor{}, err
 	}
 
 	reader := bufio.NewReader(tarballFile)
 
 	if err := ociStore.Push(c.Context, descriptor, reader); err != nil {
-		return descriptor, err
-	}
-
-	configBytes := fmt.Appendf([]byte{}, "{\"created\":%q}", time.Now().UTC().Format(time.RFC3339))
-	configDesc := content.NewDescriptorFromBytes(oci.MediaTypeConfig, configBytes)
-
-	if err := ociStore.Push(c.Context, configDesc, bytes.NewReader(configBytes)); err != nil {
-		return descriptor, err
+		return ocispec.Descriptor{}, err
 	}
 
 	cfgDesc := []byte("{}")
@@ -226,6 +208,9 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 				MediaType: ocispec.MediaTypeEmptyJSON,
 				Digest:    digest.FromBytes(cfgDesc),
 				Size:      int64(len(cfgDesc)),
+				Annotations: map[string]string{
+					ocispec.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
+				},
 			},
 		},
 	)
