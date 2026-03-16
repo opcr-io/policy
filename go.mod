@@ -7,7 +7,7 @@ toolchain go1.26.1
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v1.14.0
-	github.com/aserto-dev/runtime v1.14.2-0.20260316093245-b50223c4134e
+	github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28
 	github.com/containerd/containerd/v2 v2.2.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0

@@ -22,6 +22,8 @@ github.com/aserto-dev/logger v0.0.9 h1:QH11l8937Sw+GAe2yvgpoLg70fqQvPrEufkXAmDUk
 github.com/aserto-dev/logger v0.0.9/go.mod h1:mMXq/bhdIKoOVsIZ2zJOqgjcc/jR2x14FhU0St/8AVQ=
 github.com/aserto-dev/runtime v1.14.2-0.20260316093245-b50223c4134e h1:ELVD6Fh/yF37a9+Hiq8R393060rm7PkM7GFwips8OUw=
 github.com/aserto-dev/runtime v1.14.2-0.20260316093245-b50223c4134e/go.mod h1:jRdbfMG02HQ1vEPKnIUEJ3FVTw9FJ4QmDtGkL+FYMnU=
+github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28 h1:c07KxGQIzOxVCQ/IwE0SQ+2RKqDn707CMAL56wMNo3c=
+github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28/go.mod h1:jRdbfMG02HQ1vEPKnIUEJ3FVTw9FJ4QmDtGkL+FYMnU=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytecodealliance/wasmtime-go/v39 v39.0.1 h1:RibaT47yiyCRxMOj/l2cvL8cWiWBSqDXHyqsa9sGcCE=
