@@ -49,7 +49,7 @@ func (c *PolicyApp) Build(
 	excludeVerifyFiles []string,
 	signingKey string,
 	claimsFile string,
-	regoV1 bool,
+	regoVersion runtime.RegoVersion,
 ) error {
 	defer c.Cancel()
 
@@ -91,7 +91,7 @@ func (c *PolicyApp) Build(
 		PubKey:               verificationKey,
 		PubKeyID:             verificationKeyID,
 		ExcludeVerifyFiles:   excludeVerifyFiles,
-		RegoV1:               regoV1,
+		RegoVersion:          regoVersion,
 	}, path)
 	if err != nil {
 		return errors.Wrap(err, "failed to build opa policy bundle")
@@ -116,7 +116,7 @@ func (c *PolicyApp) Build(
 		return err
 	}
 
-	annotations = buildAnnotations(annotations, parsedRef, regoV1)
+	annotations = buildAnnotations(annotations, parsedRef, regoVersion)
 
 	desc, err := c.createImage(ociStore, outFile, annotations)
 	if err != nil {
@@ -138,7 +138,7 @@ func (c *PolicyApp) Build(
 	return nil
 }
 
-func buildAnnotations(annotations map[string]string, parsedRef reference.Named, regoV1 bool) map[string]string {
+func buildAnnotations(annotations map[string]string, parsedRef reference.Named, regoVersion runtime.RegoVersion) map[string]string {
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
@@ -146,14 +146,12 @@ func buildAnnotations(annotations map[string]string, parsedRef reference.Named, 
 	annotations[ocispec.AnnotationTitle] = parsedRef.Name()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
 	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
-
-	if regoV1 {
-		annotations["rego.version"] = "rego.V1"
-	}
+	annotations["rego.version"] = regoVersion.String()
 
 	return annotations
 }
 
+//nolint:funlen
 func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
 	descriptor := ocispec.Descriptor{}
 	ociStore.AutoSaveIndex = true
@@ -214,6 +212,8 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return descriptor, err
 	}
 
+	cfgDesc := []byte("{}")
+
 	manifestDesc, err := oras.PackManifest(
 		c.Context,
 		ociStore,
@@ -222,6 +222,11 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		oras.PackManifestOptions{
 			Layers:              []ocispec.Descriptor{descriptor},
 			ManifestAnnotations: descriptor.Annotations,
+			ConfigDescriptor: &ocispec.Descriptor{
+				MediaType: ocispec.MediaTypeEmptyJSON,
+				Digest:    digest.FromBytes(cfgDesc),
+				Size:      int64(len(cfgDesc)),
+			},
 		},
 	)
 	if err != nil {

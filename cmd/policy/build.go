@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/aserto-dev/runtime"
 	perr "github.com/opcr-io/policy/pkg/errors"
 )
 
@@ -24,11 +25,14 @@ type BuildCmd struct {
 	ExcludeVerifyFiles []string `name:"exclude-files-verify" help:"Set file names to exclude during bundle verification."`
 	SigningKey         string   `name:"signing-key" help:"Set the secret (HMAC) or path of the PEM file containing the private key (RSA and ECDSA)."`
 	ClaimsFile         string   `name:"claims-file" help:"Set path of JSON file containing optional claims (see: https://openpolicyagent.org/docs/latest/management/#signature-format)."`
-	RegoVersion        string   `name:"rego-version" enum:"rego.v0, rego.v1" default:"rego.v1" help:"Set rego version flag (enum: rego.v0 or rego.v1)."`
+	RegoVersion        string   `name:"rego-version" enum:"rego.v0, rego.v1, rego.v0v1" default:"rego.v1" help:"Set rego version flag (enum: rego.v0, rego.v0v1, rego.v1)."`
 }
 
 func (c *BuildCmd) Run(g *Globals) error {
-	v1build := c.RegoVersion == "rego.v1"
+	regoVersion := runtime.RegoVersionFromString(c.RegoVersion)
+	if regoVersion == runtime.RegoUndefined {
+		return perr.ErrBuildFailed.WithMessage("rego version %s", regoVersion.String())
+	}
 
 	err := g.App.Build(
 		c.Tag,
@@ -48,7 +52,7 @@ func (c *BuildCmd) Run(g *Globals) error {
 		c.ExcludeVerifyFiles,
 		c.SigningKey,
 		c.ClaimsFile,
-		v1build,
+		regoVersion,
 	)
 	if err != nil {
 		return perr.ErrBuildFailed.WithError(err)
