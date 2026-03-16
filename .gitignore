@@ -36,3 +36,6 @@ CLAUDE.md
 
 # latest container test-snapshot
 .container-tag.env
+
+# default bundle name and save policy artifact
+bundle.tar.gz

@@ -1,10 +1,10 @@
-package main
+package cmd
 
 import "github.com/opcr-io/policy/pkg/version"
 
 type VersionCmd struct{}
 
-func (c *VersionCmd) Run(g *Globals) error { //nolint:unparam
+func (c *VersionCmd) Run(g *Globals) error {
 	v := version.GetInfo()
 
 	g.App.UI.Normal().

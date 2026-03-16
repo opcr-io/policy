@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/v2/core/remotes"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/content"
 )
 
@@ -17,16 +17,16 @@ type remoteManager struct {
 	srcRef   string
 }
 
-func (r *remoteManager) Resolve(ctx context.Context, ref string) (ocispec.Descriptor, error) {
+func (r *remoteManager) Resolve(ctx context.Context, ref string) (v1.Descriptor, error) {
 	_, desc, err := r.resolver.Resolve(ctx, ref)
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	return desc, nil
 }
 
-func (r *remoteManager) Fetch(ctx context.Context, target ocispec.Descriptor) (io.ReadCloser, error) {
+func (r *remoteManager) Fetch(ctx context.Context, target v1.Descriptor) (io.ReadCloser, error) {
 	fetcher, err := r.resolver.Fetcher(ctx, r.srcRef)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (r *remoteManager) Fetch(ctx context.Context, target ocispec.Descriptor) (i
 	return fetcher.Fetch(ctx, target)
 }
 
-func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (bool, error) {
+func (r *remoteManager) Exists(ctx context.Context, target v1.Descriptor) (bool, error) {
 	if _, err := r.Fetch(ctx, target); err != nil {
 		return false, err
 	}
@@ -43,7 +43,7 @@ func (r *remoteManager) Exists(ctx context.Context, target ocispec.Descriptor) (
 	return true, nil
 }
 
-func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, ctn io.Reader) error {
+func (r *remoteManager) Push(ctx context.Context, expected v1.Descriptor, ctn io.Reader) error {
 	pusher, err := r.resolver.Pusher(ctx, r.srcRef)
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (r *remoteManager) Push(ctx context.Context, expected ocispec.Descriptor, c
 	return writer.Commit(ctx, size, expected.Digest)
 }
 
-func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, reference string) error {
+func (r *remoteManager) Tag(ctx context.Context, desc v1.Descriptor, reference string) error {
 	originalRef := r.srcRef
 
 	reader, err := r.fetcher.Fetch(ctx, desc)
@@ -82,7 +82,7 @@ func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, refere
 
 	r.srcRef = reference
 	desc.Annotations = make(map[string]string)
-	desc.Annotations[ocispec.AnnotationRefName] = reference
+	desc.Annotations[v1.AnnotationRefName] = reference
 
 	err = r.Push(ctx, desc, reader)
 	if err != nil {
@@ -94,6 +94,6 @@ func (r *remoteManager) Tag(ctx context.Context, desc ocispec.Descriptor, refere
 	return nil
 }
 
-func (r *remoteManager) Delete(ctx context.Context, desc ocispec.Descriptor) error {
+func (r *remoteManager) Delete(ctx context.Context, desc v1.Descriptor) error {
 	return nil
 }

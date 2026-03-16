@@ -1,9 +1,9 @@
-package main
+package cmd
 
 import "github.com/pkg/errors"
 
 type PushCmd struct {
-	Policies []string `arg:"" name:"policy" help:"Policies to push."`
+	Policies []string `name:"policy" arg:"" help:"Policies to push."`
 }
 
 func (c *PushCmd) Run(g *Globals) error {

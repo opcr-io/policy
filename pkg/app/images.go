@@ -10,7 +10,7 @@ import (
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/pkg/table"
 
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type imageStruct struct {
@@ -47,8 +47,8 @@ func (c *PolicyApp) Images() error {
 			return err
 		}
 
-		var manifest *ocispec.Manifest
-		if desc.MediaType == ocispec.MediaTypeImageManifest {
+		var manifest *v1.Manifest
+		if desc.MediaType == v1.MediaTypeImageManifest {
 			manifest, err = ociClient.GetManifest(&desc)
 			if err != nil {
 				return err
@@ -76,9 +76,9 @@ func (c *PolicyApp) Images() error {
 
 		var createdAt string
 		if manifest == nil {
-			createdAt = desc.Annotations[ocispec.AnnotationCreated]
+			createdAt = desc.Annotations[v1.AnnotationCreated]
 		} else {
-			createdAt = manifest.Annotations[ocispec.AnnotationCreated]
+			createdAt = manifest.Annotations[v1.AnnotationCreated]
 		}
 
 		images = append(images, imageStruct{
