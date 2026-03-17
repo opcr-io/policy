@@ -19,12 +19,16 @@ set -o pipefail
 POLICY_TEST=${TMPDIR}/policy
 mkdir -p $POLICY_TEST
 
-./policy save test/policy_v0:test   --file ${POLICY_TEST}/policy/policy_v0.bundle.tar.gz
-./policy save test/policy_v0v1:test --file ${POLICY_TEST}/policy/policy_v0v1.bundle.tar.gz
-./policy save test/policy_v1:test   --file ${POLICY_TEST}/policy/policy_v1.bundle.tar.gz
+./policy images
 
-./policy rm test/policy_v0:test   --force 
-./policy rm test/policy_v0v1:test --force
-./policy rm test/policy_v1:test   --force
+# ./policy save test/policy_v0:test   --file ${POLICY_TEST}/policy/policy_v0.bundle.tar.gz
+# ./policy save test/policy_v0v1:test --file ${POLICY_TEST}/policy/policy_v0v1.bundle.tar.gz
+# ./policy save test/policy_v1:test   --file ${POLICY_TEST}/policy/policy_v1.bundle.tar.gz
+
+./policy images
+
+# ./policy rm test/policy_v0:test   --force 
+# ./policy rm test/policy_v0v1:test --force
+# ./policy rm test/policy_v1:test   --force
 
 ./policy images
