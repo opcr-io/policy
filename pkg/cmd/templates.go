@@ -3,12 +3,12 @@ package cmd
 import "github.com/opcr-io/policy/pkg/errors"
 
 type TemplatesCmd struct {
-	Apply ApplyCmd `cmd:"" name:"apply" help:"Create or update a policy or related artifacts from a template."`
-	List  ListCmd  `cmd:"" name:"list" help:"List all available templates."`
+	Apply ApplyCmd `name:"apply" cmd:"" help:"Create or update a policy or related artifacts from a template."`
+	List  ListCmd  `name:"list" cmd:"" help:"List all available templates."`
 }
 
 type ApplyCmd struct {
-	Template    string `arg:"" name:"template" required:"true" help:"name of the template to apply"`
+	Template    string `name:"template" arg:"" required:"true" help:"name of the template to apply"`
 	Output      string `name:"output" short:"o" help:"output directory (defaults to current directory)" default:"."`
 	Overwrite   bool   `name:"overwrite" help:"overwrite existing files" default:"false"`
 	RegoVersion string `name:"rego-version" enum:"rego.v0, rego.v1" default:"rego.v1" help:"Set rego version flag (enum: rego.v0 or rego.v1)."`

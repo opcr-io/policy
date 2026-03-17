@@ -3,7 +3,7 @@ package cmd
 import "github.com/pkg/errors"
 
 type ReplCmd struct {
-	Policy    string `arg:"" name:"policy" help:"Policy to run." type:"string"`
+	Policy    string `name:"policy" arg:"" help:"Policy to run." type:"string"`
 	MaxErrors int    `name:"max-errors" short:"m" help:"Set the number of errors to allow before compilation fails early." default:"10"`
 }
 
