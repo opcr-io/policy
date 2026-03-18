@@ -19,40 +19,26 @@ var (
 
 type PolicyCLIError struct {
 	Message string
-	Err     error
 }
 
 func NewPolicyError(message string) *PolicyCLIError {
-	return &PolicyCLIError{
-		Message: message,
-	}
+	return &PolicyCLIError{Message: message}
 }
 
 const arrow string = " -> "
 
 func (e *PolicyCLIError) Error() string {
-	response := e.Message
-	if e.Err != nil {
-		response += arrow + e.Err.Error()
-	}
-
-	return response
+	return e.Message
 }
 
 func (e *PolicyCLIError) WithMessage(message string, args ...any) *PolicyCLIError {
 	return &PolicyCLIError{
 		Message: e.Message + arrow + fmt.Sprintf(message, args...),
-		Err:     e.Err,
 	}
 }
 
 func (e *PolicyCLIError) WithError(base error) *PolicyCLIError {
 	return &PolicyCLIError{
-		Message: e.Message,
-		Err:     base,
+		Message: e.Message + arrow + base.Error(),
 	}
-}
-
-func (e *PolicyCLIError) Unwrap() error {
-	return e.Err
 }
