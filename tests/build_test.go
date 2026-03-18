@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/aserto-dev/runtime"
@@ -15,7 +16,7 @@ func TestBuildV0(t *testing.T) {
 
 	sourcePath := []string{"/Users/gertd/workspace/src/github.com/opcr-io/policy/tests/fixtures/policy_v0"}
 	policyName := "test/policy_v0:test"
-	// fileName := filepath.Join(t.TempDir(), "policy_v0.bundle.tar.gz")
+	fileName := filepath.Join(t.TempDir(), "policy_v0.bundle.tar.gz")
 
 	require.NoError(t, NewVersionCmd(t).Run(cmdCtx))
 	t.Log("\n")
@@ -38,11 +39,11 @@ func TestBuildV0(t *testing.T) {
 	require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
 	t.Log("\n")
 
-	// require.NoError(t, NewSaveCmd(t,
-	// 	SaveWithPolicy(policyName),
-	// 	SaveWithFile(fileName),
-	// ).Run(cmdCtx))
-	// t.Log("\n")
+	require.NoError(t, NewSaveCmd(t,
+		SaveWithPolicy(policyName),
+		SaveWithFile(fileName),
+	).Run(cmdCtx))
+	t.Log("\n")
 
 	require.NoError(t, NewRmCmd(t,
 		RmWithPolicies([]string{policyName}),
