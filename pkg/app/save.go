@@ -42,7 +42,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 
 		outputFile, err = os.Create(outputFilePath)
 		if err != nil {
-			return perr.ErrSaveFailed(err).WithMessage("failed to create output file [%s]", outputFilePath)
+			return perr.ErrSaveFailed.WithError(err).WithMessage("failed to create output file [%s]", outputFilePath)
 		}
 
 		defer func() {
