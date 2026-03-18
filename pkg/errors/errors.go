@@ -40,11 +40,19 @@ func (e *PolicyCLIError) Error() string {
 }
 
 func (e *PolicyCLIError) WithMessage(message string, args ...any) *PolicyCLIError {
-	e.Message += arrow + fmt.Sprintf(message, args...)
-	return e
+	return &PolicyCLIError{
+		Message: e.Message + arrow + fmt.Sprintf(message, args...),
+		Err:     e.Err,
+	}
 }
 
 func (e *PolicyCLIError) WithError(base error) *PolicyCLIError {
-	e.Err = base
-	return e
+	return &PolicyCLIError{
+		Message: e.Message,
+		Err:     base,
+	}
+}
+
+func (e *PolicyCLIError) Unwrap() error {
+	return e.Err
 }
