@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/olekukonko/errors"
 	ilog "github.com/opcr-io/policy/internal/logger"
 	"github.com/opcr-io/policy/pkg/app"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/clui"
 	"github.com/opcr-io/policy/pkg/cmd"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
