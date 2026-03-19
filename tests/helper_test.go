@@ -33,15 +33,26 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 
 	// create POLICY_FILE_STORE_ROOT $HOME/.policy directory.
 	policyStoreRoot := filepath.Join(homeDir, ".policy")
-	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o700))
+	if IsGitHubActions() {
+		policyStoreRoot = "/github/workspace/_policy"
+	}
+
+	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o755))
+	require.DirExists(t, policyStoreRoot)
 
 	t.Logf("POLICY_FILE_STORE_ROOT: %q", policyStoreRoot)
 	t.Setenv("POLICY_FILE_STORE_ROOT", policyStoreRoot)
 
 	// create file store directory $HOME/.policy/policies-root (preventative).
 	policyStorePath := filepath.Join(homeDir, ".policy", "policies-root")
-	require.NoError(t, os.MkdirAll(policyStorePath, 0o700))
+	if IsGitHubActions() {
+		policyStorePath = "/github/workspace/_policy/policies-root"
+	}
+
+	require.NoError(t, os.MkdirAll(policyStorePath, 0o755))
 	require.DirExists(t, policyStorePath)
+
+	t.Logf("POLICY_FILE_STORE_PATH: %q", policyStorePath)
 
 	logger := zerolog.New(os.Stderr)
 
@@ -292,4 +303,14 @@ func NewVersionCmd(t testing.TB, opts ...VersionOption) *cmd.VersionCmd {
 
 func LogStep(cmd string) {
 	fmt.Fprintf(os.Stderr, "\n=> policy %s\n", cmd)
+}
+
+func IsGitHubActions() bool {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		return true
+	}
+	if os.Getenv("CI") == "true" && os.Getenv("GITHUB_WORKFLOW") != "" {
+		return true
+	}
+	return false
 }
