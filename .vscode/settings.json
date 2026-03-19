@@ -4,7 +4,8 @@
     "formatting.gofumpt": true
   },
   "go.testFlags": [
-    "-race"
+    "-v",
+    "-gcflags="all=-N -l""
   ],
   "cSpell.words": [
     "accnt",
