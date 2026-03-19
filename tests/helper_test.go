@@ -37,7 +37,7 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 		policyStoreRoot = "/github/workspace/_policy"
 	}
 
-	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o755))
+	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o755)) //nolint:gosec
 	require.DirExists(t, policyStoreRoot)
 
 	t.Logf("POLICY_FILE_STORE_ROOT: %q", policyStoreRoot)
@@ -49,7 +49,7 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 		policyStorePath = "/github/workspace/_policy/policies-root"
 	}
 
-	require.NoError(t, os.MkdirAll(policyStorePath, 0o755))
+	require.NoError(t, os.MkdirAll(policyStorePath, 0o755)) //nolint:gosec
 	require.DirExists(t, policyStorePath)
 
 	t.Logf("POLICY_FILE_STORE_PATH: %q", policyStorePath)
@@ -309,8 +309,10 @@ func IsGitHubActions() bool {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		return true
 	}
+
 	if os.Getenv("CI") == "true" && os.Getenv("GITHUB_WORKFLOW") != "" {
 		return true
 	}
+
 	return false
 }
