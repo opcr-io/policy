@@ -104,7 +104,7 @@ type Globals struct {
 	App       *app.PolicyApp
 }
 
-var CLI struct {
+type CLI struct {
 	Config    string       `flag:"" short:"c" type:"path" help:"Path to the policy CLI config file." default:"${userHome}/.config/policy/config.yaml"`
 	Debug     bool         `flag:"" help:"Enable debug mode."`
 	Verbosity int          `flag:"" short:"v" type:"counter" help:"Use to increase output verbosity."`
