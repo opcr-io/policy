@@ -15,20 +15,35 @@ import (
 	"github.com/opcr-io/policy/pkg/cmd"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
 )
 
 func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Helper()
+
+	ctx, cancel := context.WithCancel(t.Context())
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		t.Error(err)
 	}
 
-	t.Logf("HOME: %q", homeDir)
 	t.Setenv("HOME", homeDir)
+	t.Logf("HOME: %q", os.Getenv("HOME"))
 
-	ctx, cancel := context.WithCancel(t.Context())
+	// create POLICY_FILE_STORE_ROOT $HOME/.policy directory.
+	policyStoreRoot := filepath.Join(homeDir, ".policy")
+	if IsGitHubActions() {
+		policyStoreRoot = filepath.Join(homeDir, "work", "policy", "_policy")
+	}
+
+	require.NoError(t, os.MkdirAll(filepath.Join(policyStoreRoot, "policies-root"), 0o755)) //nolint:gosec
+	require.DirExists(t, policyStoreRoot)
+	require.DirExists(t, filepath.Join(policyStoreRoot, "policies-root"))
+
+	t.Setenv("POLICY_FILE_STORE_ROOT", policyStoreRoot)
+
+	t.Logf("POLICY_FILE_STORE_ROOT: %q", os.Getenv("POLICY_FILE_STORE_ROOT"))
 
 	logger := zerolog.New(os.Stderr)
 
@@ -279,4 +294,16 @@ func NewVersionCmd(t testing.TB, opts ...VersionOption) *cmd.VersionCmd {
 
 func LogStep(cmd string) {
 	fmt.Fprintf(os.Stderr, "\n=> policy %s\n", cmd)
+}
+
+func IsGitHubActions() bool {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		return true
+	}
+
+	if os.Getenv("CI") == "true" && os.Getenv("GITHUB_WORKFLOW") != "" {
+		return true
+	}
+
+	return false
 }
