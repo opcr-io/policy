@@ -38,6 +38,8 @@ var tcs = []tc{
 }
 
 func TestBuild(t *testing.T) {
+	require.DirExists("./fixtures")
+
 	for _, tc := range tcs {
 		t.Run(tc.PolicyName, testBuild(&tc))
 	}

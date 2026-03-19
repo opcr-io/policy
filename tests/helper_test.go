@@ -15,10 +15,13 @@ import (
 	"github.com/opcr-io/policy/pkg/cmd"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
 )
 
 func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Helper()
+
+	ctx, cancel := context.WithCancel(t.Context())
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -28,7 +31,11 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Logf("HOME: %q", homeDir)
 	t.Setenv("HOME", homeDir)
 
-	ctx, cancel := context.WithCancel(t.Context())
+	policyStorePath := filepath.Join(homeDir, ".policy", "policies-root")
+
+	// create $HOME/.policy/policies-root
+	require.NoError(t, os.MkdirAll(policyStorePath, 0o700))
+	require.DirExists(t, policyStorePath)
 
 	logger := zerolog.New(os.Stderr)
 
