@@ -177,7 +177,7 @@ func (c *Config) LoadDefaultDomain() error {
 }
 
 func fileExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err == nil {
+	if fi, err := os.Stat(path); err == nil && !fi.IsDir() {
 		return true, nil
 	} else if os.IsNotExist(err) {
 		return false, nil
