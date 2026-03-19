@@ -9,7 +9,7 @@ import (
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
 	perr "github.com/opcr-io/policy/pkg/errors"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *PolicyApp) Save(userRef, outputFilePath string) error {
@@ -42,7 +42,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 
 		outputFile, err = os.Create(outputFilePath)
 		if err != nil {
-			return perr.ErrSaveFailed.WithError(err).WithMessage("failed to create output file [%s]", outputFilePath)
+			return perr.ErrSaveFailed.WithMessage("failed to create output file [%s]", outputFilePath)
 		}
 
 		defer func() {
@@ -61,7 +61,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 	return nil
 }
 
-func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.Descriptor, error) {
+func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*v1.Descriptor, error) {
 	refs, err := ociClient.ListReferences()
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.D
 		return nil, perr.ErrNotFound.WithMessage("policy [%s] not in the local store", ref)
 	}
 
-	if refDescriptor.MediaType == ocispec.MediaTypeImageManifest {
+	if refDescriptor.MediaType == v1.MediaTypeImageManifest {
 		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, &refDescriptor)
 		if err != nil {
 			return nil, err
@@ -84,7 +84,7 @@ func (c *PolicyApp) getRefDescriptor(ociClient *oci.Oci, ref string) (*ocispec.D
 	return &refDescriptor, nil
 }
 
-func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *ocispec.Descriptor, outputFile io.Writer) error {
+func (c *PolicyApp) writePolicy(ociStore *oci.Oci, refDescriptor *v1.Descriptor, outputFile io.Writer) error {
 	reader, err := ociStore.GetStore().Fetch(c.Context, *refDescriptor)
 	if err != nil {
 		return err

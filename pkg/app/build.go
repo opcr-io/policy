@@ -13,7 +13,7 @@ import (
 	"github.com/containerd/errdefs"
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	orasoci "oras.land/oras-go/v2/content/oci"
 
@@ -139,31 +139,31 @@ func buildAnnotations(annotations map[string]string, parsedRef reference.Named, 
 		annotations = map[string]string{}
 	}
 
-	annotations[ocispec.AnnotationTitle] = parsedRef.Name()
+	annotations[v1.AnnotationTitle] = parsedRef.Name()
 	annotations[AnnotationPolicyRegistryType] = PolicyTypePolicy
-	annotations[ocispec.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
+	annotations[v1.AnnotationCreated] = time.Now().UTC().Format(time.RFC3339)
 	annotations["rego.version"] = regoVersion.String()
 
 	return annotations
 }
 
-func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (ocispec.Descriptor, error) {
+func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotations map[string]string) (v1.Descriptor, error) {
 	ociStore.AutoSaveIndex = true
 	ociStore.AutoGC = true
 
 	fDigest, err := c.fileDigest(tarball)
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	tarballFile, err := os.Open(tarball)
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	fileInfo, err := tarballFile.Stat()
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	defer func() {
@@ -172,7 +172,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		}
 	}()
 
-	descriptor := ocispec.Descriptor{
+	descriptor := v1.Descriptor{
 		Digest:      fDigest,
 		Size:        fileInfo.Size(),
 		Annotations: annotations,
@@ -181,17 +181,17 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 
 	exists, err := ociStore.Exists(c.Context, descriptor)
 	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	if err := ociStore.Delete(c.Context, descriptor); exists && err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	reader := bufio.NewReader(tarballFile)
 
 	if err := ociStore.Push(c.Context, descriptor, reader); err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	cfgDesc := []byte("{}")
@@ -200,22 +200,22 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		c.Context,
 		ociStore,
 		oras.PackManifestVersion1_1,
-		ocispec.MediaTypeImageManifest,
+		v1.MediaTypeImageManifest,
 		oras.PackManifestOptions{
-			Layers:              []ocispec.Descriptor{descriptor},
+			Layers:              []v1.Descriptor{descriptor},
 			ManifestAnnotations: descriptor.Annotations,
-			ConfigDescriptor: &ocispec.Descriptor{
-				MediaType: ocispec.MediaTypeEmptyJSON,
+			ConfigDescriptor: &v1.Descriptor{
+				MediaType: v1.MediaTypeEmptyJSON,
 				Digest:    digest.FromBytes(cfgDesc),
 				Size:      int64(len(cfgDesc)),
 				Annotations: map[string]string{
-					ocispec.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
+					v1.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
 				},
 			},
 		},
 	)
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return v1.Descriptor{}, err
 	}
 
 	c.UI.Normal().
