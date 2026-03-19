@@ -7,7 +7,7 @@ toolchain go1.26.1
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v1.14.0
-	github.com/aserto-dev/runtime v1.14.2-0.20260316095052-fc5496af3a28
+	github.com/aserto-dev/runtime v1.14.2-0.20260319103329-dab3cd778642
 	github.com/containerd/containerd/v2 v2.2.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0
@@ -27,7 +27,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.41.0
-	google.golang.org/grpc v1.79.2
+	google.golang.org/grpc v1.79.3
 	oras.land/oras-go/v2 v2.6.0
 )
 
@@ -115,6 +115,7 @@ require (
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
