@@ -28,31 +28,22 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 		t.Error(err)
 	}
 
-	t.Logf("HOME: %q", homeDir)
 	t.Setenv("HOME", homeDir)
+	t.Logf("HOME: %q", os.Getenv("HOME"))
 
 	// create POLICY_FILE_STORE_ROOT $HOME/.policy directory.
 	policyStoreRoot := filepath.Join(homeDir, ".policy")
 	if IsGitHubActions() {
-		policyStoreRoot = "/github/workspace/_policy"
+		policyStoreRoot = filepath.Join(homeDir, "work", "policy", "_policy")
 	}
 
-	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o755)) //nolint:gosec
+	require.NoError(t, os.MkdirAll(filepath.Join(policyStoreRoot, "policies-root"), 0o755)) //nolint:gosec
 	require.DirExists(t, policyStoreRoot)
+	require.DirExists(t, filepath.Join(policyStoreRoot, "policies-root"))
 
-	t.Logf("POLICY_FILE_STORE_ROOT: %q", policyStoreRoot)
 	t.Setenv("POLICY_FILE_STORE_ROOT", policyStoreRoot)
 
-	// create file store directory $HOME/.policy/policies-root (preventative).
-	policyStorePath := filepath.Join(homeDir, ".policy", "policies-root")
-	if IsGitHubActions() {
-		policyStorePath = "/github/workspace/_policy/policies-root"
-	}
-
-	require.NoError(t, os.MkdirAll(policyStorePath, 0o755)) //nolint:gosec
-	require.DirExists(t, policyStorePath)
-
-	t.Logf("POLICY_FILE_STORE_PATH: %q", policyStorePath)
+	t.Logf("POLICY_FILE_STORE_ROOT: %q", os.Getenv("POLICY_FILE_STORE_ROOT"))
 
 	logger := zerolog.New(os.Stderr)
 
