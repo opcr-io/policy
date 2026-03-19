@@ -84,13 +84,13 @@ func testBuild(tc *tc) func(*testing.T) {
 				SaveWithPolicy(policyName),
 				SaveWithFile(fileName),
 			).Run(cmdCtx))
-		}
 
-		LogStep("rm")
-		require.NoError(t, NewRmCmd(t,
-			RmWithPolicies([]string{policyName}),
-			RmWithForce(true),
-		).Run(cmdCtx))
+			LogStep("rm")
+			require.NoError(t, NewRmCmd(t,
+				RmWithPolicies([]string{policyName}),
+				RmWithForce(true),
+			).Run(cmdCtx))
+		}
 
 		LogStep("images")
 		require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
