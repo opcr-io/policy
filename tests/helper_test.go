@@ -31,9 +31,15 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Logf("HOME: %q", homeDir)
 	t.Setenv("HOME", homeDir)
 
-	policyStorePath := filepath.Join(homeDir, ".policy", "policies-root")
+	// create POLICY_FILE_STORE_ROOT $HOME/.policy directory.
+	policyStoreRoot := filepath.Join(homeDir, ".policy")
+	require.NoError(t, os.MkdirAll(policyStoreRoot, 0o700))
 
-	// create $HOME/.policy/policies-root
+	t.Logf("POLICY_FILE_STORE_ROOT: %q", policyStoreRoot)
+	t.Setenv("POLICY_FILE_STORE_ROOT", policyStoreRoot)
+
+	// create file store directory $HOME/.policy/policies-root (preventative).
+	policyStorePath := filepath.Join(homeDir, ".policy", "policies-root")
 	require.NoError(t, os.MkdirAll(policyStorePath, 0o700))
 	require.DirExists(t, policyStorePath)
 
