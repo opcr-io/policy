@@ -1,9 +1,9 @@
-package main
+package cmd
 
 import "github.com/opcr-io/policy/pkg/errors"
 
 type SaveCmd struct {
-	Policy string `arg:"" name:"policy" help:"Policy to save."`
+	Policy string `name:"policy" arg:"" help:"Policy to save."`
 	File   string `name:"file" short:"f" help:"Output file path, '-' is accepted for stdout" default:"bundle.tar.gz"`
 }
 

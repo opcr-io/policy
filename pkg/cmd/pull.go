@@ -1,9 +1,9 @@
-package main
+package cmd
 
 import "github.com/pkg/errors"
 
 type PullCmd struct {
-	Policies []string `arg:"" name:"policy" help:"Policies to pull from the remote registry."`
+	Policies []string `name:"policy" arg:"" help:"Policies to pull from the remote registry."`
 }
 
 func (c *PullCmd) Run(g *Globals) error {

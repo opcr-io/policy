@@ -6,7 +6,7 @@ import (
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
 	"github.com/opcr-io/policy/pkg/table"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -55,10 +55,10 @@ func (c *PolicyApp) Inspect(userRef string) error {
 	return nil
 }
 
-func getAnnotations(contentInfo *ocispec.Descriptor, ociClient *oci.Oci) (map[string]string, error) {
+func getAnnotations(contentInfo *v1.Descriptor, ociClient *oci.Oci) (map[string]string, error) {
 	var annotations map[string]string
 
-	if contentInfo.MediaType == ocispec.MediaTypeImageManifest {
+	if contentInfo.MediaType == v1.MediaTypeImageManifest {
 		manifest, err := ociClient.GetManifest(contentInfo)
 		if err != nil {
 			return nil, err

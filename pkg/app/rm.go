@@ -8,7 +8,7 @@ import (
 	"github.com/opcr-io/policy/oci"
 	"github.com/opcr-io/policy/parser"
 	"github.com/opcr-io/policy/pkg/errors"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *PolicyApp) Rm(existingRef string, force bool) error {
@@ -51,7 +51,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	}
 
 	// attach ref name annotation for comparison.
-	if len(ref.Annotations) == 0 || ref.Annotations[ocispec.AnnotationRefName] == "" {
+	if len(ref.Annotations) == 0 || ref.Annotations[v1.AnnotationRefName] == "" {
 		oldAnnotations := ref.Annotations
 		ref.Annotations = make(map[string]string)
 
@@ -59,7 +59,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 			ref.Annotations = oldAnnotations
 		}
 
-		ref.Annotations[ocispec.AnnotationRefName] = existingRefParsed
+		ref.Annotations[v1.AnnotationRefName] = existingRefParsed
 	}
 
 	// Reload ociClient with refreshed index to update reference list.
@@ -84,7 +84,7 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	return nil
 }
 
-func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descriptor, refString string) error {
+func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *v1.Descriptor, refString string) error {
 	anotherImageWithSameDigest, err := c.buildFromSameImage(ref)
 	if err != nil {
 		return err
@@ -109,8 +109,8 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *ocispec.Descr
 
 func (c *PolicyApp) removeBasedOnTarball(
 	ociClient *oci.Oci,
-	ref *ocispec.Descriptor,
-	existingRefs map[string]ocispec.Descriptor,
+	ref *v1.Descriptor,
+	existingRefs map[string]v1.Descriptor,
 	existingRefParsed string,
 ) error {
 	if err := ociClient.Untag(ref, existingRefParsed); err != nil {
@@ -145,10 +145,10 @@ func (c *PolicyApp) removeBasedOnTarball(
 	return nil
 }
 
-func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *ocispec.Descriptor) (bool, error) {
+func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *v1.Descriptor) (bool, error) {
 	type index struct {
-		Version   int                  `json:"schemaVersion"`
-		Manifests []ocispec.Descriptor `json:"manifests"`
+		Version   int             `json:"schemaVersion"`
+		Manifests []v1.Descriptor `json:"manifests"`
 	}
 
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
@@ -179,7 +179,7 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 			}
 
 			for _, layer := range manifest.Layers {
-				if (layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer) && layer.Digest == ref.Digest {
+				if (layer.MediaType == v1.MediaTypeImageLayerGzip || layer.MediaType == v1.MediaTypeImageLayer) && layer.Digest == ref.Digest {
 					return true, nil
 				}
 			}
@@ -189,10 +189,10 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *o
 	return false, nil
 }
 
-func (c *PolicyApp) buildFromSameImage(ref *ocispec.Descriptor) (bool, error) {
+func (c *PolicyApp) buildFromSameImage(ref *v1.Descriptor) (bool, error) {
 	type index struct {
-		Version   int                  `json:"schemaVersion"`
-		Manifests []ocispec.Descriptor `json:"manifests"`
+		Version   int             `json:"schemaVersion"`
+		Manifests []v1.Descriptor `json:"manifests"`
 	}
 
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")

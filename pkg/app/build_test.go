@@ -31,3 +31,6 @@ func TestRefCalculation(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildTests(t *testing.T) {
+}

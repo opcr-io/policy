@@ -11,7 +11,7 @@ import (
 	"github.com/opcr-io/policy/parser"
 	"github.com/opcr-io/policy/pkg/errors"
 	"github.com/open-policy-agent/opa/v1/repl"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
@@ -96,10 +96,10 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	return nil
 }
 
-func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *ocispec.Descriptor) (string, error) {
+func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *v1.Descriptor) (string, error) {
 	var bundleHex string
 	// check for media type - if manifest get tarbarll digest hex.
-	if descriptor.MediaType == ocispec.MediaTypeImageManifest {
+	if descriptor.MediaType == v1.MediaTypeImageManifest {
 		bundleDescriptor, _, err := ociClient.GetTarballAndConfigLayerDescriptor(c.Context, descriptor)
 		if err != nil {
 			return "", err

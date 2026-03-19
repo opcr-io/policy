@@ -3,18 +3,13 @@ package oci
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
-	"net/http"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/containerd/containerd/v2/core/remotes/docker"
 	"github.com/opencontainers/go-digest"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"oras.land/oras-go/v2"
@@ -43,6 +38,7 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	}
 
 	ociStore.AutoSaveIndex = true
+	ociStore.AutoGC = true
 
 	return &Oci{
 		logger:         log,
@@ -53,48 +49,18 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	}, nil
 }
 
-func (o *Oci) WithDockerRegistryHosts(transport *http.Transport, user, pat string) *Oci {
-	client := &http.Client{Transport: transport}
-
-	authOpts := []docker.AuthorizerOpt{
-		docker.WithAuthClient(client),
-	}
-	if user != "" || pat != "" {
-		authOpts = append(
-			authOpts,
-			docker.WithAuthCreds(func(s string) (string, string, error) {
-				return user, pat, nil
-			}))
-	}
-
-	o.hostsFunc = func(host string) ([]docker.RegistryHost, error) {
-		config := docker.RegistryHost{
-			Host:         host,
-			Scheme:       "https",
-			Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
-			Client:       client,
-			Path:         "/v2",
-			Authorizer:   docker.NewDockerAuthorizer(authOpts...),
-		}
-
-		return []docker.RegistryHost{config}, nil
-	}
-
-	return o
-}
-
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
 	})
 	remoteManager := &remoteManager{resolver: dockerResolver, srcRef: ref}
 
-	var manifestDescriptor ocispec.Descriptor
+	var manifestDescriptor v1.Descriptor
 
 	opts := oras.DefaultCopyOptions
 
 	// Get tarball descriptor digest
-	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+	opts.OnCopySkipped = func(ctx context.Context, desc v1.Descriptor) error {
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -106,7 +72,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 		return nil
 	}
 
-	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+	opts.PostCopy = func(ctx context.Context, desc v1.Descriptor) error {
 		if !IsAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
@@ -135,10 +101,10 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	return manifestDescriptor.Digest, nil
 }
 
-func (o *Oci) ListReferences() (map[string]ocispec.Descriptor, error) {
+func (o *Oci) ListReferences() (map[string]v1.Descriptor, error) {
 	var tgs []string
 
-	refs := make(map[string]ocispec.Descriptor, 0)
+	refs := make(map[string]v1.Descriptor, 0)
 
 	if err := o.ociStore.Tags(o.ctx, "", func(tags []string) error {
 		tgs = append(tgs, tags...)
@@ -268,7 +234,7 @@ func (o *Oci) Tag(existingRef, newRef string) error {
 	return o.ociStore.SaveIndex()
 }
 
-func (o *Oci) Untag(descr *ocispec.Descriptor, ref string) error {
+func (o *Oci) Untag(descr *v1.Descriptor, ref string) error {
 	return o.ociStore.Untag(o.ctx, ref)
 }
 
@@ -278,17 +244,17 @@ func (o *Oci) GetStore() *oci.Store {
 
 func (o *Oci) GetTarballAndConfigLayerDescriptor(
 	ctx context.Context,
-	descriptor *ocispec.Descriptor,
+	descriptor *v1.Descriptor,
 ) (
-	*ocispec.Descriptor,
-	*ocispec.Descriptor,
+	*v1.Descriptor,
+	*v1.Descriptor,
 	error,
 ) {
 	if descriptor == nil {
 		return nil, nil, errors.New("nil descriptor provided")
 	}
 
-	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
+	if descriptor.MediaType != v1.MediaTypeImageManifest {
 		return nil, nil, errors.New("provided descriptor is not a manifest descriptor")
 	}
 
@@ -297,15 +263,15 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(
 		return nil, nil, err
 	}
 
-	configDigest := manifest.Config.Digest
+	configDigest := manifest.Config.Digest.String()
 
-	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest.String())
+	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	for _, layer := range manifest.Layers {
-		if layer.MediaType == ocispec.MediaTypeImageLayerGzip || layer.MediaType == ocispec.MediaTypeImageLayer {
+		if layer.MediaType == v1.MediaTypeImageLayerGzip || layer.MediaType == v1.MediaTypeImageLayer {
 			tarballDescriptor, err := o.ociStore.Resolve(ctx, layer.Digest.String())
 			if err != nil {
 				return nil, nil, err
@@ -318,7 +284,7 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(
 	return nil, nil, errors.New("could not find tarball and config descriptors")
 }
 
-func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, error) {
+func (o *Oci) GetManifest(descriptor *v1.Descriptor) (*v1.Manifest, error) {
 	reader, err := o.GetStore().Fetch(o.ctx, *descriptor)
 	if err != nil {
 		return nil, err
@@ -329,7 +295,7 @@ func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, er
 		return nil, err
 	}
 
-	var manifest ocispec.Manifest
+	var manifest v1.Manifest
 
 	err = json.Unmarshal(manifestBytes.Bytes(), &manifest)
 	if err != nil {
@@ -344,7 +310,7 @@ func (o *Oci) GetManifest(descriptor *ocispec.Descriptor) (*ocispec.Manifest, er
 	return &manifest, nil
 }
 
-func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Descriptor, ref string) (digest.Digest, error) {
+func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *v1.Descriptor, ref string) (digest.Digest, error) {
 	memoryStore := memory.New()
 	configBytes := []byte("{}")
 	configDesc := content.NewDescriptorFromBytes(MediaTypeConfig, configBytes)
@@ -355,7 +321,7 @@ func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Des
 	}
 
 	//nolint:staticcheck
-	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []ocispec.Descriptor{*desc}, oras.PackOptions{
+	manifestDesc, err := oras.Pack(o.ctx, memoryStore, MediaTypeConfig, []v1.Descriptor{*desc}, oras.PackOptions{
 		PackImageManifest:   true,
 		ManifestAnnotations: desc.Annotations,
 		ConfigDescriptor:    &configDesc,
@@ -388,119 +354,19 @@ func (o *Oci) pushBasedOnTarBall(remoteManager *remoteManager, desc *ocispec.Des
 	return desc.Digest, nil
 }
 
-func CopyPolicy(
-	ctx context.Context,
-	log *zerolog.Logger,
-	sourceRef, sourceUser, sourcePassword, destinationRef, destinationUser, destinationPassword, ociStore string,
-) error {
-	transport, err := getTransport(log)
-	if err != nil {
-		return errors.Wrap(err, "failed to create transport")
-	}
-
-	ociClient, err := NewOCI(ctx,
-		log,
-		func(server string) ([]docker.RegistryHost, error) {
-			client := &http.Client{Transport: transport}
-
-			return []docker.RegistryHost{
-				{
-					Host:         server,
-					Scheme:       "https",
-					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
-					Client:       client,
-					Path:         "/v2",
-					Authorizer: docker.NewDockerAuthorizer(
-						docker.WithAuthClient(client),
-						docker.WithAuthCreds(func(s string) (string, string, error) {
-							return sourceUser, sourcePassword, nil
-						})),
-				},
-			}, nil
-		},
-		ociStore)
-	if err != nil {
-		return errors.Wrap(err, "failed to create oci client")
-	}
-
-	if _, err := ociClient.Pull(sourceRef); err != nil {
-		return errors.Wrap(err, "failed to pull image")
-	}
-
-	err = ociClient.Tag(sourceRef, destinationRef)
-	if err != nil {
-		return errors.Wrap(err, "failed to tag image")
-	}
-
-	ociClient, err = NewOCI(ctx,
-		log,
-		func(server string) ([]docker.RegistryHost, error) {
-			client := &http.Client{Transport: transport}
-
-			return []docker.RegistryHost{
-				{
-					Host:         server,
-					Scheme:       "https",
-					Capabilities: docker.HostCapabilityPull | docker.HostCapabilityResolve | docker.HostCapabilityPush,
-					Client:       client,
-					Path:         "/v2",
-					Authorizer: docker.NewDockerAuthorizer(
-						docker.WithAuthClient(client),
-						docker.WithAuthCreds(func(s string) (string, string, error) {
-							return destinationUser, destinationPassword, nil
-						})),
-				},
-			}, nil
-		},
-		ociStore)
-	if err != nil {
-		return errors.Wrap(err, "failed to create oci client")
-	}
-
-	if _, err := ociClient.Push(destinationRef); err != nil {
-		return errors.Wrap(err, "failed to push image")
-	}
-
-	return nil
-}
-
-func cloneDescriptor(desc *ocispec.Descriptor) (ocispec.Descriptor, error) {
+func cloneDescriptor(desc *v1.Descriptor) (v1.Descriptor, error) {
 	b, err := json.Marshal(desc)
 	if err != nil {
-		return ocispec.Descriptor{}, errors.Wrap(err, "failed to clone descriptor")
+		return v1.Descriptor{}, errors.Wrap(err, "failed to clone descriptor")
 	}
 
-	result := ocispec.Descriptor{}
+	result := v1.Descriptor{}
 
 	if err := json.Unmarshal(b, &result); err != nil {
-		return ocispec.Descriptor{}, errors.Wrap(err, "failed to create descriptor clone")
+		return v1.Descriptor{}, errors.Wrap(err, "failed to create descriptor clone")
 	}
 
 	return result, nil
-}
-
-func getTransport(log *zerolog.Logger) (*http.Transport, error) {
-	// Get the SystemCertPool, continue with an empty pool on error
-	var rootCAs *x509.CertPool
-
-	rootCAs, err := x509.SystemCertPool()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load system cert pool")
-	}
-
-	if rootCAs == nil {
-		log.Warn().Err(err).Msg("failed to load system ca certs")
-
-		rootCAs = x509.NewCertPool()
-	}
-
-	// Trust the augmented cert pool in our client
-	conf := &tls.Config{
-		RootCAs:    rootCAs,
-		MinVersion: tls.VersionTLS12,
-	}
-
-	return &http.Transport{TLSClientConfig: conf}, nil
 }
 
 func IsAllowedMediaType(mediaType string) bool {
@@ -514,15 +380,4 @@ func IsAllowedMediaType(mediaType string) bool {
 	}
 
 	return slices.Contains(allowedMediaTypes, mediaType)
-}
-
-func RemoveBlob(ref *ocispec.Descriptor, path string) error {
-	digestPath := filepath.Join(strings.Split(ref.Digest.String(), ":")...)
-	blob := filepath.Join(path, "blobs", digestPath)
-
-	if err := os.Remove(blob); err != nil {
-		return err
-	}
-
-	return nil
 }
