@@ -9,76 +9,86 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildV0(t *testing.T) {
-	cmdCtx := NewCmdContext(t)
-	cleanup := cmdCtx.Setup()
-	t.Cleanup(cleanup)
-
-	sourcePath := []string{"/Users/gertd/workspace/src/github.com/opcr-io/policy/tests/fixtures/policy_v0"}
-	policyName := "test/policy_v0:test"
-	fileName := filepath.Join(t.TempDir(), "policy_v0.bundle.tar.gz")
-
-	require.NoError(t, NewVersionCmd(t).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewBuildCmd(t,
-		BuildWithTag(policyName),
-		BuildWithSourcePath(sourcePath),
-		BuildWithRegoVersion(runtime.RegoV0),
-	).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewInspectCmd(t,
-		InspectWithPolicy(policyName),
-	).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewSaveCmd(t,
-		SaveWithPolicy(policyName),
-		SaveWithFile(fileName),
-	).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewRmCmd(t,
-		RmWithPolicies([]string{policyName}),
-		RmWithForce(true),
-	).Run(cmdCtx))
-	t.Log("\n")
-
-	require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
-	t.Log("\n")
+type tc struct {
+	PolicyName  string
+	SourcePath  string
+	SaveFile    string
+	RegoVersion runtime.RegoVersion
 }
 
-func TestBuildV0V1(t *testing.T) {
-	cmdCtx := NewCmdContext(t)
-	cleanup := cmdCtx.Setup()
-	t.Cleanup(cleanup)
-
-	err := NewBuildCmd(t,
-		BuildWithTag("test/policy_v0v1:test"),
-		BuildWithSourcePath([]string{"/Users/gertd/workspace/src/github.com/opcr-io/policy/tests/fixtures/policy_v0v1"}),
-		BuildWithRegoVersion(runtime.RegoV0CompatV1),
-	).Run(cmdCtx)
-
-	require.NoError(t, err)
+var tcs = []tc{
+	{
+		PolicyName:  "ghcr.io/test/policy_v0:test",
+		SourcePath:  "./fixtures/policy_v0",
+		SaveFile:    "policy_v0.bundle.tar.gz",
+		RegoVersion: runtime.RegoV0,
+	},
+	{
+		PolicyName:  "ghcr.io/test/policy_v0v1:test",
+		SourcePath:  "./fixtures/policy_v0v1",
+		SaveFile:    "policy_v0v1.bundle.tar.gz",
+		RegoVersion: runtime.RegoV0CompatV1,
+	},
+	{
+		PolicyName:  "ghcr.io/test/policy_v1:test",
+		SourcePath:  "./fixtures/policy_v1",
+		SaveFile:    "policy_v1.bundle.tar.gz",
+		RegoVersion: runtime.RegoV1,
+	},
 }
 
-func TestBuildV1(t *testing.T) {
-	cmdCtx := NewCmdContext(t)
-	cleanup := cmdCtx.Setup()
-	t.Cleanup(cleanup)
+func TestBuild(t *testing.T) {
+	for _, tc := range tcs {
+		t.Run(tc.PolicyName, testBuild(&tc))
+	}
+}
 
-	err := NewBuildCmd(t,
-		BuildWithTag("test/policy_v1:test"),
-		BuildWithSourcePath([]string{"/Users/gertd/workspace/src/github.com/opcr-io/policy/tests/fixtures/policy_v1"}),
-		BuildWithRegoVersion(runtime.RegoV1),
-	).Run(cmdCtx)
+func testBuild(tc *tc) func(*testing.T) {
+	return func(t *testing.T) {
+		cmdCtx := NewCmdContext(t)
+		cleanup := cmdCtx.Setup()
+		t.Cleanup(cleanup)
 
-	require.NoError(t, err)
+		sourcePath := []string{tc.SourcePath}
+
+		policyName := tc.PolicyName
+
+		fileName := filepath.Join("/tmp", tc.SaveFile)
+
+		LogStep("version")
+		require.NoError(t, NewVersionCmd(t).Run(cmdCtx))
+
+		LogStep("images")
+		require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
+
+		LogStep("build")
+		require.NoError(t, NewBuildCmd(t,
+			BuildWithTag(policyName),
+			BuildWithSourcePath(sourcePath),
+			BuildWithRegoVersion(tc.RegoVersion),
+		).Run(cmdCtx))
+
+		LogStep("inspect")
+		require.NoError(t, NewInspectCmd(t,
+			InspectWithPolicy(policyName),
+		).Run(cmdCtx))
+
+		LogStep("images")
+		require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
+
+		LogStep("save")
+		require.NoError(t, NewSaveCmd(t,
+			SaveWithPolicy(policyName),
+			SaveWithFile(fileName),
+		).Run(cmdCtx))
+
+		LogStep("rm")
+		require.NoError(t, NewRmCmd(t,
+			RmWithPolicies([]string{policyName}),
+			RmWithForce(true),
+		).Run(cmdCtx))
+
+		LogStep("images")
+		require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
+	}
 }

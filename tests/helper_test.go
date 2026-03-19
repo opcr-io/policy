@@ -2,6 +2,7 @@ package tests_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,20 +20,13 @@ import (
 func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Helper()
 
-	t.TempDir()
-	homeDir := filepath.Join(t.TempDir(), "policy", "test", "home")
-	os.MkdirAll(homeDir, 0o700)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
 
 	t.Logf("HOME: %q", homeDir)
 	t.Setenv("HOME", homeDir)
-
-	policyStore := filepath.Join(t.TempDir(), "policy", "test", "store")
-	os.MkdirAll(policyStore, 0o700)
-
-	t.Logf("POLICY_FILE_STORE_ROOT: %q", policyStore)
-	t.Setenv("POLICY_FILE_STORE_ROOT", policyStore)
-
-	cfgPath := filepath.Join(homeDir, ".config", "policy", "config.yaml")
 
 	ctx, cancel := context.WithCancel(t.Context())
 
@@ -42,7 +36,7 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 
 	cfg := cmd.Globals{
 		Debug:     false,
-		Config:    cfgPath,
+		Config:    filepath.Join(homeDir, ".config", "policy", "config.yaml"),
 		Verbosity: 0,
 		Insecure:  false,
 		Plaintext: false,
@@ -51,8 +45,8 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 			Cancel:  cancel,
 			Logger:  &logger,
 			Configuration: &config.Config{
-				FileStoreRoot: policyStore,
-				DefaultDomain: "ghcr.io",
+				FileStoreRoot: filepath.Join(homeDir, ".policy"),
+				DefaultDomain: "",
 				Logging: ilog.Config{
 					Prod:           false,
 					LogLevelParsed: zerolog.InfoLevel,
@@ -281,4 +275,8 @@ func NewVersionCmd(t testing.TB, opts ...VersionOption) *cmd.VersionCmd {
 	}
 
 	return cmd
+}
+
+func LogStep(cmd string) {
+	fmt.Fprintf(os.Stderr, "\n=> policy %s\n", cmd)
 }
