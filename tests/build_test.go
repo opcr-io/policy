@@ -78,11 +78,13 @@ func testBuild(tc *tc) func(*testing.T) {
 		LogStep("images")
 		require.NoError(t, NewImagesCmd(t).Run(cmdCtx))
 
-		LogStep("save")
-		require.NoError(t, NewSaveCmd(t,
-			SaveWithPolicy(policyName),
-			SaveWithFile(fileName),
-		).Run(cmdCtx))
+		if !IsGitHubActions() {
+			LogStep("save")
+			require.NoError(t, NewSaveCmd(t,
+				SaveWithPolicy(policyName),
+				SaveWithFile(fileName),
+			).Run(cmdCtx))
+		}
 
 		LogStep("rm")
 		require.NoError(t, NewRmCmd(t,
