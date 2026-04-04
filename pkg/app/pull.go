@@ -46,7 +46,7 @@ func (c *PolicyApp) Pull(userRef string, untarDir string) error {
 
 		c.UI.Normal().
 			WithStringValue("directory", untarDir).
-			Msgf("Extracted policy bundle to directory.")
+			Msg("Extracted policy bundle to directory.")
 	}
 
 	return nil

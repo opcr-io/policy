@@ -104,15 +104,18 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 			}
 
 		case tar.TypeReg, tar.TypeRegA:
-			if err := c.extractRegularFile(targetPath, absDestDir, tarReader); err != nil {
+			if err := extractRegularFile(targetPath, absDestDir, tarReader); err != nil {
 				return err
 			}
 
 		case tar.TypeSymlink:
 			c.UI.Normal().Msgf("Skipping symlink [%s] -> [%s]: symlinks are not supported.", header.Name, header.Linkname)
 
+		case tar.TypeLink:
+			c.UI.Normal().Msgf("Skipping hardlink [%s] -> [%s]: hardlinks are not supported.", header.Name, header.Linkname)
+
 		default:
-			c.UI.Normal().Msgf("Skipping unknown file type [%d] for [%s].", header.Typeflag, header.Name)
+			c.UI.Normal().Msgf("Skipping unsupported file type [%q] for [%s].", header.Typeflag, header.Name)
 		}
 	}
 
@@ -167,40 +170,50 @@ func ensureSafeDir(targetDir, absDestDir string) error {
 	return nil
 }
 
-func (c *PolicyApp) extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) error {
+// extractRegularFile writes tar content to targetPath using a temp file + atomic
+// rename to avoid TOCTOU symlink races (CWE-59). The parent directory must already
+// exist and be verified safe by ensureSafeDir.
+func extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) error {
 	parentDir := filepath.Dir(targetPath)
 
 	if err := ensureSafeDir(parentDir, absDestDir); err != nil {
 		return err
 	}
 
-	// Guard against writing through pre-existing symlinks (CWE-59).
-	if lstat, lErr := os.Lstat(targetPath); lErr == nil && lstat.Mode()&os.ModeSymlink != 0 {
-		return perr.ErrExtractFailed.WithMessage("refusing to write through symlink [%s]", targetPath)
-	}
-
-	outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, x.OwnerReadWrite) //nolint:gosec // G304: targetPath validated above
+	outFile, err := os.CreateTemp(parentDir, ".extract-*")
 	if err != nil {
-		return perr.ErrExtractFailed.WithMessage("failed to create file [%s]", targetPath).WithError(err)
+		return perr.ErrExtractFailed.WithMessage("failed to create temporary file for [%s]", targetPath).WithError(err)
 	}
 
-	written, copyErr := io.Copy(outFile, io.LimitReader(tarReader, maxExtractFileSize)) //nolint:gosec // G110: size bounded by LimitReader
+	tempPath := outFile.Name()
+
+	written, copyErr := io.Copy(outFile, io.LimitReader(tarReader, maxExtractFileSize+1)) //nolint:gosec // G110: size bounded by LimitReader
 	if copyErr != nil {
 		outFile.Close()
-		_ = os.Remove(targetPath)
+		_ = os.Remove(tempPath)
 
 		return perr.ErrExtractFailed.WithMessage("failed to write file [%s]", targetPath).WithError(copyErr)
 	}
 
-	if written >= maxExtractFileSize {
+	if written > maxExtractFileSize {
 		outFile.Close()
-		_ = os.Remove(targetPath)
+		_ = os.Remove(tempPath)
 
 		return perr.ErrExtractFailed.WithMessage("file [%s] exceeds maximum allowed size (%d bytes)", targetPath, maxExtractFileSize)
 	}
 
 	if err := outFile.Close(); err != nil {
+		_ = os.Remove(tempPath)
+
 		return perr.ErrExtractFailed.WithMessage("failed to close file [%s]", targetPath).WithError(err)
+	}
+
+	// Atomic rename replaces any existing file (including symlinks) without
+	// following them, eliminating the TOCTOU window between check and write.
+	if err := os.Rename(tempPath, targetPath); err != nil {
+		_ = os.Remove(tempPath)
+
+		return perr.ErrExtractFailed.WithMessage("failed to install file [%s]", targetPath).WithError(err)
 	}
 
 	return nil

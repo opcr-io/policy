@@ -28,7 +28,9 @@ type tarEntry struct {
 	Linkname string
 }
 
-func buildTar(entries []tarEntry) []byte {
+func buildTar(t *testing.T, entries []tarEntry) []byte {
+	t.Helper()
+
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
 
@@ -48,23 +50,27 @@ func buildTar(entries []tarEntry) []byte {
 			hdr.Typeflag = tar.TypeReg
 		}
 
-		_ = tw.WriteHeader(hdr)
+		require.NoError(t, tw.WriteHeader(hdr))
 
 		if e.TypeFlag == tar.TypeReg || e.TypeFlag == 0 {
-			_, _ = tw.Write([]byte(e.Body))
+			_, err := tw.Write([]byte(e.Body))
+			require.NoError(t, err)
 		}
 	}
 
-	_ = tw.Close()
+	require.NoError(t, tw.Close())
 
 	return buf.Bytes()
 }
 
-func gzipBytes(b []byte) []byte {
+func gzipBytes(t *testing.T, b []byte) []byte {
+	t.Helper()
+
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
-	_, _ = gw.Write(b)
-	_ = gw.Close()
+	_, err := gw.Write(b)
+	require.NoError(t, err)
+	require.NoError(t, gw.Close())
 
 	return buf.Bytes()
 }
@@ -147,7 +153,7 @@ func TestExtractPolicyBundle_PlainTar(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "dir/", TypeFlag: tar.TypeDir},
 		{Name: "dir/file.txt", Body: "hello world"},
 		{Name: "root.txt", Body: "root content"},
@@ -172,11 +178,11 @@ func TestExtractPolicyBundle_GzipTar(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "gzipped.txt", Body: "compressed content"},
 	})
 
-	pushBlob(t, a.Context, ociClient, gzipBytes(tarData), v1.MediaTypeImageLayerGzip, testRef)
+	pushBlob(t, a.Context, ociClient, gzipBytes(t, tarData), v1.MediaTypeImageLayerGzip, testRef)
 
 	err := a.ExtractPolicyBundle(ociClient, testRef, destDir)
 	require.NoError(t, err)
@@ -191,7 +197,7 @@ func TestExtractPolicyBundle_SymlinkSkipped(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "real.txt", Body: "real"},
 		{Name: "link.txt", TypeFlag: tar.TypeSymlink, Linkname: "real.txt"},
 	})
@@ -224,7 +230,7 @@ func TestExtractPolicyBundle_DestDirDoesNotExist(t *testing.T) {
 	a := newTestApp(t)
 	ociClient := newTestOCI(t)
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "file.txt", Body: "data"},
 	})
 
@@ -288,7 +294,7 @@ func TestExtractPolicyBundle_SymlinkEscapeSkipped(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "escape", TypeFlag: tar.TypeSymlink, Linkname: "../../etc/passwd"},
 	})
 
@@ -307,7 +313,7 @@ func TestExtractPolicyBundle_AbsoluteSymlinkTargetSkipped(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "abslink", TypeFlag: tar.TypeSymlink, Linkname: "/etc/passwd"},
 	})
 
@@ -325,7 +331,7 @@ func TestExtractPolicyBundle_HardlinkSkipped(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "original.txt", Body: "data"},
 		{Name: "hardlink.txt", TypeFlag: tar.TypeLink, Linkname: "original.txt"},
 	})
@@ -348,7 +354,7 @@ func TestExtractPolicyBundle_EmptyTar(t *testing.T) {
 	ociClient := newTestOCI(t)
 	destDir := t.TempDir()
 
-	tarData := buildTar(nil)
+	tarData := buildTar(t, nil)
 
 	pushBlob(t, a.Context, ociClient, tarData, v1.MediaTypeImageLayer, testRef)
 
@@ -371,7 +377,7 @@ func TestExtractPolicyBundle_PreExistingSymlinkBlocked(t *testing.T) {
 	require.NoError(t, os.Symlink(filepath.Join(outsideDir, "stolen.txt"), symPath))
 
 	// Build a tar that writes to the same path as the symlink.
-	tarData := buildTar([]tarEntry{
+	tarData := buildTar(t, []tarEntry{
 		{Name: "trap.txt", Body: "payload"},
 	})
 
