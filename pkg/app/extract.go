@@ -99,11 +99,11 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, x.OwnerReadWriteExecute); err != nil {
-				return perr.ErrExtractFailed.WithMessage("failed to create directory [%s]", targetPath).WithError(err)
+			if err := ensureSafeDir(targetPath, absDestDir); err != nil {
+				return err
 			}
 
-		case tar.TypeReg:
+		case tar.TypeReg, tar.TypeRegA:
 			if err := c.extractRegularFile(targetPath, absDestDir, tarReader); err != nil {
 				return err
 			}
@@ -119,22 +119,59 @@ func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir 
 	return nil
 }
 
+// ensureSafeDir creates a directory at targetDir, walking each path component
+// from absDestDir and rejecting any component that is a symlink. This prevents
+// MkdirAll from following pre-existing symlinks to create directories outside
+// the destination (CWE-59).
+func ensureSafeDir(targetDir, absDestDir string) error {
+	rel, err := filepath.Rel(absDestDir, targetDir)
+	if err != nil {
+		return perr.ErrExtractFailed.WithMessage("failed to resolve relative path for [%s]", targetDir).WithError(err)
+	}
+
+	if rel == "." {
+		return nil
+	}
+
+	current := absDestDir
+
+	for _, component := range strings.Split(rel, string(filepath.Separator)) {
+		if component == "" || component == "." {
+			continue
+		}
+
+		current = filepath.Join(current, component)
+
+		info, statErr := os.Lstat(current)
+		if statErr == nil {
+			if info.Mode()&os.ModeSymlink != 0 {
+				return perr.ErrExtractFailed.WithMessage("path component [%s] is a symlink", current)
+			}
+
+			if !info.IsDir() {
+				return perr.ErrExtractFailed.WithMessage("path component [%s] is not a directory", current)
+			}
+
+			continue
+		}
+
+		if !os.IsNotExist(statErr) {
+			return perr.ErrExtractFailed.WithMessage("failed to inspect path component [%s]", current).WithError(statErr)
+		}
+
+		if mkErr := os.Mkdir(current, x.OwnerReadWriteExecute); mkErr != nil {
+			return perr.ErrExtractFailed.WithMessage("failed to create directory [%s]", current).WithError(mkErr)
+		}
+	}
+
+	return nil
+}
+
 func (c *PolicyApp) extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) error {
 	parentDir := filepath.Dir(targetPath)
 
-	if err := os.MkdirAll(parentDir, x.OwnerReadWriteExecute); err != nil {
-		return perr.ErrExtractFailed.WithMessage("failed to create parent directory for [%s]", targetPath).WithError(err)
-	}
-
-	// Verify the resolved parent directory is still within the destination
-	// to guard against pre-existing symlinks in intermediate path components (CWE-59).
-	resolvedParent, err := filepath.EvalSymlinks(parentDir)
-	if err != nil {
-		return perr.ErrExtractFailed.WithMessage("failed to resolve parent directory [%s]", parentDir).WithError(err)
-	}
-
-	if !isPathSafe(resolvedParent, absDestDir) {
-		return perr.ErrExtractFailed.WithMessage("parent directory [%s] resolves outside destination", parentDir)
+	if err := ensureSafeDir(parentDir, absDestDir); err != nil {
+		return err
 	}
 
 	// Guard against writing through pre-existing symlinks (CWE-59).
@@ -150,11 +187,15 @@ func (c *PolicyApp) extractRegularFile(targetPath, absDestDir string, tarReader 
 	written, copyErr := io.Copy(outFile, io.LimitReader(tarReader, maxExtractFileSize)) //nolint:gosec // G110: size bounded by LimitReader
 	if copyErr != nil {
 		outFile.Close()
+		_ = os.Remove(targetPath)
+
 		return perr.ErrExtractFailed.WithMessage("failed to write file [%s]", targetPath).WithError(copyErr)
 	}
 
 	if written >= maxExtractFileSize {
 		outFile.Close()
+		_ = os.Remove(targetPath)
+
 		return perr.ErrExtractFailed.WithMessage("file [%s] exceeds maximum allowed size (%d bytes)", targetPath, maxExtractFileSize)
 	}
 
