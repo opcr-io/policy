@@ -208,8 +208,14 @@ func extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) erro
 		return perr.ErrExtractFailed.WithMessage("failed to close file [%s]", targetPath).WithError(err)
 	}
 
-	// Atomic rename replaces any existing file (including symlinks) without
-	// following them, eliminating the TOCTOU window between check and write.
+	// Reject pre-existing symlinks at the target path before installing.
+	if lstat, lErr := os.Lstat(targetPath); lErr == nil && lstat.Mode()&os.ModeSymlink != 0 {
+		_ = os.Remove(tempPath)
+
+		return perr.ErrExtractFailed.WithMessage("refusing to write through symlink [%s]", targetPath)
+	}
+
+	// Atomic rename installs the file without following symlinks.
 	if err := os.Rename(tempPath, targetPath); err != nil {
 		_ = os.Remove(tempPath)
 

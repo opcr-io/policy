@@ -249,14 +249,15 @@ func TestExtractPolicyBundle_AbsolutePathInArchive(t *testing.T) {
 	// Build a tar archive with an absolute path entry.
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
-	_ = tw.WriteHeader(&tar.Header{
+	require.NoError(t, tw.WriteHeader(&tar.Header{
 		Name:     "/etc/passwd",
 		Mode:     0o644,
 		Size:     4,
 		Typeflag: tar.TypeReg,
-	})
-	_, _ = tw.Write([]byte("evil"))
-	_ = tw.Close()
+	}))
+	_, writeErr := tw.Write([]byte("evil"))
+	require.NoError(t, writeErr)
+	require.NoError(t, tw.Close())
 
 	pushBlob(t, a.Context, ociClient, buf.Bytes(), v1.MediaTypeImageLayer, testRef)
 
@@ -273,14 +274,15 @@ func TestExtractPolicyBundle_PathTraversalInArchive(t *testing.T) {
 	// Build a tar archive with a path traversal entry.
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
-	_ = tw.WriteHeader(&tar.Header{
+	require.NoError(t, tw.WriteHeader(&tar.Header{
 		Name:     "../../outside.txt",
 		Mode:     0o644,
 		Size:     6,
 		Typeflag: tar.TypeReg,
-	})
-	_, _ = tw.Write([]byte("escape"))
-	_ = tw.Close()
+	}))
+	_, writeErr := tw.Write([]byte("escape"))
+	require.NoError(t, writeErr)
+	require.NoError(t, tw.Close())
 
 	pushBlob(t, a.Context, ociClient, buf.Bytes(), v1.MediaTypeImageLayer, testRef)
 
