@@ -15,7 +15,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const maxExtractFileSize = 256 << 20 // 256 MiB per file.
+const MaxExtractFileSize = 256 << 20 // 256 MiB per file.
 
 func (c *PolicyApp) ExtractPolicyBundle(ociClient *oci.Oci, ref string, destDir string) error {
 	refDescriptor, err := c.getRefDescriptor(ociClient, ref)
@@ -187,7 +187,7 @@ func extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) erro
 
 	tempPath := outFile.Name()
 
-	written, copyErr := io.Copy(outFile, io.LimitReader(tarReader, maxExtractFileSize+1)) //nolint:gosec // G110: size bounded by LimitReader
+	written, copyErr := io.Copy(outFile, io.LimitReader(tarReader, MaxExtractFileSize+1)) //nolint:gosec // G110: size bounded by LimitReader
 	if copyErr != nil {
 		outFile.Close()
 		_ = os.Remove(tempPath)
@@ -195,11 +195,11 @@ func extractRegularFile(targetPath, absDestDir string, tarReader io.Reader) erro
 		return perr.ErrExtractFailed.WithMessage("failed to write file [%s]", targetPath).WithError(copyErr)
 	}
 
-	if written > maxExtractFileSize {
+	if written > MaxExtractFileSize {
 		outFile.Close()
 		_ = os.Remove(tempPath)
 
-		return perr.ErrExtractFailed.WithMessage("file [%s] exceeds maximum allowed size (%d bytes)", targetPath, maxExtractFileSize)
+		return perr.ErrExtractFailed.WithMessage("file [%s] exceeds maximum allowed size (%d bytes)", targetPath, MaxExtractFileSize)
 	}
 
 	if err := outFile.Close(); err != nil {

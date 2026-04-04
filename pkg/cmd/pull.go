@@ -13,7 +13,12 @@ func (c *PullCmd) Run(g *Globals) error {
 	for _, policyRef := range c.Policies {
 		err := g.App.Pull(policyRef, c.UntarDir)
 		if err != nil {
-			g.App.UI.Problem().WithErr(err).Msgf("Failed to pull policy: %s", policyRef)
+			if c.UntarDir != "" {
+				g.App.UI.Problem().WithErr(err).Msgf("Failed to pull/extract policy: %s", policyRef)
+			} else {
+				g.App.UI.Problem().WithErr(err).Msgf("Failed to pull policy: %s", policyRef)
+			}
+
 			errs = err
 		}
 	}

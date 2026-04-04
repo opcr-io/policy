@@ -393,3 +393,67 @@ func TestExtractPolicyBundle_PreExistingSymlinkBlocked(t *testing.T) {
 	_, err = os.Stat(filepath.Join(outsideDir, "stolen.txt"))
 	require.True(t, os.IsNotExist(err))
 }
+
+func TestExtractPolicyBundle_OversizeFileRejected(t *testing.T) {
+	a := newTestApp(t)
+	ociClient := newTestOCI(t)
+	destDir := t.TempDir()
+
+	// Build a tar with a file that exceeds the per-file size limit.
+	// We declare a large size in the header but only need to write enough
+	// for LimitReader to hit the cap. Use a sparse approach: the tar header
+	// declares the size, and we write just over the limit.
+	const oversize = app.MaxExtractFileSize + 1
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	require.NoError(t, tw.WriteHeader(&tar.Header{
+		Name:     "huge.bin",
+		Mode:     0o644,
+		Size:     oversize,
+		Typeflag: tar.TypeReg,
+	}))
+	// Write oversize bytes of zeros.
+	_, writeErr := tw.Write(make([]byte, oversize))
+	require.NoError(t, writeErr)
+	require.NoError(t, tw.Close())
+
+	pushBlob(t, a.Context, ociClient, buf.Bytes(), v1.MediaTypeImageLayer, testRef)
+
+	err := a.ExtractPolicyBundle(ociClient, testRef, destDir)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "exceeds maximum allowed size")
+
+	// Verify the oversize file was cleaned up.
+	_, err = os.Stat(filepath.Join(destDir, "huge.bin"))
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestExtractPolicyBundle_IntermediateDirSymlinkBlocked(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink creation requires elevated privileges on Windows")
+	}
+
+	a := newTestApp(t)
+	ociClient := newTestOCI(t)
+	destDir := t.TempDir()
+
+	// Create a symlink at an intermediate directory pointing outside destDir.
+	outsideDir := t.TempDir()
+	require.NoError(t, os.Symlink(outsideDir, filepath.Join(destDir, "evil")))
+
+	// Build a tar that writes through the symlinked directory.
+	tarData := buildTar(t, []tarEntry{
+		{Name: "evil/payload.txt", Body: "escaped"},
+	})
+
+	pushBlob(t, a.Context, ociClient, tarData, v1.MediaTypeImageLayer, testRef)
+
+	err := a.ExtractPolicyBundle(ociClient, testRef, destDir)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "is a symlink")
+
+	// Verify no file was written outside destDir.
+	_, err = os.Stat(filepath.Join(outsideDir, "payload.txt"))
+	require.True(t, os.IsNotExist(err))
+}
