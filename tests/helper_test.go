@@ -22,6 +22,7 @@ func NewCmdContext(t testing.TB) *cmd.Globals {
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
