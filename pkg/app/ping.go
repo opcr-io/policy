@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const schemeHTTPS string = "https"
+
 func (c *PolicyApp) Ping(server, username, password string) error {
 	defer c.Cancel()
 
@@ -24,7 +26,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
-			Scheme: "https",
+			Scheme: schemeHTTPS,
 			Host:   server,
 			Path:   "/v2/",
 		},
@@ -50,7 +52,7 @@ func (c *PolicyApp) Ping(server, username, password string) error {
 	req2 := &http.Request{
 		Method: http.MethodGet,
 		URL: &url.URL{
-			Scheme: "https",
+			Scheme: schemeHTTPS,
 			Host:   server,
 			Path:   "/v2/",
 		},

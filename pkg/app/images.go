@@ -2,6 +2,7 @@ package app
 
 import (
 	"os"
+	"slices"
 	"sort"
 	"strings"
 
@@ -96,13 +97,13 @@ func (c *PolicyApp) Images() error {
 	})
 
 	data := [][]any{}
-	for i := len(images) - 1; i >= 0; i-- {
+	for _, image := range slices.Backward(images) {
 		data = append(data, []any{
-			images[i].familiarName,
-			images[i].tagOrNone,
-			images[i].digest,
-			images[i].createdAt,
-			images[i].size,
+			image.familiarName,
+			image.tagOrNone,
+			image.digest,
+			image.createdAt,
+			image.size,
 		})
 	}
 
