@@ -25,7 +25,7 @@ EXT_TMP_DIR        := ${EXT_DIR}/tmp
 GO_VER             := 1.26
 SVU_VER            := 3.3.0
 GOTESTSUM_VER      := 1.13.0
-GOLANGCI-LINT_VER  := 2.11.4
+GOLANGCI-LINT_VER  := 2.12.2
 GORELEASER_VER     := 2.14.1
 SYFT_VER           := 1.13.0
 
@@ -113,9 +113,7 @@ install-svu: ${EXT_BIN_DIR} ${EXT_TMP_DIR}
 .PHONY: install-gotestsum
 install-gotestsum: ${EXT_TMP_DIR} ${EXT_BIN_DIR}
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-	@gh release download v${GOTESTSUM_VER} --repo https://github.com/gotestyourself/gotestsum --pattern "gotestsum_${GOTESTSUM_VER}_${GOOS}_${GOARCH}.tar.gz" --output "${EXT_TMP_DIR}/gotestsum.tar.gz" --clobber
-	@tar -xvf ${EXT_TMP_DIR}/gotestsum.tar.gz --directory ${EXT_BIN_DIR} gotestsum &> /dev/null
-	@chmod +x ${EXT_BIN_DIR}/gotestsum
+	@GOBIN=${EXT_BIN_DIR} go install gotest.tools/gotestsum@v${GOTESTSUM_VER}
 	@${EXT_BIN_DIR}/gotestsum --version
 
 .PHONY: install-golangci-lint
