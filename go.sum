@@ -20,8 +20,8 @@ github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0/go.mod h1:t2tdKJDJF9BV14lnkjHmOQgcvEKgtqs5a1N3LNdJhGE=
 github.com/aserto-dev/logger v0.0.9 h1:QH11l8937Sw+GAe2yvgpoLg70fqQvPrEufkXAmDUk0g=
 github.com/aserto-dev/logger v0.0.9/go.mod h1:mMXq/bhdIKoOVsIZ2zJOqgjcc/jR2x14FhU0St/8AVQ=
-github.com/aserto-dev/runtime v1.16.2 h1:wBQiQ0KmB/NcS2E1gmqKCQs3iohH7anJkTVz/A7BSYE=
-github.com/aserto-dev/runtime v1.16.2/go.mod h1:MW1zt6Y3zVnn9RZNIg12raaTb4BAFjCUM1T2ksrROLk=
+github.com/aserto-dev/runtime v1.16.3 h1:fWvxsAxe9yXvEX5BuOPdAqpd0KgnXiHw6hkZBl38YXg=
+github.com/aserto-dev/runtime v1.16.3/go.mod h1:MW1zt6Y3zVnn9RZNIg12raaTb4BAFjCUM1T2ksrROLk=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytecodealliance/wasmtime-go/v43 v43.0.2 h1:EZJlEpDanv6j/Y5Mcl2ndMjgK5Tw2QVDTJCzmLWNozg=

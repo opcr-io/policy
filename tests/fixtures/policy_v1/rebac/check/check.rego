@@ -1,7 +1,5 @@
 package rebac.check
 
-import rego.v1
-
 # default to a closed system (deny by default)
 default allowed := false
 

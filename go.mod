@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v1.14.0
-	github.com/aserto-dev/runtime v1.16.2
+	github.com/aserto-dev/runtime v1.16.3
 	github.com/containerd/containerd/v2 v2.3.0
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0
