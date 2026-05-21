@@ -49,7 +49,10 @@ func run() int {
 			Indenter:            kong.SpaceIndenter,
 			NoExpandSubcommands: true,
 		}),
-		kong.Resolvers(cmd.ConfigExpander()), kong.Vars{"userHome": home},
+		kong.Resolvers(cmd.ConfigExpander()),
+		kong.Vars{
+			"userHome": home,
+		},
 	)
 
 	g := &cmd.Globals{

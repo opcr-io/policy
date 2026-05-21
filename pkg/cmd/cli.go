@@ -105,7 +105,7 @@ type Globals struct {
 }
 
 type CLI struct {
-	Config    string       `flag:"" short:"c" type:"path" help:"Path to the policy CLI config file." default:"${userHome}/.config/policy/config.yaml"`
+	Config    string       `flag:"" short:"c" type:"path" help:"Path to the policy CLI config file." default:"${userHome}/.policy/config.yaml"`
 	Debug     bool         `flag:"" help:"Enable debug mode."`
 	Verbosity int          `flag:"" short:"v" type:"counter" help:"Use to increase output verbosity."`
 	Insecure  bool         `flag:"" short:"k" help:"Do not verify TLS connections."`
