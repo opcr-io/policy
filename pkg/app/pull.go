@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/containerd/containerd/v2/core/remotes/docker"
-	"github.com/opcr-io/policy/oci"
-	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 	"github.com/pkg/errors"
 )
 

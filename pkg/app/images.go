@@ -8,7 +8,7 @@ import (
 
 	"github.com/distribution/reference"
 	"github.com/dustin/go-humanize"
-	"github.com/opcr-io/policy/oci"
+	"github.com/opcr-io/policy/internal/oci"
 	"github.com/opcr-io/policy/pkg/table"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"

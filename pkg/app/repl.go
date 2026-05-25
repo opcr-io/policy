@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/opcr-io/policy/oci"
-	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 	"github.com/opcr-io/policy/pkg/errors"
 	"github.com/open-policy-agent/opa/v1/repl"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
