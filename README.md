@@ -9,11 +9,9 @@ It uses OCI standards to manage artifacts, and the [Open Policy Agent (OPA)](htt
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/opcr-io/policy?)](https://goreportcard.com/report/github.com/opcr-io/policy)
 [![ci](https://github.com/opcr-io/policy/actions/workflows/ci.yaml/badge.svg)](https://github.com/opcr-io/policy/actions/workflows/ci.yaml)
-[![codebeat badge](https://codebeat.co/badges/8e9c8690-9890-46d4-accc-17e5ac24cd88)](https://codebeat.co/projects/github-com-opcr-io-policy-main)
 ![GitHub all releases](https://img.shields.io/github/downloads/opcr-io/policy/total)
 ![Apache 2.0](https://img.shields.io/github/license/opcr-io/policy)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/opcr-io/policy)
-[<img src="https://img.shields.io/badge/slack-@asertocommunity-yellow.svg?logo=slack">](https://asertocommunity.slack.com/)
 [<img src="https://img.shields.io/badge/docs-%F0%9F%95%B6-blue">](https://www.openpolicycontainers.com/docs/intro)
 [![CodeQL](https://github.com/opcr-io/policy/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/opcr-io/policy/actions/workflows/codeql-analysis.yml)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6859/badge)](https://bestpractices.coreinfrastructure.org/projects/6859)
