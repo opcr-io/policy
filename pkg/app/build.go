@@ -153,6 +153,69 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 	ociStore.AutoGC = true
 
 	// tarball layer
+	tarDescriptor, err := c.createTarLayer(ociStore, tarball, annotations)
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	// cfg layer
+	cfgDescriptor, err := c.createEmptyCfgLayer(ociStore)
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	manifestDesc, err := oras.PackManifest(
+		c.Context,
+		ociStore,
+		oras.PackManifestVersion1_1,
+		v1.MediaTypeImageManifest,
+		oras.PackManifestOptions{
+			Layers:              []v1.Descriptor{tarDescriptor},
+			ManifestAnnotations: tarDescriptor.Annotations,
+			ConfigDescriptor:    &cfgDescriptor,
+		},
+	)
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	c.UI.Normal().
+		WithStringValue("digest", manifestDesc.Digest.String()).
+		Msg("Created new image.")
+
+	return manifestDesc, nil
+}
+
+func (c *PolicyApp) createEmptyCfgLayer(ociStore *orasoci.Store) (v1.Descriptor, error) {
+	cfg := []byte("{}")
+
+	cfgDescriptor := v1.Descriptor{
+		MediaType: v1.MediaTypeEmptyJSON,
+		Digest:    digest.FromBytes(cfg),
+		Size:      int64(len(cfg)),
+	}
+
+	cfgExist, err := ociStore.Exists(c.Context, cfgDescriptor)
+	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
+		return v1.Descriptor{}, err
+	}
+
+	if err := ociStore.Delete(c.Context, cfgDescriptor); cfgExist && err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	if err := ociStore.Push(c.Context, cfgDescriptor, bytes.NewReader(cfg)); err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	cfgDescriptor.Annotations = map[string]string{
+		v1.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	return cfgDescriptor, nil
+}
+
+func (c *PolicyApp) createTarLayer(ociStore *orasoci.Store, tarball string, annotations map[string]string) (v1.Descriptor, error) {
 	tarDigest, err := c.fileDigest(tarball)
 	if err != nil {
 		return v1.Descriptor{}, err
@@ -197,55 +260,7 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		return v1.Descriptor{}, err
 	}
 
-	// cfg layer
-	cfg := []byte("{}")
-
-	cfgDescriptor := v1.Descriptor{
-		MediaType: v1.MediaTypeEmptyJSON,
-		Digest:    digest.FromBytes(cfg),
-		Size:      int64(len(cfg)),
-	}
-
-	cfgExist, err := ociStore.Exists(c.Context, cfgDescriptor)
-	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
-		return v1.Descriptor{}, err
-	}
-
-	if err := ociStore.Delete(c.Context, cfgDescriptor); cfgExist && err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	if err := ociStore.Push(c.Context, cfgDescriptor, bytes.NewReader(cfg)); err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	manifestDesc, err := oras.PackManifest(
-		c.Context,
-		ociStore,
-		oras.PackManifestVersion1_1,
-		v1.MediaTypeImageManifest,
-		oras.PackManifestOptions{
-			Layers:              []v1.Descriptor{tarDescriptor},
-			ManifestAnnotations: tarDescriptor.Annotations,
-			ConfigDescriptor: &v1.Descriptor{
-				MediaType: v1.MediaTypeEmptyJSON,
-				Digest:    digest.FromBytes(cfg),
-				Size:      int64(len(cfg)),
-				Annotations: map[string]string{
-					v1.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
-				},
-			},
-		},
-	)
-	if err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	c.UI.Normal().
-		WithStringValue("digest", manifestDesc.Digest.String()).
-		Msg("Created new image.")
-
-	return manifestDesc, nil
+	return tarDescriptor, nil
 }
 
 func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {
