@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/aserto-dev/runtime"
-	"github.com/opcr-io/policy/oci"
-	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 
 	"github.com/containerd/errdefs"
 	"github.com/distribution/reference"

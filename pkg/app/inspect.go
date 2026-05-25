@@ -3,8 +3,8 @@ package app
 import (
 	"os"
 
-	"github.com/opcr-io/policy/oci"
-	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 	"github.com/opcr-io/policy/pkg/table"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"

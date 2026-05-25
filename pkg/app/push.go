@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/opcr-io/policy/oci"
-	"github.com/opcr-io/policy/parser"
+	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 	"github.com/opcr-io/policy/pkg/errors"
 )
 
