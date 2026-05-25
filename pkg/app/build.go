@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"path/filepath"
 	"time"
@@ -151,50 +152,17 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 	ociStore.AutoSaveIndex = true
 	ociStore.AutoGC = true
 
-	fDigest, err := c.fileDigest(tarball)
+	// tarball layer
+	tarDescriptor, err := c.createTarLayer(ociStore, tarball, annotations)
 	if err != nil {
 		return v1.Descriptor{}, err
 	}
 
-	tarballFile, err := os.Open(tarball)
+	// cfg layer
+	cfgDescriptor, err := c.createEmptyCfgLayer(ociStore)
 	if err != nil {
 		return v1.Descriptor{}, err
 	}
-
-	fileInfo, err := tarballFile.Stat()
-	if err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	defer func() {
-		if err := tarballFile.Close(); err != nil {
-			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
-		}
-	}()
-
-	descriptor := v1.Descriptor{
-		Digest:      fDigest,
-		Size:        fileInfo.Size(),
-		Annotations: annotations,
-		MediaType:   oci.MediaTypeImageLayer,
-	}
-
-	exists, err := ociStore.Exists(c.Context, descriptor)
-	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
-		return v1.Descriptor{}, err
-	}
-
-	if err := ociStore.Delete(c.Context, descriptor); exists && err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	reader := bufio.NewReader(tarballFile)
-
-	if err := ociStore.Push(c.Context, descriptor, reader); err != nil {
-		return v1.Descriptor{}, err
-	}
-
-	cfgDesc := []byte("{}")
 
 	manifestDesc, err := oras.PackManifest(
 		c.Context,
@@ -202,16 +170,9 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		oras.PackManifestVersion1_1,
 		v1.MediaTypeImageManifest,
 		oras.PackManifestOptions{
-			Layers:              []v1.Descriptor{descriptor},
-			ManifestAnnotations: descriptor.Annotations,
-			ConfigDescriptor: &v1.Descriptor{
-				MediaType: v1.MediaTypeEmptyJSON,
-				Digest:    digest.FromBytes(cfgDesc),
-				Size:      int64(len(cfgDesc)),
-				Annotations: map[string]string{
-					v1.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
-				},
-			},
+			Layers:              []v1.Descriptor{tarDescriptor},
+			ManifestAnnotations: tarDescriptor.Annotations,
+			ConfigDescriptor:    &cfgDescriptor,
 		},
 	)
 	if err != nil {
@@ -223,6 +184,83 @@ func (c *PolicyApp) createImage(ociStore *orasoci.Store, tarball string, annotat
 		Msg("Created new image.")
 
 	return manifestDesc, nil
+}
+
+func (c *PolicyApp) createEmptyCfgLayer(ociStore *orasoci.Store) (v1.Descriptor, error) {
+	cfg := []byte("{}")
+
+	cfgDescriptor := v1.Descriptor{
+		MediaType: v1.MediaTypeEmptyJSON,
+		Digest:    digest.FromBytes(cfg),
+		Size:      int64(len(cfg)),
+	}
+
+	cfgExist, err := ociStore.Exists(c.Context, cfgDescriptor)
+	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
+		return v1.Descriptor{}, err
+	}
+
+	if err := ociStore.Delete(c.Context, cfgDescriptor); cfgExist && err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	if err := ociStore.Push(c.Context, cfgDescriptor, bytes.NewReader(cfg)); err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	cfgDescriptor.Annotations = map[string]string{
+		v1.AnnotationCreated: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	return cfgDescriptor, nil
+}
+
+func (c *PolicyApp) createTarLayer(ociStore *orasoci.Store, tarball string, annotations map[string]string) (v1.Descriptor, error) {
+	tarDigest, err := c.fileDigest(tarball)
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	tarReader, err := os.Open(tarball)
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	defer func() {
+		if err := tarReader.Close(); err != nil {
+			c.UI.Problem().WithErr(err).Msg("Failed to close bundle tarball.")
+		}
+	}()
+
+	fileInfo, err := tarReader.Stat()
+	if err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	tarDescriptor := v1.Descriptor{
+		Digest:      tarDigest,
+		Size:        fileInfo.Size(),
+		Annotations: annotations,
+		MediaType:   oci.MediaTypeImageLayer,
+	}
+
+	exists, err := ociStore.Exists(c.Context, tarDescriptor)
+	if err != nil && !errors.Is(err, errdefs.ErrNotFound) {
+		return v1.Descriptor{}, err
+	}
+
+	// delete if exists
+	if err := ociStore.Delete(c.Context, tarDescriptor); exists && err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	reader := bufio.NewReader(tarReader)
+
+	if err := ociStore.Push(c.Context, tarDescriptor, reader); err != nil {
+		return v1.Descriptor{}, err
+	}
+
+	return tarDescriptor, nil
 }
 
 func (c *PolicyApp) fileDigest(file string) (digest.Digest, error) {

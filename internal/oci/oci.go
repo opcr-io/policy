@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	MediaTypeImageLayer = "application/vnd.oci.image.layer.v1.tar+gzip"
-	MediaTypeConfig     = "application/vnd.oci.image.config.v1+json"
+	MediaTypeImageLayer = v1.MediaTypeImageLayerGzip // "application/vnd.oci.image.layer.v1.tar+gzip"
+	MediaTypeConfig     = v1.MediaTypeImageConfig    // "application/vnd.oci.image.config.v1+json"
 )
 
 type Oci struct {
@@ -49,6 +49,10 @@ func NewOCI(ctx context.Context, log *zerolog.Logger, hostsFunc docker.RegistryH
 	}, nil
 }
 
+func (o *Oci) GetStore() *oci.Store {
+	return o.ociStore
+}
+
 func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	dockerResolver := docker.NewResolver(docker.ResolverOptions{
 		Hosts: o.hostsFunc,
@@ -61,7 +65,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 
 	// Get tarball descriptor digest
 	opts.OnCopySkipped = func(ctx context.Context, desc v1.Descriptor) error {
-		if !IsAllowedMediaType(desc.MediaType) {
+		if !isAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
 
@@ -73,7 +77,7 @@ func (o *Oci) Pull(ref string) (digest.Digest, error) {
 	}
 
 	opts.PostCopy = func(ctx context.Context, desc v1.Descriptor) error {
-		if !IsAllowedMediaType(desc.MediaType) {
+		if !isAllowedMediaType(desc.MediaType) {
 			return errors.Errorf("%s media type not allowed", desc.MediaType)
 		}
 
@@ -238,10 +242,6 @@ func (o *Oci) Untag(descr *v1.Descriptor, ref string) error {
 	return o.ociStore.Untag(o.ctx, ref)
 }
 
-func (o *Oci) GetStore() *oci.Store {
-	return o.ociStore
-}
-
 func (o *Oci) GetTarballAndConfigLayerDescriptor(
 	ctx context.Context,
 	descriptor *v1.Descriptor,
@@ -263,12 +263,7 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(
 		return nil, nil, err
 	}
 
-	configDigest := manifest.Config.Digest.String()
-
-	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest)
-	if err != nil {
-		return nil, nil, err
-	}
+	configDescriptor := manifest.Config
 
 	for _, layer := range manifest.Layers {
 		if layer.MediaType == v1.MediaTypeImageLayerGzip || layer.MediaType == v1.MediaTypeImageLayer {
@@ -369,14 +364,15 @@ func cloneDescriptor(desc *v1.Descriptor) (v1.Descriptor, error) {
 	return result, nil
 }
 
-func IsAllowedMediaType(mediaType string) bool {
+func isAllowedMediaType(mediaType string) bool {
 	allowedMediaTypes := []string{
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/octet-stream",
-		"application/vnd.oci.image.config.v1+json",
-		"application/vnd.unknown.config.v1+json",
-		"application/vnd.oci.image.layer.v1.tar+gzip",
-		"application/vnd.oci.image.layer.v1.tar",
+		v1.MediaTypeImageManifest,                // application/vnd.oci.image.manifest.v1+json
+		v1.MediaTypeImageConfig,                  // application/vnd.oci.image.config.v1+json
+		v1.MediaTypeImageLayerGzip,               // application/vnd.oci.image.layer.v1.tar+gzip
+		v1.MediaTypeImageLayer,                   // application/vnd.oci.image.layer.v1.tar
+		v1.MediaTypeEmptyJSON,                    // application/vnd.oci.empty.v1+json
+		"application/vnd.unknown.config.v1+json", // application/vnd.unknown.config.v1+json
+		"application/octet-stream",               // application/octet-stream
 	}
 
 	return slices.Contains(allowedMediaTypes, mediaType)
