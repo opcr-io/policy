@@ -9,7 +9,7 @@ import (
 func (c *PolicyApp) Push(userRef string) error {
 	defer c.Cancel()
 
-	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
+	ref, err := parser.CalculateRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.ErrPushFailed.WithError(err)
 	}

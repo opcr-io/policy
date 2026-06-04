@@ -263,7 +263,12 @@ func (o *Oci) GetTarballAndConfigLayerDescriptor(
 		return nil, nil, err
 	}
 
-	configDescriptor := manifest.Config
+	configDigest := manifest.Config.Digest.String()
+
+	configDescriptor, err := o.ociStore.Resolve(ctx, configDigest)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	for _, layer := range manifest.Layers {
 		if layer.MediaType == v1.MediaTypeImageLayerGzip || layer.MediaType == v1.MediaTypeImageLayer {

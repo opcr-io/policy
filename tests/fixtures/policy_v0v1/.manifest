@@ -1,5 +1,6 @@
 {
   "roots": ["rebac"],
+  "rego_version": 1,
   "metadata": {
     "required_builtins": {
       "builtin1": [
@@ -18,35 +19,7 @@
           }
         },
         {
-          "name": "ds.check_permission",
-          "decl": {
-            "args": [
-              {
-                "type": "any"
-              }
-            ],
-            "result": {
-              "type": "boolean"
-            },
-            "type": "function"
-          }
-        },
-        {
-          "name": "ds.check_relation",
-          "decl": {
-            "args": [
-              {
-                "type": "any"
-              }
-            ],
-            "result": {
-              "type": "boolean"
-            },
-            "type": "function"
-          }
-        },
-        {
-          "name": "ds.graph",
+          "name": "ds.checks",
           "decl": {
             "args": [
               {
@@ -60,7 +33,7 @@
           }
         },
         {
-          "name": "ds.identity",
+          "name": "ds.graph",
           "decl": {
             "args": [
               {
@@ -116,7 +89,63 @@
           }
         },
         {
-          "name": "ds.user",
+          "name": "az.evaluation",
+          "decl": {
+            "args": [
+              {
+                "type": "any"
+              }
+            ],
+            "result": {
+              "type": "any"
+            },
+            "type": "function"
+          }
+        },
+                {
+          "name": "az.evaluations",
+          "decl": {
+            "args": [
+              {
+                "type": "any"
+              }
+            ],
+            "result": {
+              "type": "any"
+            },
+            "type": "function"
+          }
+        },
+        {
+          "name": "az.action_search",
+          "decl": {
+            "args": [
+              {
+                "type": "any"
+              }
+            ],
+            "result": {
+              "type": "any"
+            },
+            "type": "function"
+          }
+        },
+        {
+          "name": "az.resource_search",
+          "decl": {
+            "args": [
+              {
+                "type": "any"
+              }
+            ],
+            "result": {
+              "type": "any"
+            },
+            "type": "function"
+          }
+        },
+        {
+          "name": "az.subject_search",
           "decl": {
             "args": [
               {

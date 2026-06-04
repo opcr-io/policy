@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/aserto-dev/runtime"
+	"github.com/opcr-io/policy/internal/runtime"
 	perr "github.com/opcr-io/policy/pkg/errors"
 )
 

@@ -20,4 +20,9 @@ if [ ! -f $BIN_PATH ]; then
     echo "local binary \"${BIN_PATH}\" not found!"
 fi
 
-${BIN_PATH} $*
+if [[ -v TRACE ]]; then
+  echo ""
+  echo ">>> policy $*"
+fi
+
+exec "${BIN_PATH}" "$@"

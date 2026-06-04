@@ -17,7 +17,7 @@ func (c *PolicyApp) Save(userRef, outputFilePath string) error {
 
 	var outputFile *os.File
 
-	ref, err := parser.CalculatePolicyRef(userRef, c.Configuration.DefaultDomain)
+	ref, err := parser.CalculateRef(userRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return perr.ErrSaveFailed.WithError(err)
 	}

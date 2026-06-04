@@ -1,39 +1,48 @@
 package parser
 
 import (
+	"strings"
+
 	"github.com/distribution/reference"
-	"github.com/pkg/errors"
 )
 
 const (
 	DefaultCanonicalDomain = "docker.io"
 )
 
-// CalculatePolicyRef calculates the docker reference from string.
-func CalculatePolicyRef(userRef, defaultDomain string) (string, error) {
-	parsed, err := reference.ParseDockerRef(userRef)
+func CalculateRef(userRef, defaultDomain string) (string, error) {
+	ref, err := CalculateNamedRef(userRef, defaultDomain)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse reference [%s]", userRef)
+		return "", err
 	}
 
-	familiarized := reference.FamiliarString(parsed)
+	return ref.String(), nil
+}
 
-	domain := reference.Domain(parsed)
+func CalculateNamedRef(userRef, defaultDomain string) (reference.Named, error) {
+	if defaultDomain == "" {
+		defaultDomain = DefaultCanonicalDomain
+	}
 
-	if (familiarized == userRef || familiarized == userRef+":latest") && domain == DefaultCanonicalDomain {
-		if defaultDomain == "" {
-			defaultDomain = DefaultCanonicalDomain
-		}
+	dockerRef, err := reference.ParseDockerRef(userRef)
+	if err != nil {
+		return nil, err
+	}
 
-		parsedWithDomain, err := reference.ParseDockerRef(defaultDomain + "/" + userRef)
+	incomingDomain := reference.Domain(dockerRef)
+
+	hasDomain := strings.HasPrefix(userRef, incomingDomain)
+
+	if defaultDomain != DefaultCanonicalDomain && incomingDomain != defaultDomain && !hasDomain {
+		tmpRef := defaultDomain + strings.TrimPrefix(dockerRef.String(), DefaultCanonicalDomain)
+
+		updatedRef, err := reference.ParseDockerRef(tmpRef)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to parse normalized reference [%s]", defaultDomain+"/"+userRef)
+			return nil, err
 		}
 
-		return parsedWithDomain.String(), nil
-	} else if domain == DefaultCanonicalDomain {
-		return DefaultCanonicalDomain + "/" + familiarized, nil
+		return updatedRef, nil
 	}
 
-	return familiarized, nil
+	return dockerRef, nil
 }

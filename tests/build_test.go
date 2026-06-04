@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aserto-dev/runtime"
+	"github.com/opcr-io/policy/internal/runtime"
 
 	"github.com/stretchr/testify/require"
 )

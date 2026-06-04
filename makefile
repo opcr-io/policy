@@ -88,7 +88,7 @@ lint: gover
 .PHONY: test
 test: gover
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-	@${EXT_BIN_DIR}/gotestsum --format short-verbose ./... -count=1 -timeout 120s -parallel=1 -v -coverprofile=cover.out -coverpkg=./...
+	@${EXT_BIN_DIR}/gotestsum --format short-verbose ./... -count=1 -timeout 120s -parallel=1 -fullpath -v -coverprofile=cover.out -coverpkg=./...
 
 .PHONY: info
 info:

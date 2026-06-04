@@ -14,7 +14,7 @@ import (
 func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	defer c.Cancel()
 
-	existingRefParsed, err := parser.CalculatePolicyRef(existingRef, c.Configuration.DefaultDomain)
+	existingRefParsed, err := parser.CalculateRef(existingRef, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
@@ -84,6 +84,12 @@ func (c *PolicyApp) Rm(existingRef string, force bool) error {
 	return nil
 }
 
+type index struct {
+	Version   int             `json:"schemaVersion"` //nolint:tagliatelle
+	Manifests []v1.Descriptor `json:"manifests"`
+}
+
+// TODO: re-evaluate need based on latest store.
 func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *v1.Descriptor, refString string) error {
 	anotherImageWithSameDigest, err := c.buildFromSameImage(ref)
 	if err != nil {
@@ -107,6 +113,7 @@ func (c *PolicyApp) removeBasedOnManifest(ociClient *oci.Oci, ref *v1.Descriptor
 	return nil
 }
 
+// TODO: re-evaluate need based on latest store.
 func (c *PolicyApp) removeBasedOnTarball(
 	ociClient *oci.Oci,
 	ref *v1.Descriptor,
@@ -145,12 +152,8 @@ func (c *PolicyApp) removeBasedOnTarball(
 	return nil
 }
 
+// TODO: re-evaluate need based on latest store.
 func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *v1.Descriptor) (bool, error) {
-	type index struct {
-		Version   int             `json:"schemaVersion"`
-		Manifests []v1.Descriptor `json:"manifests"`
-	}
-
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
 
 	indexBytes, err := os.ReadFile(indexPath)
@@ -189,12 +192,8 @@ func (c *PolicyApp) tarballReferencedByOtherManifests(ociClient *oci.Oci, ref *v
 	return false, nil
 }
 
+// TODO: re-evaluate need based on latest store.
 func (c *PolicyApp) buildFromSameImage(ref *v1.Descriptor) (bool, error) {
-	type index struct {
-		Version   int             `json:"schemaVersion"`
-		Manifests []v1.Descriptor `json:"manifests"`
-	}
-
 	indexPath := filepath.Join(c.Configuration.PoliciesRoot(), "index.json")
 
 	indexBytes, err := os.ReadFile(indexPath)

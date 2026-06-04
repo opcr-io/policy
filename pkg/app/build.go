@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/aserto-dev/runtime"
 	"github.com/opcr-io/policy/internal/oci"
 	"github.com/opcr-io/policy/internal/parser"
+	"github.com/opcr-io/policy/internal/runtime"
 
 	"github.com/containerd/errdefs"
 	"github.com/distribution/reference"
@@ -62,13 +62,12 @@ func (c *PolicyApp) Build(
 		}
 	}()
 
-	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context),
-		&runtime.Config{
-			InstanceID: "policy-build",
-		})
+	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context))
 	if err != nil {
 		return errors.Wrap(err, "failed to setup the OPA runtime")
 	}
+
+	opaRuntime.Config.InstanceID = "policy-build"
 
 	outFile := filepath.Join(workDir, "bundle.tgz")
 
@@ -103,14 +102,9 @@ func (c *PolicyApp) Build(
 		ref = "default"
 	}
 
-	familiarizedRef, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	parsedRef, err := parser.CalculateNamedRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return errors.Wrap(err, "failed to calculate policy reference")
-	}
-
-	parsedRef, err := reference.ParseDockerRef(familiarizedRef)
-	if err != nil {
-		return err
 	}
 
 	annotations = buildAnnotations(annotations, parsedRef, regoVersion)
