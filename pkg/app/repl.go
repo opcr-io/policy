@@ -1,21 +1,34 @@
 package app
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
-	"time"
 
-	"github.com/aserto-dev/runtime"
 	"github.com/opcr-io/policy/internal/oci"
 	"github.com/opcr-io/policy/internal/parser"
+	"github.com/opcr-io/policy/internal/runtime"
+
 	"github.com/opcr-io/policy/pkg/errors"
+	"github.com/open-policy-agent/opa/v1/ast"
+	"github.com/open-policy-agent/opa/v1/bundle"
+	"github.com/open-policy-agent/opa/v1/metrics"
 	"github.com/open-policy-agent/opa/v1/repl"
+	"github.com/open-policy-agent/opa/v1/storage"
+	"github.com/open-policy-agent/opa/v1/storage/inmem"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 	defer c.Cancel()
+
+	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context))
+	if err != nil {
+		return err
+	}
+
+	opaRuntime.Config.InstanceID = "policy-repl"
 
 	ociClient, err := oci.NewOCI(c.Context, c.Logger, c.getHosts, c.Configuration.PoliciesRoot())
 	if err != nil {
@@ -27,7 +40,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		return err
 	}
 
-	existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+	existingRefParsed, err := parser.CalculateRef(ref, c.Configuration.DefaultDomain)
 	if err != nil {
 		return err
 	}
@@ -45,7 +58,7 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 			return err
 		}
 
-		existingRefParsed, err := parser.CalculatePolicyRef(ref, c.Configuration.DefaultDomain)
+		existingRefParsed, err := parser.CalculateRef(ref, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
 		}
@@ -56,44 +69,86 @@ func (c *PolicyApp) Repl(ref string, maxErrors int) error {
 		}
 	}
 
-	// check for media type - if manifest get tarball digest hex.
-	bundleHex, err := c.getBundleHex(ociClient, &descriptor)
+	store, err := c.loadStore(ociClient, descriptor)
 	if err != nil {
 		return err
 	}
 
-	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", bundleHex)
+	outputFormat := ""
+	banner := fmt.Sprintf("running policy [%s]", ref)
 
-	opaRuntime, err := runtime.New(c.Logger.WithContext(c.Context), &runtime.Config{
-		InstanceID: "policy-run",
-		LocalBundles: runtime.LocalBundlesConfig{
-			Paths: []string{bundleFile},
-		},
-	})
-	if err != nil {
-		return errors.ErrReplFailed.WithError(err)
-	}
+	r := repl.New(store, ".policy_history", os.Stdout, outputFormat, maxErrors, banner)
 
-	if err := opaRuntime.Start(c.Context); err != nil {
-		return errors.ErrReplFailed.WithError(err)
-	}
-
-	if err := opaRuntime.WaitForPlugins(c.Context, time.Minute*1); err != nil {
-		return errors.ErrReplFailed.WithError(err)
-	}
-
-	loop := repl.New(
-		opaRuntime.GetPluginsManager().Store,
-		c.Configuration.ReplHistoryFile(),
-		c.UI.Output(),
-		"",
-		maxErrors,
-		fmt.Sprintf("running policy [%s]", ref),
-	)
-
-	loop.Loop(context.Background())
+	r.Loop(c.Context)
 
 	return nil
+}
+
+func (c *PolicyApp) loadStore(ociClient *oci.Oci, descriptor v1.Descriptor) (storage.Store, error) {
+	// check for media type - if manifest get tarball digest hex.
+	bundleHex, err := c.getBundleHex(ociClient, &descriptor)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleFile := filepath.Join(c.Configuration.PoliciesRoot(), "blobs", "sha256", bundleHex)
+
+	reader, err := os.Open(bundleFile)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	loader := bundle.NewTarballLoaderWithBaseURL(reader, "")
+
+	bundleReader := bundle.NewCustomReader(loader)
+
+	loadedBundle, err := bundleReader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	manifestBytes, err := json.Marshal(loadedBundle.Manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	manifest := runtime.MetadataEx{}
+	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return nil, err
+	}
+
+	runtime.RegisterStubBuiltins(manifest.Metadata.RequiredBuiltins)
+
+	store := inmem.New()
+
+	txn, err := store.NewTransaction(c.Context, storage.WriteParams)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := bundle.ActivateOpts{
+		Ctx:      c.Context,
+		Store:    store,
+		Txn:      txn,
+		Compiler: ast.NewCompiler(),
+		Metrics:  metrics.New(),
+		Bundles: map[string]*bundle.Bundle{
+			"default": &loadedBundle,
+		},
+	}
+
+	err = bundle.Activate(&opts)
+	if err != nil {
+		store.Abort(c.Context, txn)
+		return nil, err
+	}
+
+	if err := store.Commit(c.Context, txn); err != nil {
+		return nil, err
+	}
+
+	return store, nil
 }
 
 func (c *PolicyApp) getBundleHex(ociClient *oci.Oci, descriptor *v1.Descriptor) (string, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/distribution/reference"
 	"github.com/dustin/go-humanize"
 	"github.com/opcr-io/policy/internal/oci"
+	"github.com/opcr-io/policy/internal/parser"
 	"github.com/opcr-io/policy/pkg/table"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -70,7 +71,7 @@ func (c *PolicyApp) Images() error {
 			tagOrNone = tag.Tag()
 		}
 
-		familiarName, err := c.familiarPolicyRef(refName)
+		familiarName, err := parser.CalculateRef(refName, c.Configuration.DefaultDomain)
 		if err != nil {
 			return err
 		}
@@ -113,19 +114,4 @@ func (c *PolicyApp) Images() error {
 	t.Render()
 
 	return nil
-}
-
-func (c *PolicyApp) familiarPolicyRef(userRef string) (string, error) {
-	parsed, err := reference.ParseDockerRef(userRef)
-	if err != nil {
-		return "", err
-	}
-
-	domain := reference.Domain(parsed)
-	if domain == c.Configuration.DefaultDomain {
-		path := reference.Path(parsed)
-		return path, nil
-	}
-
-	return userRef, nil
 }

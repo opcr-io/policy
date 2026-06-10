@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aserto-dev/runtime"
 	ilog "github.com/opcr-io/policy/internal/logger"
+	"github.com/opcr-io/policy/internal/runtime"
 	"github.com/opcr-io/policy/pkg/app"
 	"github.com/opcr-io/policy/pkg/cc/config"
 	"github.com/opcr-io/policy/pkg/clui"

@@ -19,7 +19,7 @@ func main() {
 		os.Args = append(os.Args, "--help")
 	}
 
-	os.Exit(run())
+	os.Exit(Run())
 }
 
 func exitErr(err error) int {
@@ -27,7 +27,7 @@ func exitErr(err error) int {
 	return rcErr
 }
 
-func run() int {
+func Run() int {
 	cli := cmd.CLI{}
 
 	home, err := os.UserHomeDir()

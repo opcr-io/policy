@@ -1,0 +1,10 @@
+# Verify that binary executes and returns version info
+exec policy version 
+cp stdout version.txt
+! stderr .
+
+exec cat version.txt
+stdout 'Policy CLI.'
+stdout 'version: \d+\.\d+\.\d+?(-[a-z0-9]+)?(-dirty)?'
+stdout 'date: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z'
+stdout 'commit: [a-f0-9]{7}'

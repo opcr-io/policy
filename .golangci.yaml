@@ -19,6 +19,7 @@ linters:
     - exhaustive
     - forbidigo
     - gochecknoglobals # no configuration options
+    - godox
     - gomodguard # deprecated, replaced by gomodguard_v2
     - nilnil
     - nlreturn # redundant with wsl
@@ -52,7 +53,10 @@ linters:
       disable-all: true
       enabled-checks:
         - commentedOutCode
-
+    godot:
+      scope: toplevel
+      exclude:
+        - "^TODO:"
     gosec:
       excludes:
         - G104 # Errors unhandled
@@ -67,6 +71,8 @@ linters:
         - kong.Resolver
         - clui.Progress
         - generators.Generator
+        - reference.Named
+        - storage.Store
 
     lll:
       line-length: 150
@@ -80,11 +86,6 @@ linters:
         rules:
           json: snake
           yaml: snake
-
-        overrides:
-          - pkg: pkg/app
-            rules:
-              json: camel
               
     wsl_v5:
       allow-first-in-block: true
