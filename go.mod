@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v1.15.0
-	github.com/containerd/containerd/v2 v2.3.1
+	github.com/containerd/containerd/v2 v2.3.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v29.5.2+incompatible
