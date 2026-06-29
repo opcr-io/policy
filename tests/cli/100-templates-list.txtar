@@ -1,0 +1,13 @@
+# Verify that binary executes and returns version info
+exec policy templates list
+cp stdout golden-templates-list.txt
+! stderr .
+
+-- golden-templates-list.txt --
+Fetching templates
+ NAME             KIND    DESCRIPTION
+ github           cicd    GitHub policy CI/CD template
+ gitlab           cicd    GitLab policy CI/CD template
+ policy-template  policy  Minimal policy template
+
+-- end-golden-templates-list.txt --

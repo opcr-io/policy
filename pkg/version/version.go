@@ -1,8 +1,6 @@
 package version
 
 import (
-	"fmt"
-	"runtime"
 	"time"
 )
 
@@ -39,15 +37,4 @@ func GetInfo() Info {
 		Date:    date,
 		Commit:  commit,
 	}
-}
-
-// String() returns the version info string.
-func (vi Info) String() string {
-	return fmt.Sprintf("%s g%s %s-%s [%s]",
-		vi.Version,
-		vi.Commit,
-		runtime.GOOS,
-		runtime.GOARCH,
-		vi.Date,
-	)
 }

@@ -1,0 +1,11 @@
+# Verify that fixtures directory can be found
+
+exec echo $FIXTURES
+
+cd ${FIXTURES}
+
+exists policy_v0
+exists policy_v0v1
+exists policy_v1
+
+! stderr .

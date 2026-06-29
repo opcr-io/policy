@@ -23,8 +23,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 		return errors.New("template name is required")
 	}
 
-	prog := c.UI.Progressf("Processing template '%s'", name)
-	prog.Start()
+	c.UI.Normal().Msgf("Processing template %q", name)
 
 	templatesInfo, err := c.listTemplates()
 	if err != nil {
@@ -41,10 +40,8 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 	}
 
 	if tmplInfo.name == "" {
-		return errors.Errorf("template '%s' not found", name)
+		return errors.Errorf("template %q not found", name)
 	}
-
-	prog.Stop()
 
 	generatorCfg, err := c.getGeneratorConfig(tmplInfo)
 	if err != nil {
@@ -55,13 +52,11 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 		name = fmt.Sprintf("%s/%s", name, regoVersion)
 	}
 
-	prog.ChangeMessage("Generating files")
-
-	prog.Start()
+	c.UI.Normal().Msg("Generating files")
 
 	templateRoot, err := fs.Sub(templates.Assets(), name)
 	if err != nil {
-		return errors.Wrapf(err, "failed tog get sub fs %s", name)
+		return errors.Wrapf(err, "failed to get sub fs %q", name)
 	}
 
 	generator, err := generators.NewGenerator(
@@ -77,9 +72,7 @@ func (c *PolicyApp) TemplateApply(name, outPath string, overwrite bool, regoVers
 		return errors.Wrap(err, "failed to generate policy")
 	}
 
-	prog.Stop()
-
-	c.UI.Normal().Msgf("The template '%s' was created successfully.", name)
+	c.UI.Normal().Msgf("The template %q was created successfully", name)
 
 	return nil
 }

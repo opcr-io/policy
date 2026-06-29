@@ -6,7 +6,6 @@ import (
 	"github.com/open-policy-agent/opa/v1/ast"
 	"github.com/open-policy-agent/opa/v1/plugins"
 	"github.com/open-policy-agent/opa/v1/rego"
-	"github.com/open-policy-agent/opa/v1/storage"
 	"github.com/rs/zerolog"
 )
 
@@ -20,11 +19,7 @@ type Runtime struct {
 	builtins3        map[*rego.Function]rego.Builtin3
 	builtins4        map[*rego.Function]rego.Builtin4
 	builtinsDyn      map[*rego.Function]rego.BuiltinDyn
-	builtins         []func(*rego.Rego)
 	compilerBuiltins map[string]*ast.Builtin
-	imports          []string
-	storage          storage.Store
-	regoVersion      ast.RegoVersion
 }
 
 func New(ctx context.Context) (*Runtime, error) {

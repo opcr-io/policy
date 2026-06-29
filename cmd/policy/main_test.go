@@ -23,35 +23,83 @@ func TestMain(m *testing.M) {
 	})
 }
 
+var scripts = []string{
+	"tests/cli/001-version.txtar",
+	"tests/cli/002-fixtures.txtar",
+	"tests/cli/003-build-policy_v1.txtar",
+	"tests/cli/100-templates-list.txtar",
+	"tests/cli/101-template-apply.txtar",
+}
+
 func TestScripts(t *testing.T) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Logf("cannot determine current working directory %q", err.Error())
+		t.FailNow()
+	}
+
+	policyBinPath, err := getPolicyBinPath()
+	if err != nil {
+		t.Logf("cannot determine policy bin location %q", err.Error())
+		t.FailNow()
+	}
+
+	_, policyBin := filepath.Split(policyBinPath)
+
+	fixturesDir, err := filepath.Abs(filepath.Join(cwd, "../../tests/fixtures"))
+	if err != nil {
+		t.Logf("cannot determine absolute path to test fixtures directory %q", err.Error())
+		t.FailNow()
+	}
+
 	testscript.Run(t, testscript.Params{
-		Dir:             "../../tests/cli",
+		Dir:             "",
+		Files:           scripts,
 		ContinueOnError: true,
 		Setup: func(env *testscript.Env) error {
-			policyBin, err := getPolicyBinPath()
-			if err != nil {
-				return err
-			}
-
-			_, file := filepath.Split(policyBin)
-
 			binDir := filepath.Join(env.WorkDir, "bin")
 			if err := os.MkdirAll(binDir, 0o750); err != nil {
 				return err
 			}
 
-			if err := os.Symlink(policyBin, filepath.Join(binDir, file)); err != nil {
+			if err := os.Symlink(policyBinPath, filepath.Join(binDir, policyBin)); err != nil {
 				return err
 			}
 
-			env.Vars = append(env.Vars, "PATH="+binDir+string(os.PathListSeparator)+env.Getenv("PATH"))
+			t.Logf("symlink %q => %q", policyBinPath, filepath.Join(binDir, policyBin))
 
-			if fixturePath, ok := os.LookupEnv("FIXTURES"); ok {
-				env.Vars = append(env.Vars, "FIXTURES="+fixturePath)
+			env.Vars = append(env.Vars, "PATH="+binDir+string(os.PathListSeparator)+env.Getenv("PATH"))
+			t.Logf("PATH="+binDir+string(os.PathListSeparator), binDir)
+
+			if fixturesEnv, ok := os.LookupEnv("FIXTURES"); ok {
+				t.Logf("FIXTURES=%q", fixturesEnv)
+				env.Vars = append(env.Vars, "FIXTURES="+fixturesEnv)
+			} else {
+				env.Vars = append(env.Vars, "FIXTURES="+fixturesDir)
 			}
+
+			policyRoot := filepath.Join(env.WorkDir, "policy")
+			if err := os.MkdirAll(policyRoot, 0o750); err != nil {
+				return err
+			}
+
+			env.Vars = append(env.Vars, "POLICY_FILE_STORE_ROOT="+policyRoot)
+
+			policyConfig := filepath.Join(policyRoot, "policy.json")
+
+			r, err := os.Create(policyConfig)
+			if err != nil {
+				t.Logf("failed to create policy/config.json %q", err.Error())
+				t.FailNow()
+			}
+
+			_ = r.Close()
 
 			return nil
 		},
+	})
+
+	t.Cleanup(func() {
 	})
 }
 
