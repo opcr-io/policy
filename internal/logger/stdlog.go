@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"log"
 	"sync"
 
 	"github.com/rs/zerolog"
@@ -46,10 +45,4 @@ func (z *ZerologWriter) Write(p []byte) (int, error) {
 	}
 
 	return len(p), nil
-}
-
-// NewSTDLogger creates a standard logger that writes to
-// a zerolog logger.
-func NewSTDLogger(logger *zerolog.Logger) *log.Logger {
-	return log.New(NewZerologWriter(logger), "", 0)
 }

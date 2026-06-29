@@ -1,0 +1,22 @@
+# Generate policy templates
+exec policy templates apply policy-template --output="./tmpl" --overwrite --rego-version=rego.v0
+cp stdout golden-templates-apply-v0.txt
+! stderr .
+
+-- golden-templates-apply-v0.txt --
+Processing template "policy-template"
+Generating files
+The template "policy-template/rego.v0" was created successfully
+
+-- end-golden-templates-apply-v0.txt --
+
+exec policy templates apply policy-template --output="./tmpl" --overwrite --rego-version=rego.v1
+cp stdout golden-templates-apply-v1.txt
+! stderr .
+
+-- golden-templates-apply-v1.txt --
+Processing template "policy-template"
+Generating files
+The template "policy-template/rego.v1" was created successfully
+
+-- end-golden-templates-apply-v1.txt --

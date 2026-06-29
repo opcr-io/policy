@@ -19,24 +19,20 @@ type templateInfo struct {
 }
 
 var templatesDescription = map[string]string{
-	"github":          "GitHub policy CI/CD template.",
-	"gitlab":          "GitLab policy CI/CD template.",
-	"policy-template": "Minimal policy template.",
+	"github":          "GitHub policy CI/CD template",
+	"gitlab":          "GitLab policy CI/CD template",
+	"policy-template": "Minimal policy template",
 }
 
 func (c *PolicyApp) TemplatesList() error {
 	defer c.Cancel()
 
-	p := c.UI.Progress("Fetching templates")
-
-	p.Start()
+	c.UI.Normal().Msg("Fetching templates")
 
 	templateInfos, err := c.listTemplates()
 	if err != nil {
 		return err
 	}
-
-	p.Stop()
 
 	sort.Slice(templateInfos, func(i, j int) bool {
 		return templateInfos[i].name < templateInfos[j].name

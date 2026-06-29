@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - 
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - 
         name: Setup Go
         uses: actions/setup-go@v6
@@ -92,7 +92,7 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     steps:
       -
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       -
@@ -136,7 +136,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       -
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       -
@@ -180,7 +180,7 @@ jobs:
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - 

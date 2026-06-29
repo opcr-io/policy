@@ -1,0 +1,50 @@
+# build policy using policy_v1 to default
+
+exec policy build ${FIXTURES}/policy_v1
+cp stdout build-1.txt
+! stderr .
+
+exec cat build-1.txt
+stdout 'Created new image.'
+stdout 'digest: sha256:[a-f0-9]{64}'
+stdout 'Tagging image.'
+stdout 'reference: docker.io/library/default:latest'
+
+exec policy images
+cp stdout image-1.txt
+! stderr .
+
+exec cat image-1.txt
+stdout 'REPOSITORY                        TAG     IMAGE ID      CREATED               SIZE'
+stdout 'docker.io/library/default:latest  latest  [a-f0-9]{12}  \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z  924B'
+
+exec policy inspect default
+cp stdout golden-inspect-1.txt
+! stderr .
+
+-- golden-inspect-1.txt --
+media type: application/vnd.oci.image.manifest.v1+json
+digest: sha256:60cdb62a57aa31ba564089432c816bd562bd52e63aed8f49234b9b0a9bad9879
+size: 924
+
+Annotations
+ ANNOTATION                        VALUE
+ org.opencontainers.image.created  \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z
+ org.opencontainers.image.title    docker.io/library/default
+ org.openpolicyregistry.type       policy
+ rego.version                      rego.v1
+
+-- end-golden-inspect-1.txt --
+
+exec policy rm default --force
+cp stdout rm-1.txt
+! stderr .
+
+exec policy images
+cp stdout image-2.txt
+! stderr .
+
+-- golden-images-2.txt 
+stdout 'REPOSITORY  TAG  IMAGE ID  CREATED  SIZE'
+
+-- end-golden-images-2.txt 

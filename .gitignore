@@ -39,3 +39,6 @@ CLAUDE.md
 
 # default bundle name and save policy artifact
 bundle.tar.gz
+
+# policy repl history file
+.policy_history
