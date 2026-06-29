@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/kong v1.15.0
-	github.com/containerd/containerd/v2 v2.3.1
+	github.com/containerd/containerd/v2 v2.3.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v29.5.2+incompatible
@@ -13,7 +13,6 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/kyokomi/emoji v2.2.4+incompatible
-	github.com/mitchellh/copystructure v1.2.0
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/open-policy-agent/opa v1.17.1
 	github.com/opencontainers/go-digest v1.0.0
@@ -73,6 +72,7 @@ require (
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
