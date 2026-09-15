@@ -22,11 +22,11 @@ EXT_DIR            := ${PWD}/.ext
 EXT_BIN_DIR        := ${EXT_DIR}/bin
 EXT_TMP_DIR        := ${EXT_DIR}/tmp
 
-GO_VER             := 1.26
-SVU_VER            := 3.3.0
+GO_VER             := 1.27
+SVU_VER            := 3.4.1
 GOTESTSUM_VER      := 1.13.0
-GOLANGCI-LINT_VER  := 2.12.2
-GORELEASER_VER     := 2.14.1
+GOLANGCI-LINT_VER  := 2.13.2
+GORELEASER_VER     := 2.18.0
 SYFT_VER           := 1.13.0
 
 RELEASE_TAG        := $$(${EXT_BIN_DIR}/svu current)
@@ -70,7 +70,7 @@ release: gover
 .PHONY: snapshot
 snapshot: gover
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
-	@${EXT_BIN_DIR}/goreleaser release --config .goreleaser.yml --clean --snapshot --skip archive,homebrew,sbom,publish
+	@${EXT_BIN_DIR}/goreleaser release --config .goreleaser.yml --clean --snapshot --skip sbom,publish
 
 .PHONY: generate
 generate:
