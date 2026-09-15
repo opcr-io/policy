@@ -111,13 +111,13 @@ func (u *Message) Msg(message string) {
 			//nolint:forcetypeassert
 			switch interaction.valueType {
 			case tBool:
-				*(interaction.value.(*bool)) = u.readBool(interaction.name, interaction.boolMap)
+				*interaction.value.(*bool) = u.readBool(interaction.name, interaction.boolMap)
 			case tInt:
-				*(interaction.value.(*int64)) = u.readInt(interaction.name, interaction.allowedIntValues...)
+				*interaction.value.(*int64) = u.readInt(interaction.name, interaction.allowedIntValues...)
 			case tString:
-				*(interaction.value.(*string)) = u.readString(interaction.name)
+				*interaction.value.(*string) = u.readString(interaction.name)
 			case tPassword:
-				*(interaction.value.(*string)) = u.readPassword(interaction.name, interaction.stdin)
+				*interaction.value.(*string) = u.readPassword(interaction.name, interaction.stdin)
 			}
 		case show:
 			switch interaction.valueType {
