@@ -15,6 +15,7 @@ var (
 	ErrReplFailed     = NewPolicyError("repl failed")
 	ErrTagFailed      = NewPolicyError("tag failed")
 	ErrTemplateFailed = NewPolicyError("template failed")
+	ErrExtractFailed  = NewPolicyError("extract failed")
 )
 
 type PolicyCLIError struct {
