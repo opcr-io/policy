@@ -93,9 +93,6 @@ homebrew_casks:
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP }}"
 
-    url:
-      verified: "github.com/{{ .Env.ORG }}/{{ .ProjectName }}"
-
     commit_author:
       name: Policy Bot
       email: info@openpolicycontainers.com
@@ -146,11 +143,6 @@ dockers_v2:
 
     sbom: false # Attestation is not supported for the docker driver.
 
-    retry:
-      attempts: 10
-      delay: 10s
-      max_delay: 2m
-
     extra_files:
       - scripts
       
@@ -173,3 +165,8 @@ sboms:
     artifacts: binary
     ids:
       - policy
+
+retry:
+  attempts: 10
+  delay: 10s
+  max_delay: 2m
