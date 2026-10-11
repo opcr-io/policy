@@ -129,6 +129,8 @@ dockers_v2:
 
     tags:
       - "{{ .Version }}"
+      - "{{ if not .IsSnapshot }}{{ .Major }}.{{ .Minor }}{{ end }}"
+      - "{{ if not .IsSnapshot }}{{ .Major }}{{ end }}"
       - "{{ if not .IsSnapshot }}latest{{ end }}"
       - "{{ if .IsSnapshot }}test{{ end }}"
 
