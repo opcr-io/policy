@@ -23,7 +23,7 @@ permissions:
 
 env:
   PRE_RELEASE: ${{ github.ref == 'refs/heads/main' && 'main' || '' }}
-  GO_RELEASER_VERSION: "v2.18.2"
+  GO_RELEASER_VERSION: "v2.18.3"
   GO_LANGCI_LINT_VERSION: "v2.14.0"
   SYFT_VERSION: "v1.13.0"
 
