@@ -11,11 +11,10 @@ ORG                := opcr.io
 REPO               := policy
 DESCRIPTION        := "Open Policy Containers CLI"
 LICENSE            := Apache-2.0
+WINGET_PKG_ID      := OpenPolicyContainers.Policy
 
 GOOS               := $(shell go env GOOS)
 GOARCH             := $(shell go env GOARCH)
-POLICY_DIST        := ${PWD}/$(shell cat dist/artifacts.json | jq -r '.[] | select(.name == "policy").path')
-GOPRIVATE          := "github.com/aserto-dev"
 DOCKER_BUILDKIT    := 1
 
 EXT_DIR            := ${PWD}/.ext
@@ -25,8 +24,8 @@ EXT_TMP_DIR        := ${EXT_DIR}/tmp
 GO_VER             := 1.27
 SVU_VER            := 3.4.1
 GOTESTSUM_VER      := 1.13.0
-GOLANGCI-LINT_VER  := 2.14.0
-GORELEASER_VER     := 2.18.3
+GOLANGCI-LINT_VER  := 2.15.0
+GORELEASER_VER     := 2.19.0
 SYFT_VER           := 1.13.0
 
 RELEASE_TAG        := $$(${EXT_BIN_DIR}/svu current)
@@ -60,6 +59,7 @@ container-tag:
 PHONY: go-mod-tidy
 go-mod-tidy:
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
+	@gofumpt -l -w .
 	@go mod tidy -v
 
 .PHONY: release
@@ -76,6 +76,13 @@ snapshot: gover
 generate:
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
 	@GOBIN=${EXT_BIN_DIR} go generate ./...
+
+.PHONY: publish-winget
+publish-winget:
+	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
+	@komac --version
+	@komac token add --token=$$(gh auth token)
+	@komac update ${WINGET_PKG_ID} --version $$(svu current --tag.prefix="") --urls https://github.com/opcr-io/policy/releases/download/$$(svu current)/policy_windows_amd64.zip
 
 .PHONY: lint
 lint: gover
@@ -99,7 +106,6 @@ info:
 	@echo "EXT_BIN_DIR: ${EXT_BIN_DIR}"
 	@echo "EXT_TMP_DIR: ${EXT_TMP_DIR}"
 	@echo "RELEASE_TAG: ${RELEASE_TAG}"
-	@echo "POLICY_DIST: ${POLICY_DIST}"
 	@echo "REGISTRY:    ${REGISTRY}"
 	@echo "ORG:         ${ORG}"
 	@echo "REPO:        ${REPO}"
